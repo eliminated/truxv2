@@ -8,5 +8,6 @@ declare(strict_types=1);
     <div class="muted">© <?= date('Y') ?> <?= trux_e(TRUX_APP_NAME) ?> · Built with PHP + MySQL</div>
   </div>
 </footer>
+<script src="/assets/app.js?v=1" defer></script>
 </body>
 </html>

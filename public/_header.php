@@ -20,6 +20,9 @@ $q = trux_str_param('q', '');
 </head>
 
 <body>
+  <div id="pageFX" class="pagefx" aria-hidden="true">
+    <div class="pagefx__bar"></div>
+  </div>
   <header class="topbar">
     <div class="container topbar__inner">
       <a class="brand" href="/"><?= trux_e(TRUX_APP_NAME) ?></a>
@@ -41,18 +44,19 @@ $q = trux_str_param('q', '');
             <?= trux_csrf_field() ?>
             <button class="linklike" type="submit">Logout</button>
           </form>
-        <?php else: ?>
           <a href="/login.php">Login</a>
           <a class="btn btn--small" href="/register.php">Create account</a>
         <?php endif; ?>
       </nav>
     </div>
   </header>
+  <script src="/assets/app.js?v=1" defer></script>
+</body>
 
-  <main class="container">
-    <?php if ($error): ?>
-      <div class="flash flash--error"><?= trux_e($error) ?></div>
-    <?php endif; ?>
-    <?php if ($success): ?>
-      <div class="flash flash--success"><?= trux_e($success) ?></div>
-    <?php endif; ?>
+<main class="container">
+  <?php if ($error): ?>
+    <div class="flash flash--error"><?= trux_e($error) ?></div>
+  <?php endif; ?>
+  <?php if ($success): ?>
+    <div class="flash flash--success"><?= trux_e($success) ?></div>
+  <?php endif; ?>
