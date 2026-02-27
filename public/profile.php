@@ -9,15 +9,15 @@ if ($username === '') {
     trux_redirect('/');
 }
 
-$user = trux_fetch_user_by_username($username);
-if (!$user) {
+$profileUser = trux_fetch_user_by_username($username);
+if (!$profileUser) {
     http_response_code(404);
     trux_flash_set('error', 'User not found.');
     trux_redirect('/');
 }
 
 $before = trux_int_param('before', 0);
-$posts = trux_fetch_posts_by_user((int)$user['id'], 20, $before > 0 ? $before : null);
+$posts = trux_fetch_posts_by_user((int)$profileUser['id'], 20, $before > 0 ? $before : null);
 
 $nextBefore = null;
 if (count($posts) > 0) {
@@ -31,14 +31,16 @@ require_once __DIR__ . '/_header.php';
 ?>
 
 <section class="hero">
-  <h1>@<?= trux_e((string)$user['username']) ?></h1>
+  <h1>@<?= trux_e((string)$profileUser['username']) ?></h1>
   <p class="muted">
     Joined:
-    <span title="<?= trux_e(trux_format_exact_time((string)$user['created_at'])) ?>">
-      <?= trux_e(trux_time_ago((string)$user['created_at'])) ?>
+    <span title="<?= trux_e(trux_format_exact_time((string)$profileUser['created_at'])) ?>">
+      <?= trux_e(trux_time_ago((string)$profileUser['created_at'])) ?>
     </span>
   </p>
 </section>
+
+<!-- rest stays the same -->
 
 <section class="feed">
   <?php if (!$posts): ?>
