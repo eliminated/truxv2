@@ -1,8 +1,8 @@
 :root {
-  --bg0: #06070b;
-  --bg1: #0b0f1c;
-  --panel: #0f1424;
-  --panel2: #0b1020;
+  --bg0: #0b0f18;
+  --bg1: #111827;
+  --panel: #141c2f;
+  --panel2: #0f1626;
   --text: #e9eef7;
   --muted: #a9b4c7;
   --border: rgba(255, 255, 255, .10);
@@ -21,7 +21,8 @@
 
 html,
 body {
-  height: 100%
+  height: 100%;
+  color: #eef3ff;
 }
 
 body {
@@ -87,7 +88,9 @@ a:hover {
   background: rgba(6, 7, 11, .65);
   backdrop-filter: blur(14px);
   border-bottom: 1px solid rgba(122, 167, 255, .18);
-  box-shadow: 0 10px 40px rgba(0, 0, 0, .35);
+  box-shadow:
+    0 10px 40px rgba(0,0,0,.35),
+    0 1px 0 rgba(122,167,255,.15);
 }
 
 .topbar__inner {
@@ -96,7 +99,15 @@ a:hover {
   justify-content: space-between;
   gap: 14px;
   padding: 12px 0;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+}
+
+@media (max-width: 820px) {
+  .topbar__inner {
+    flex-wrap: wrap;
+  }
+
+  /* wrap only on small screens */
 }
 
 .brand {
@@ -121,8 +132,9 @@ a:hover {
   display: flex;
   gap: 8px;
   align-items: center;
-  flex: 1 1 360px;
-  max-width: 520px;
+  flex: 1 1 auto;
+  min-width: 220px;
+  max-width: none;
 }
 
 .search__input {
@@ -157,28 +169,30 @@ a:hover {
 
 .nav {
   display: flex;
-  gap: 14px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+  gap: 18px;
   align-items: center;
 }
 
-.nav a{
-  position:relative;
+.nav a {
+  position: relative;
   text-decoration: none;
 }
 
-.nav a::after{
-  content:"";
-  position:absolute;
-  left:0;
-  bottom:-4px;
-  height:2px;
-  width:0%;
+.nav a::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  height: 2px;
+  width: 0%;
   background: linear-gradient(90deg, var(--neonA), var(--neonB));
   transition: width .25s ease;
 }
 
-.nav a:hover::after{
-  width:100%;
+.nav a:hover::after {
+  width: 100%;
   text-decoration: none;
 }
 
@@ -211,13 +225,17 @@ h1 {
 }
 
 .muted {
-  color: var(--muted)
+  color: #b7c4db;
 }
 
 /* Cards with neon animated border */
 .card {
   position: relative;
-  background: linear-gradient(180deg, rgba(15, 20, 36, .92), rgba(10, 14, 28, .92));
+  background: linear-gradient(
+    180deg,
+    rgba(20,28,47,.92),
+    rgba(16,22,38,.92)
+  );
   border: 1px solid rgba(255, 255, 255, .10);
   border-radius: 16px;
   overflow: hidden;
@@ -228,13 +246,14 @@ h1 {
   animation: fadeUp .4s ease both;
 }
 
-@keyframes fadeUp{
-  from{
-    opacity:0;
+@keyframes fadeUp {
+  from {
+    opacity: 0;
     transform: translateY(10px);
   }
-  to{
-    opacity:1;
+
+  to {
+    opacity: 1;
     transform: translateY(0);
   }
 }
@@ -272,8 +291,8 @@ h1 {
   box-shadow: 0 24px 75px rgba(0, 0, 0, .45);
   filter: brightness(1.03);
   box-shadow:
-    0 24px 75px rgba(0,0,0,.45),
-    0 0 25px rgba(122,167,255,.12);
+    0 24px 75px rgba(0, 0, 0, .45),
+    0 0 25px rgba(122, 167, 255, .12);
 }
 
 .card__body {
@@ -420,12 +439,12 @@ textarea {
   color: var(--text);
   font-weight: 900;
   position: relative;
-  font-weight:900;
+  font-weight: 900;
 }
 
-.post__user:hover{
+.post__user:hover {
   color: var(--accent);
-  text-shadow: 0 0 12px rgba(122,167,255,.35);
+  text-shadow: 0 0 12px rgba(122, 167, 255, .35);
 }
 
 .post__body {
@@ -446,9 +465,9 @@ textarea {
   height: auto
 }
 
-.pager{
-  display:flex;
-  justify-content:center;
+.pager {
+  display: flex;
+  justify-content: center;
   padding: 20px 0 10px;
 }
 
@@ -481,7 +500,7 @@ textarea {
 }
 
 /* Page transition overlay */
-.pagefx{
+.pagefx {
   position: fixed;
   inset: 0;
   pointer-events: none;
@@ -490,57 +509,307 @@ textarea {
   transition: opacity 220ms ease;
 }
 
-.pagefx.is-active{
+.pagefx.is-active {
   opacity: 1;
 }
 
 /* Soft blur + dark veil */
-.pagefx::before{
-  content:"";
-  position:absolute;
-  inset:0;
+.pagefx::before {
+  content: "";
+  position: absolute;
+  inset: 0;
   background:
-    radial-gradient(900px 520px at 20% 0%, rgba(122,167,255,.18), transparent 60%),
-    radial-gradient(900px 520px at 80% 0%, rgba(69,212,131,.12), transparent 60%),
-    rgba(6,7,11,.55);
+    radial-gradient(900px 520px at 20% 0%, rgba(122, 167, 255, .18), transparent 60%),
+    radial-gradient(900px 520px at 80% 0%, rgba(69, 212, 131, .12), transparent 60%),
+    rgba(6, 7, 11, .55);
   backdrop-filter: blur(8px);
 }
 
 /* Top loading bar */
-.pagefx__bar{
-  position:absolute;
-  top:0;
-  left:0;
-  height:3px;
+.pagefx__bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 3px;
   width: 0%;
   background: linear-gradient(90deg, var(--neonA), var(--neonB), var(--neonC));
-  box-shadow: 0 0 18px rgba(122,167,255,.25);
+  box-shadow: 0 0 18px rgba(122, 167, 255, .25);
   border-radius: 0 0 999px 999px;
 }
 
 /* When active: animate bar across */
-.pagefx.is-active .pagefx__bar{
+.pagefx.is-active .pagefx__bar {
   animation: pagefxBar 650ms ease forwards;
 }
 
-@keyframes pagefxBar{
-  0%   { width: 0%;  opacity: .9; }
-  65%  { width: 72%; opacity: 1; }
-  100% { width: 100%; opacity: 1; }
+@keyframes pagefxBar {
+  0% {
+    width: 0%;
+    opacity: .9;
+  }
+
+  65% {
+    width: 72%;
+    opacity: 1;
+  }
+
+  100% {
+    width: 100%;
+    opacity: 1;
+  }
 }
 
 /* Nice fade-in for main content on load */
-.page-enter{
+.page-enter {
   animation: pageEnter 260ms ease both;
 }
 
-@keyframes pageEnter{
-  from{ opacity: 0; transform: translateY(6px); }
-  to  { opacity: 1; transform: translateY(0); }
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Reduced motion */
-@media (prefers-reduced-motion: reduce){
-  .pagefx, .page-enter{ animation: none !important; transition: none !important; }
-  .pagefx__bar{ display:none; }
+@media (prefers-reduced-motion: reduce) {
+
+  .pagefx,
+  .page-enter {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .pagefx__bar {
+    display: none;
+  }
+}
+
+/* Profile dropdown menu */
+.nav__menu {
+  margin-left: 6px;
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  z-index: 1;
+}
+
+.menu__panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 220px;
+  background: rgba(10, 14, 28, .92);
+  border: 1px solid rgba(122, 167, 255, .22);
+  border-radius: 14px;
+  box-shadow:
+    0 24px 70px rgba(0,0,0,.55),
+    0 0 40px rgba(122,167,255,.08);
+  padding: 8px;
+  opacity: 0;
+  transform: translateY(-6px);
+  pointer-events: none;
+  transition: opacity 160ms ease, transform 160ms ease;
+  z-index: 50;
+  transform-origin: top right;
+  transform: translateY(-6px) scale(.97);
+}
+
+.nav__icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  width: 44px;
+  height: 44px;
+
+  border-radius: 14px;
+  border: 1px solid rgba(122, 167, 255, .35);
+  background: rgba(122, 167, 255, .08);
+
+  line-height: 1;
+  /* prevent baseline issues */
+  padding: 0;
+  /* remove inherited padding */
+}
+
+.nav__icon svg {
+  display: block;
+  /* remove inline baseline behavior */
+  width: 20px;
+  height: 20px;
+  transform: translateY(1px);
+}
+
+/* Hover bridge so the menu doesn't flicker when moving from icon to panel */
+.nav__menu::after {
+  content: "";
+  position: absolute;
+  left: -8px;
+  right: -8px;
+  top: 100%;
+  height: 12px;
+  /* bridge area */
+  pointer-events: auto;
+  /* keeps hover alive */
+}
+
+/* Open on hover OR keyboard focus */
+.nav__menu:hover .menu__panel,
+.nav__menu:focus-within .menu__panel {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.nav__menu:hover .nav__icon,
+.nav__menu:focus-within .nav__icon {
+  box-shadow:
+    0 0 0 3px rgba(122, 167, 255, .15),
+    0 0 25px rgba(122, 167, 255, .20);
+  border-color: rgba(122, 167, 255, .65);
+}
+
+.menu__panel {
+  transform: translateY(-6px) scale(0.98);
+}
+
+.menu__item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 10px;
+  border-radius: 12px;
+  color: var(--text);
+  text-decoration: none;
+  border: 1px solid transparent;
+  position: relative;
+}
+
+.menu__item:hover {
+  text-decoration: none;
+  background: rgba(122, 167, 255, .10);
+  border-color: rgba(122, 167, 255, .18);
+}
+
+
+.menu__item::after{
+  content:"";
+  position:absolute;
+  left:12px;
+  right:12px;
+  bottom:6px;
+  height:2px;
+  background: linear-gradient(90deg, var(--neonA), var(--neonB));
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .25s ease;
+  border-radius: 999px;
+}
+
+.menu__item:hover::after{
+  transform: scaleX(1);
+  box-shadow: 0 0 12px rgba(122,167,255,.35);
+}
+
+.menu__sep {
+  height: 1px;
+  background: rgba(255, 255, 255, .08);
+  margin: 6px 4px;
+}
+
+.menu__btnLogout {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: var(--danger);
+  font-weight: 900;
+  cursor: pointer;
+  padding: 0;
+}
+
+.menu__btnLogout:hover {
+  text-decoration: underline;
+}
+
+/* Slight spacing between create (+) and profile */
+.nav__menu--plus {
+  margin-right: 4px;
+}
+
+/* Make + button feel primary */
+.nav__icon--plus {
+  border-color: rgba(69, 212, 131, .40);
+  background: rgba(69, 212, 131, .10);
+}
+
+.nav__icon--plus:hover {
+  box-shadow:
+    0 0 0 4px rgba(69,212,131,.18),
+    0 0 32px rgba(69,212,131,.22);
+}
+
+.nav__icon--plus:hover svg{
+  transform: rotate(90deg);
+  transition: transform .2s ease;
+}
+
+/* Optional: when create menu open, glow green */
+.nav__menu--plus:hover .nav__icon--plus,
+.nav__menu--plus:focus-within .nav__icon--plus {
+  border-color: rgba(69, 212, 131, .70);
+  box-shadow:
+    0 0 0 3px rgba(69, 212, 131, .15),
+    0 0 24px rgba(69, 212, 131, .20);
+}
+
+.nav__menu--profile:hover .nav__icon--profile{
+  box-shadow:
+    0 0 0 3px rgba(122,167,255,.18),
+    0 0 30px rgba(122,167,255,.25);
+}
+
+.menu__divider {
+  height: 1px;
+  background: rgba(255, 255, 255, .08);
+  margin: 8px 6px;
+}
+
+.menu__form {
+  margin: 0;
+}
+
+.menu__danger {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+  border: 0;
+  color: #ff5c7a;
+  padding: 10px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  font: inherit;
+}
+
+.menu__danger:hover {
+  background: rgba(255, 92, 122, .10);
+}
+
+.searchWrap{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  flex: 1 1 360px;
+  max-width: 620px;
+}
+
+.searchWrap .nav__menu--plus{
+  flex: 0 0 auto;
 }
