@@ -54,3 +54,6 @@ Not present:
 - Likes/comments/follows/DMs/notifications
 - Admin/moderation tools, reports
 - Password reset email flow
+
+## Changelog
+Changelog: [Changelog](CHANGELOG.md)
