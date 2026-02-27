@@ -1,0 +1,12 @@
+# Environment / local config
+.env
+
+# User uploads
+public/uploads/*
+
+# Keep the directory + htaccess
+!public/uploads/.htaccess
+
+# OS files
+.DS_Store
+Thumbs.db
