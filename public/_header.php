@@ -32,7 +32,10 @@ $q = trux_str_param('q', '');
       <div class="searchWrap">
         <form class="search" method="get" action="/search.php" role="search">
           <input class="search__input" name="q" value="<?= trux_e($q) ?>" placeholder="Search users or posts..." maxlength="80">
-          <button class="search__btn" type="submit">Search</button>
+          <button class="search__btn" type="submit">
+            Search
+            <span class="sweep" aria-hidden="true"></span>
+          </button>
         </form>
 
         <?php if ($user): ?>

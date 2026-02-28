@@ -89,8 +89,8 @@ a:hover {
   backdrop-filter: blur(14px);
   border-bottom: 1px solid rgba(122, 167, 255, .18);
   box-shadow:
-    0 10px 40px rgba(0,0,0,.35),
-    0 1px 0 rgba(122,167,255,.15);
+    0 10px 40px rgba(0, 0, 0, .35),
+    0 1px 0 rgba(122, 167, 255, .15);
 }
 
 .topbar__inner {
@@ -153,6 +153,8 @@ a:hover {
 }
 
 .search__btn {
+  position: relative;
+  overflow: hidden;
   padding: 10px 14px;
   border-radius: 14px;
   border: 1px solid rgba(122, 167, 255, .35);
@@ -160,6 +162,40 @@ a:hover {
   color: var(--text);
   cursor: pointer;
   font-weight: 800;
+}
+
+.search__btn .sweep {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  background: linear-gradient(110deg,
+      transparent 0%,
+      rgba(122, 167, 255, .20) 35%,
+      rgba(122, 167, 255, .55) 50%,
+      rgba(122, 167, 255, .20) 65%,
+      transparent 100%);
+  transform: translateX(-140%);
+}
+
+.search__btn:hover .sweep,
+.search__btn:focus-visible .sweep{
+  opacity: 1;
+  animation: truxSweep 1.6s cubic-bezier(.4,0,.2,1) infinite;
+}
+
+.search__btn:hover,
+.search__btn:focus-visible {
+  box-shadow:
+    0 0 0 3px rgba(122, 167, 255, .16),
+    0 0 26px rgba(122, 167, 255, .18);
+  transform: translateY(-1px);
+}
+
+@keyframes truxSweep{
+  0%   { transform: translateX(-140%); }
+  100% { transform: translateX(140%); }
 }
 
 .search__btn:hover {
@@ -231,11 +267,9 @@ h1 {
 /* Cards with neon animated border */
 .card {
   position: relative;
-  background: linear-gradient(
-    180deg,
-    rgba(20,28,47,.92),
-    rgba(16,22,38,.92)
-  );
+  background: linear-gradient(180deg,
+      rgba(20, 28, 47, .92),
+      rgba(16, 22, 38, .92));
   border: 1px solid rgba(255, 255, 255, .10);
   border-radius: 16px;
   overflow: hidden;
@@ -435,7 +469,7 @@ textarea {
   margin-bottom: 10px;
 }
 
-.post__meta a{
+.post__meta a {
   text-decoration: none;
 }
 
@@ -501,7 +535,18 @@ textarea {
   .card,
   .btn,
   .search__btn {
-    transition: none
+    transition: none;
+    padding: 10px 14px;
+    border-radius: 14px;
+
+    border: 2px solid rgba(122, 167, 255, .35);
+    background: rgba(122, 167, 255, .12);
+
+    color: var(--text);
+    cursor: pointer;
+    font-weight: 800;
+    position: relative;
+    overflow: hidden;
   }
 }
 
@@ -614,8 +659,8 @@ textarea {
   border: 1px solid rgba(122, 167, 255, .22);
   border-radius: 14px;
   box-shadow:
-    0 24px 70px rgba(0,0,0,.55),
-    0 0 40px rgba(122,167,255,.08);
+    0 24px 70px rgba(0, 0, 0, .55),
+    0 0 40px rgba(122, 167, 255, .08);
   padding: 8px;
   opacity: 0;
   transform: translateY(-6px);
@@ -630,18 +675,21 @@ textarea {
   display: flex;
   align-items: center;
   justify-content: center;
+  aspect-ratio: 1/1;
 
   width: 44px;
   height: 44px;
 
-  border-radius: 14px;
+  border-radius: 50%;
   border: 1px solid rgba(122, 167, 255, .35);
   background: rgba(122, 167, 255, .08);
 
   line-height: 1;
-  /* prevent baseline issues */
   padding: 0;
-  /* remove inherited padding */
+
+  position: relative;
+  overflow: hidden;
+
 }
 
 .nav__icon svg {
@@ -705,13 +753,13 @@ textarea {
 }
 
 
-.menu__item::after{
-  content:"";
-  position:absolute;
-  left:12px;
-  right:12px;
-  bottom:6px;
-  height:2px;
+.menu__item::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 6px;
+  height: 2px;
   background: linear-gradient(90deg, var(--neonA), var(--neonB));
   transform: scaleX(0);
   transform-origin: left;
@@ -719,9 +767,9 @@ textarea {
   border-radius: 999px;
 }
 
-.menu__item:hover::after{
+.menu__item:hover::after {
   transform: scaleX(1);
-  box-shadow: 0 0 12px rgba(122,167,255,.35);
+  box-shadow: 0 0 12px rgba(122, 167, 255, .35);
 }
 
 .menu__sep {
@@ -752,17 +800,17 @@ textarea {
 
 /* Make + button feel primary */
 .nav__icon--plus {
-  border-color: rgba(69, 212, 131, .40);
+  border: 2px solid rgba(69, 212, 131, .40);
   background: rgba(69, 212, 131, .10);
 }
 
 .nav__icon--plus:hover {
   box-shadow:
-    0 0 0 4px rgba(69,212,131,.18),
-    0 0 32px rgba(69,212,131,.22);
+    0 0 0 4px rgba(69, 212, 131, .18),
+    0 0 32px rgba(69, 212, 131, .22);
 }
 
-.nav__icon--plus:hover svg{
+.nav__icon--plus:hover svg {
   transform: rotate(90deg);
   transition: transform .2s ease;
 }
@@ -776,10 +824,10 @@ textarea {
     0 0 24px rgba(69, 212, 131, .20);
 }
 
-.nav__menu--profile:hover .nav__icon--profile{
+.nav__menu--profile:hover .nav__icon--profile {
   box-shadow:
-    0 0 0 3px rgba(122,167,255,.18),
-    0 0 30px rgba(122,167,255,.25);
+    0 0 0 3px rgba(122, 167, 255, .18),
+    0 0 30px rgba(122, 167, 255, .25);
 }
 
 .menu__divider {
@@ -808,14 +856,126 @@ textarea {
   background: rgba(255, 92, 122, .10);
 }
 
-.searchWrap{
-  display:flex;
-  align-items:center;
+.searchWrap {
+  display: flex;
+  align-items: center;
   gap: 12px;
   flex: 1 1 360px;
   max-width: 620px;
 }
 
-.searchWrap .nav__menu--plus{
+.searchWrap .nav__menu--plus {
   flex: 0 0 auto;
+}
+
+/* ============================
+   Orbiting Neon Ring (Option 1)
+   ============================ */
+
+/* Default orbit color (blue). Override per element with --orbit */
+.search__btn,
+.nav__icon {
+  --orbit: rgba(122, 167, 255, .92);
+}
+
+/* Green orbit for plus button */
+.nav__icon--plus {
+  --orbit: rgba(69, 212, 131, .90);
+}
+
+/* The orbiting highlight ring (hidden by default) */
+.search__btn::before,
+.nav__icon::before {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  /* slightly outside for a thicker feel */
+  border-radius: 50%;
+  padding: 2px;
+  /* ring thickness */
+  opacity: 0;
+  pointer-events: none;
+
+  /* "scanner wedge" moving around border */
+  background: conic-gradient(from 0deg,
+      transparent 0deg 250deg,
+      var(--orbit) 290deg 360deg);
+
+  /* cut out the middle so it's only a border ring */
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+
+  filter: none;
+  transition: opacity 180ms ease;
+}
+
+/* Soft outer glow (also hidden by default) */
+.search__btn::after,
+.nav__icon::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  border-radius: 50%;
+  opacity: 0;
+  pointer-events: none;
+  background: radial-gradient(circle, var(--orbit), transparent 62%);
+  filter: blur(10px);
+  transition: opacity 180ms ease;
+}
+
+/* Animate ring ONLY on hover/focus */
+.search__btn:hover::before,
+.search__btn:focus-visible::before,
+.nav__menu:hover .nav__icon::before,
+.nav__menu:focus-within .nav__icon::before {
+  opacity: 1;
+  animation: truxOrbitSpin 2.2s linear infinite;
+}
+
+.search__btn:hover::after,
+.search__btn:focus-visible::after,
+.nav__menu:hover .nav__icon::after,
+.nav__menu:focus-within .nav__icon::after {
+  opacity: .32;
+}
+
+.nav__icon:hover {
+  transform: translateY(-2px);
+}
+
+/* Slightly stronger when the menu is engaged (keeps it feeling "active") */
+.nav__menu:hover .nav__icon,
+.nav__menu:focus-within .nav__icon {
+  filter: brightness(1.03);
+}
+
+.search__btn::before,
+.search__btn::after {
+  content: none !important;
+}
+
+/* Spin animation */
+@keyframes truxOrbitSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Reduced motion: keep thicker border but stop the orbit animation */
+@media (prefers-reduced-motion: reduce) {
+
+  .search__btn::before,
+  .nav__icon::before {
+    animation: none !important;
+  }
+
+
+
+  .search__btn:hover .sweep,
+  .search__btn:focus-visible .sweep {
+    animation: none;
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
