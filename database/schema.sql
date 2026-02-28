@@ -28,3 +28,19 @@ CREATE TABLE IF NOT EXISTS posts (
     ON DELETE CASCADE
     ON UPDATE CASCADE
 ) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS follows (
+  follower_id BIGINT UNSIGNED NOT NULL,
+  following_id BIGINT UNSIGNED NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (follower_id, following_id),
+  KEY idx_follows_follower (follower_id),
+  KEY idx_follows_following (following_id),
+  CONSTRAINT fk_follows_follower FOREIGN KEY (follower_id) REFERENCES users(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_follows_following FOREIGN KEY (following_id) REFERENCES users(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT chk_follows_not_self CHECK (follower_id <> following_id)
+) ENGINE=InnoDB;

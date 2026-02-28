@@ -19,7 +19,7 @@ $q = trux_str_param('q', '');
   <script defer src="/assets/app.js"></script>
 </head>
 
-<body>
+<body class="cyber--extreme">
   <!-- Page transition overlay -->
   <div id="pageFX" class="pagefx" aria-hidden="true">
     <div class="pagefx__bar"></div>
