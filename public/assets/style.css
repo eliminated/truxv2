@@ -435,12 +435,18 @@ textarea {
   margin-bottom: 10px;
 }
 
+.post__meta a{
+  text-decoration: none;
+}
+
 .post__user {
   color: var(--text);
   font-weight: 900;
   position: relative;
   font-weight: 900;
 }
+
+
 
 .post__user:hover {
   color: var(--accent);
