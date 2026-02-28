@@ -112,7 +112,7 @@ a:hover {
 
 .brand {
   font-weight: 900;
-  letter-spacing: .4px;
+  letter-spacing: .5px;
   color: var(--text);
   position: relative;
 }
@@ -180,9 +180,9 @@ a:hover {
 }
 
 .search__btn:hover .sweep,
-.search__btn:focus-visible .sweep{
+.search__btn:focus-visible .sweep {
   opacity: 1;
-  animation: truxSweep 1.6s cubic-bezier(.4,0,.2,1) infinite;
+  animation: truxSweep 1.6s cubic-bezier(.4, 0, .2, 1) infinite;
 }
 
 .search__btn:hover,
@@ -193,9 +193,14 @@ a:hover {
   transform: translateY(-1px);
 }
 
-@keyframes truxSweep{
-  0%   { transform: translateX(-140%); }
-  100% { transform: translateX(140%); }
+@keyframes truxSweep {
+  0% {
+    transform: translateX(-140%);
+  }
+
+  100% {
+    transform: translateX(140%);
+  }
 }
 
 .search__btn:hover {
@@ -689,15 +694,18 @@ textarea {
 
   position: relative;
   overflow: hidden;
+  color: rgba(235, 245, 255, .95);
 
 }
 
 .nav__icon svg {
   display: block;
-  /* remove inline baseline behavior */
   width: 20px;
   height: 20px;
   transform: translateY(1px);
+  filter:
+    drop-shadow(0 0 6px rgba(122, 167, 255, .45)) drop-shadow(0 0 14px rgba(122, 167, 255, .22));
+  transition: filter 160ms ease, transform 160ms ease, color 160ms ease;
 }
 
 /* Hover bridge so the menu doesn't flicker when moving from icon to panel */
@@ -727,6 +735,15 @@ textarea {
     0 0 0 3px rgba(122, 167, 255, .15),
     0 0 25px rgba(122, 167, 255, .20);
   border-color: rgba(122, 167, 255, .65);
+  filter: brightness(1.03);
+  color: rgba(245, 252, 255, 1);
+}
+
+.nav__menu:hover .nav__icon svg,
+.nav__menu:focus-within .nav__icon svg {
+  filter:
+    drop-shadow(0 0 8px rgba(122, 167, 255, .70)) drop-shadow(0 0 18px rgba(122, 167, 255, .35));
+  transform: scale(1.03);
 }
 
 .menu__panel {
@@ -802,6 +819,12 @@ textarea {
 .nav__icon--plus {
   border: 2px solid rgba(69, 212, 131, .40);
   background: rgba(69, 212, 131, .10);
+  color: rgba(190, 255, 225, .96);
+}
+
+.nav__icon--plus svg {
+  filter:
+    drop-shadow(0 0 6px rgba(69, 212, 131, .55)) drop-shadow(0 0 14px rgba(69, 212, 131, .25));
 }
 
 .nav__icon--plus:hover {
@@ -822,6 +845,14 @@ textarea {
   box-shadow:
     0 0 0 3px rgba(69, 212, 131, .15),
     0 0 24px rgba(69, 212, 131, .20);
+  color: rgba(215, 255, 238, 1);
+}
+
+.nav__menu--plus:hover .nav__icon--plus svg,
+.nav__menu--plus:focus-within .nav__icon--plus svg {
+  filter:
+    drop-shadow(0 0 9px rgba(69, 212, 131, .80)) drop-shadow(0 0 20px rgba(69, 212, 131, .38));
+  transform: scale(1.03);
 }
 
 .nav__menu--profile:hover .nav__icon--profile {
@@ -945,10 +976,7 @@ textarea {
 }
 
 /* Slightly stronger when the menu is engaged (keeps it feeling "active") */
-.nav__menu:hover .nav__icon,
-.nav__menu:focus-within .nav__icon {
-  filter: brightness(1.03);
-}
+
 
 .search__btn::before,
 .search__btn::after {
@@ -978,4 +1006,30 @@ textarea {
     opacity: 1;
     transform: translateX(0);
   }
+}
+
+/* Surge when hovering the icon itself (reliable) */
+.nav__icon:hover,
+.nav__icon:focus-visible {
+  color: rgba(245, 252, 255, 1);
+}
+
+.nav__icon:hover svg,
+.nav__icon:focus-visible svg {
+  filter:
+    drop-shadow(0 0 10px rgba(122, 167, 255, .85)) drop-shadow(0 0 22px rgba(122, 167, 255, .42));
+  transform: scale(1.06);
+}
+
+/* Plus variant */
+.nav__icon--plus:hover,
+.nav__icon--plus:focus-visible {
+  color: rgba(215, 255, 238, 1);
+}
+
+.nav__icon--plus:hover svg,
+.nav__icon--plus:focus-visible svg {
+  filter:
+    drop-shadow(0 0 11px rgba(69, 212, 131, .90)) drop-shadow(0 0 24px rgba(69, 212, 131, .44));
+  transform: scale(1.06);
 }
