@@ -51,7 +51,7 @@ Implemented:
 - Search (users + post text)
 
 Not present:
-- Likes/comments/follows/DMs/notifications
+- Likes/comments/DMs/notifications
 - Admin/moderation tools, reports
 - Password reset email flow
 
