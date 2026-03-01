@@ -7,7 +7,7 @@ TruX is a lightweight PHP + MySQL/MariaDB social feed with:
 - Owner-only post deletion (CSRF-protected)
 - Basic search (users + post text)
 - Pagination on feed + profiles + search results
-- Pretty timestamps (“5 minutes ago”) with exact time on hover
+- Pretty timestamps ("5 minutes ago") with exact time on hover
 
 ## Requirements
 - PHP 8.1+ (PDO MySQL + fileinfo extensions enabled)
@@ -40,6 +40,17 @@ TruX is a lightweight PHP + MySQL/MariaDB social feed with:
 4) If Apache runs on 8080, set:
    TRUX_BASE_URL=http://truxv2.local:8080
 5) Configure a vhost pointing DocumentRoot to the /public folder.
+
+## Updating Existing Databases
+If your `users` table was created before UI settings existed, run this migration:
+
+```sql
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS ui_reduce_motion TINYINT(1) NOT NULL DEFAULT 0,
+  ADD COLUMN IF NOT EXISTS ui_classic_appearance TINYINT(1) NOT NULL DEFAULT 0;
+```
+
+Or apply: `database/migrations/20260301_add_user_ui_preferences.sql`
 
 ## Implemented vs not present
 Implemented:

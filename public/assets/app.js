@@ -23,10 +23,20 @@
 
 (() => {
   const fx = document.getElementById("pageFX");
+  const classicAppearance = document.body.classList.contains("appearance--classic");
+  const reducedBySetting = document.body.classList.contains("motion--reduced");
+  const reducedBySystem = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const shouldReduceMotion = classicAppearance || reducedBySetting || reducedBySystem;
 
   // Fade-in page content on load
   const main = document.querySelector("main");
   if (main) main.classList.add("page-enter");
+
+  if (shouldReduceMotion) {
+    if (main) main.classList.remove("page-enter");
+    if (fx) fx.classList.remove("is-active");
+    return;
+  }
 
   if (!fx) return;
 

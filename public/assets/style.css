@@ -2095,3 +2095,200 @@ a.post__id:focus-visible {
     padding: 12px 12px; /* bigger tap target */
   }
 }
+
+/* Settings page */
+.settingsCard {
+  max-width: 760px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.settingsForm {
+  gap: 14px;
+}
+
+.settingRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  background: rgba(255, 255, 255, .02);
+}
+
+.settingRow__label {
+  display: grid;
+  gap: 4px;
+}
+
+.settingRow input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* User-selected reduced motion mode */
+body.motion--reduced::before,
+body.motion--reduced::after,
+body.motion--reduced .card::before,
+body.motion--reduced .card.post::before,
+body.motion--reduced .card.post::after,
+body.motion--reduced .card.post .card__body::after,
+body.motion--reduced .profile__avatar::before,
+body.motion--reduced .nav__icon::before,
+body.motion--reduced .search__btn .sweep {
+  animation: none !important;
+}
+
+body.motion--reduced .pagefx {
+  display: none;
+}
+
+body.motion--reduced .page-enter {
+  animation: none !important;
+}
+
+body.motion--reduced .topbar {
+  backdrop-filter: none;
+}
+
+body.motion--reduced .card.post::after,
+body.motion--reduced .nav__icon::after {
+  filter: none;
+}
+
+body.motion--reduced .card:hover,
+body.motion--reduced .card.post:hover,
+body.motion--reduced .btn:hover,
+body.motion--reduced .postAct:hover,
+body.motion--reduced .nav__icon:hover,
+body.motion--reduced .iconBtn:hover {
+  transform: none;
+}
+
+body.motion--reduced .iconBtn--danger,
+body.motion--reduced .iconBtn--danger:hover,
+body.motion--reduced .iconBtn--danger:focus-visible {
+  width: 40px;
+  border-radius: 999px;
+  clip-path: none;
+  -webkit-clip-path: none;
+}
+
+body.motion--reduced .iconBtn--danger::after {
+  display: none;
+}
+
+body.motion--reduced .search__btn:hover .sweep,
+body.motion--reduced .search__btn:focus-visible .sweep {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+/* User-selected classic mode */
+body.appearance--classic {
+  --accent: #6f95db;
+  --neonA: rgba(111, 149, 219, .6);
+  --neonB: rgba(99, 195, 151, .45);
+  --neonC: rgba(224, 111, 136, .45);
+  background: linear-gradient(180deg, #10131a, #0c1016);
+  background-attachment: scroll;
+}
+
+body.appearance--classic::before,
+body.appearance--classic::after,
+body.appearance--classic .card::before,
+body.appearance--classic .card.post::before,
+body.appearance--classic .card.post::after,
+body.appearance--classic .card.post .card__body::before,
+body.appearance--classic .card.post .card__body::after,
+body.appearance--classic .profile__hero::before,
+body.appearance--classic .profile__hero::after,
+body.appearance--classic .profileStats::before,
+body.appearance--classic .profileStats::after,
+body.appearance--classic .profile__feedHead::before,
+body.appearance--classic .profile__feedHead::after,
+body.appearance--classic .menu__item::after,
+body.appearance--classic .brand::after,
+body.appearance--classic .pagefx,
+body.appearance--classic .search__btn .sweep,
+body.appearance--classic .nav__icon::before,
+body.appearance--classic .nav__icon::after {
+  display: none !important;
+}
+
+body.appearance--classic .topbar {
+  background: rgba(13, 18, 30, .96);
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+body.appearance--classic .card,
+body.appearance--classic .card.post,
+body.appearance--classic .profile__hero,
+body.appearance--classic .profileStats,
+body.appearance--classic .profile__feedHead,
+body.appearance--classic .menu__panel {
+  border: 1px solid rgba(255, 255, 255, .10);
+  background: rgba(17, 23, 36, .94);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, .28);
+}
+
+body.appearance--classic .card:hover,
+body.appearance--classic .card.post:hover {
+  transform: none;
+  filter: none;
+  border-color: rgba(255, 255, 255, .14);
+}
+
+body.appearance--classic .card.post .card__body,
+body.appearance--classic .profileStat,
+body.appearance--classic .post__image {
+  border-color: rgba(255, 255, 255, .10);
+  background: rgba(12, 17, 27, .88);
+  box-shadow: none;
+}
+
+body.appearance--classic .profile__banner {
+  background: linear-gradient(120deg, rgba(29, 40, 60, .55), rgba(16, 22, 34, .75));
+}
+
+body.appearance--classic .profile__subtitle {
+  color: #b7c4d8;
+}
+
+body.appearance--classic .post__avatar,
+body.appearance--classic .profile__avatar,
+body.appearance--classic .iconBtn,
+body.appearance--classic .postAct,
+body.appearance--classic .nav__icon {
+  box-shadow: none;
+  filter: none;
+}
+
+body.appearance--classic .nav__icon {
+  border-radius: 12px;
+  background: rgba(255, 255, 255, .03);
+  border: 1px solid rgba(255, 255, 255, .14);
+}
+
+body.appearance--classic .nav__icon--plus {
+  border: 1px solid rgba(99, 195, 151, .45);
+  background: rgba(99, 195, 151, .08);
+}
+
+body.appearance--classic .nav__icon:hover,
+body.appearance--classic .nav__icon:focus-visible {
+  transform: none;
+}
+
+body.appearance--classic .search__btn,
+body.appearance--classic .btn {
+  border: 1px solid rgba(111, 149, 219, .42);
+  background: rgba(111, 149, 219, .12);
+  box-shadow: none;
+}

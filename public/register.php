@@ -46,7 +46,7 @@ require_once __DIR__ . '/_header.php';
       <label class="field">
         <span>Username</span>
         <input name="username" value="<?= trux_e($username) ?>" maxlength="32" required autocomplete="username">
-        <small class="muted">3–32 chars, letters/numbers/underscore.</small>
+        <small class="muted">3-32 chars, letters/numbers/underscore.</small>
       </label>
 
       <label class="field">

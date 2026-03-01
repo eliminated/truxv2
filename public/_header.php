@@ -5,8 +5,13 @@ declare(strict_types=1);
 $user = trux_current_user();
 $error = trux_flash_get('error');
 $success = trux_flash_get('success');
+$uiPrefs = trux_get_ui_preferences();
 
 $q = trux_str_param('q', '');
+$bodyClasses = [$uiPrefs['classic_appearance'] ? 'appearance--classic' : 'cyber--balanced'];
+if ($uiPrefs['reduce_motion']) {
+  $bodyClasses[] = 'motion--reduced';
+}
 ?>
 <!doctype html>
 <html lang="en">
@@ -19,7 +24,7 @@ $q = trux_str_param('q', '');
   <script defer src="/assets/app.js"></script>
 </head>
 
-<body class="cyber--extreme">
+<body class="<?= trux_e(implode(' ', $bodyClasses)) ?>">
   <!-- Page transition overlay -->
   <div id="pageFX" class="pagefx" aria-hidden="true">
     <div class="pagefx__bar"></div>
@@ -70,6 +75,10 @@ $q = trux_str_param('q', '');
               <a class="menu__item" role="menuitem" href="/profile.php?u=<?= trux_e($user['username']) ?>">
                 Profile
                 <span class="muted">@<?= trux_e($user['username']) ?></span>
+              </a>
+              <a class="menu__item" role="menuitem" href="/settings.php">
+                Settings
+                <span class="muted">Display</span>
               </a>
 
               <div class="menu__divider"></div>
