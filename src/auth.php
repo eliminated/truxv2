@@ -44,7 +44,7 @@ function trux_register_user(string $username, string $email, string $password): 
     $errors = [];
 
     if (!preg_match('/^[A-Za-z0-9_]{3,32}$/', $username)) {
-        $errors[] = 'Username must be 3–32 characters, letters/numbers/underscore only.';
+        $errors[] = 'Username must be 3-32 characters, letters/numbers/underscore only.';
     }
     if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
         $errors[] = 'Please enter a valid email address.';

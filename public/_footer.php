@@ -5,9 +5,8 @@ declare(strict_types=1);
 
 <footer class="footer">
   <div class="container footer__inner">
-    <div class="muted">© <?= date('Y') ?> <?= trux_e(TRUX_APP_NAME) ?> · Built with PHP + MySQL</div>
+    <div class="muted">&copy; <?= date('Y') ?> <?= trux_e(TRUX_APP_NAME) ?> &middot; Built with PHP + MySQL</div>
   </div>
 </footer>
-<script src="/assets/app.js?v=1" defer></script>
 </body>
 </html>

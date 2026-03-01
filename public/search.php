@@ -111,7 +111,7 @@ require_once __DIR__ . '/_header.php';
 
           <?php if (!empty($p['image_path'])): ?>
             <div class="post__image">
-              <img src="<?= trux_e((string)$p['image_path']) ?>" alt="Post image">
+              <img src="<?= trux_e((string)$p['image_path']) ?>" alt="Post image" loading="lazy" decoding="async">
             </div>
           <?php endif; ?>
 

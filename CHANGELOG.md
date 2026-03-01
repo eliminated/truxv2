@@ -5,7 +5,7 @@ Initial Releases
 ## Omnicus v0.2.0 — UI Overhaul & Follow System
 
 **Branch**: Beta
-****Date**: 2026-02-28
+**Date**: 2026-02-28
 
 ***
 
@@ -95,3 +95,70 @@ Initial Releases
 - Functional social graph foundation
 
 - Expandable interaction architecture
+
+## Omnicus v0.2.1 - Performance & Accessibility Hotfix
+
+**Branch**: Beta
+**Date**: 2026-03-01
+
+***
+
+### Added
+
+- New Settings page under Profile menu
+
+- Reduce motions toggle
+
+- Classic appearance toggle
+
+- Persistent UI preference layer (`src/ui.php`)
+
+- Account-level UI settings storage (`users.ui_reduce_motion`, `users.ui_classic_appearance`)
+
+- DB migration for existing installs (`database/migrations/20260301_add_user_ui_preferences.sql`)
+
+***
+
+### Changed
+
+- Default visual preset changed from `cyber--extreme` to `cyber--balanced`
+
+- Profile dropdown now includes direct Settings entry
+
+- Reduced-motion and classic modes now disable heavy transition/animation paths
+
+- Feed/profile/search post images now use lazy loading and async decoding
+
+- README updated with migration instructions
+
+***
+
+### Fixed
+
+- Browser slowdown from duplicate `app.js` include (removed footer duplicate)
+
+- Mis-encoded text artifacts (mojibake) in auth/register/footer/README copy
+
+- Navigation transition overhead now skipped when reduced motion/classic mode is active
+
+- Several whitespace/newline diff-noise issues in touched files
+
+***
+
+### Technical
+
+- UI preferences read/write logic now supports DB + session/cookie fallback
+
+- Safe fallback implemented when UI preference columns are not yet migrated
+
+- Header body class composition now driven by saved preferences
+
+- CSS includes explicit `motion--reduced` and `appearance--classic` optimization rules
+
+***
+
+### Notes
+
+- This hotfix focuses on lowering GPU/CPU/RAM pressure without removing the core visual identity
+
+- Users can now choose visual fidelity level per account for smoother browsing on lower-end devices
