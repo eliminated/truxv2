@@ -76,6 +76,10 @@ if ($uiPrefs['reduce_motion']) {
                 Profile
                 <span class="muted">@<?= trux_e($user['username']) ?></span>
               </a>
+              <span class="menu__item menu__item--placeholder" role="menuitem" aria-disabled="true">
+                Notifications
+                <span class="muted">Coming soon</span>
+              </span>
               <a class="menu__item" role="menuitem" href="/settings.php">
                 Settings
                 <span class="muted">Display</span>

@@ -1,4 +1,72 @@
 # Omincus Updates (Beta Versions)
+## Omnicus v0.3.0 - Post Interactions & Split Comment Dock
+
+**Branch**: Beta
+**Date**: 2026-03-07
+
+***
+
+### Added
+
+- Functional post interactions
+- Like toggle per post
+- Share toggle per post
+- Comment creation + retrieval flow
+- New interaction tables
+- `post_likes`
+- `post_comments`
+- `post_shares`
+- New migration: `database/migrations/20260307_add_post_interactions.sql`
+- Split comment dock UI
+- Left pane shows clicked post for context
+- Right pane shows live comments + comment form
+- Works from feed and profile post cards
+- Also wired on search results and single post page
+- Shared post action partial: `public/_post_actions_bar.php`
+- Profile menu placeholder item
+- Added `Notifications` entry under profile dropdown (`Coming soon`)
+
+***
+
+### Changed
+
+- Replaced placeholder Like/Comment/Share buttons with live actions
+- Added per-post interaction counters (likes/comments/shares)
+- Added active states for liked/shared buttons
+- Added comment modal scripts and styling in `public/assets/app.js` and `public/assets/style.css`
+- Styled profile dropdown notification placeholder as disabled/non-interactive
+
+***
+
+### Fixed
+
+- Normal UI mode comment submit no longer leaves page transition/loading overlay stuck
+- Transition FX now skips JS-handled/no-navigation comment form submissions
+
+***
+
+### Technical
+
+- Added new post interaction helpers in `src/posts.php`
+- Added endpoints
+- `public/like_post.php`
+- `public/share_post.php`
+- `public/comment_post.php`
+- `public/post_comments.php`
+- Added reusable global comment dock markup in `public/_footer.php`
+- Added interaction map wiring in:
+- `public/index.php`
+- `public/profile.php`
+- `public/search.php`
+- `public/post.php`
+- Updated docs to reflect interaction feature availability
+
+***
+
+### Notes
+
+- This release turns core social actions from placeholder to functional interaction loops while keeping in-context commenting via split dock UX.
+
 ## Omnicus v0.1 - Initial Release
 Initial Releases
 

@@ -6,6 +6,8 @@ TruX is a lightweight PHP + MySQL/MariaDB social feed with:
 - View global feed, single post pages, and user profiles
 - Owner-only post deletion (CSRF-protected)
 - Basic search (users + post text)
+- Post interactions: likes, comments, shares
+- Split comment dock (post preview + comments side-by-side)
 - Pagination on feed + profiles + search results
 - Pretty timestamps ("5 minutes ago") with exact time on hover
 
@@ -60,9 +62,11 @@ Implemented:
 - Pagination (feed/profile/search)
 - Owner-only delete posts
 - Search (users + post text)
+- Likes (toggle), comments, shares (toggle)
+- Side-by-side comments popup on post cards
 
 Not present:
-- Likes/comments/DMs/notifications
+- DMs/notifications
 - Admin/moderation tools, reports
 - Password reset email flow
 

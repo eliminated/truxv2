@@ -26,6 +26,10 @@ if (count($posts) > 0) {
 }
 
 $me = trux_current_user();
+$interactionMap = trux_fetch_post_interactions(
+    trux_collect_post_ids($posts),
+    $me ? (int)$me['id'] : null
+);
 $isSelf = $me && (int)$me['id'] === (int)$profileUser['id'];
 $followCounts = trux_follow_counts((int)$profileUser['id']);
 $isFollowing = false;
@@ -113,7 +117,7 @@ require_once __DIR__ . '/_header.php';
       <?php endif; ?>
 
       <?php foreach ($posts as $p): ?>
-        <article class="card post">
+        <article class="card post" data-post-id="<?= (int)$p['id'] ?>">
           <div class="card__body">
             <div class="post__head">
               <a class="post__avatar" href="/profile.php?u=<?= trux_e((string)$p['username']) ?>" aria-label="View @<?= trux_e((string)$p['username']) ?> profile"></a>
@@ -154,26 +158,12 @@ require_once __DIR__ . '/_header.php';
               </div>
             <?php endif; ?>
 
-            <div class="post__actionsBar" aria-label="Post actions">
-              <button class="postAct" type="button" aria-label="Like (coming soon)">
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <path d="M12 20.2s-6.8-4.4-8.9-8.2c-1.7-3 .2-7 3.8-7 2 0 3.1 1.1 4.1 2.5 1-1.4 2.1-2.5 4.1-2.5 3.6 0 5.5 4 3.8 7-2.1 3.8-8.9 8.2-8.9 8.2Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-                <span>Like</span>
-              </button>
-              <button class="postAct" type="button" aria-label="Comment (coming soon)">
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <path d="M20 14.6c0 2-1.8 3.6-4 3.6H9l-4 3V6.8c0-2 1.8-3.6 4-3.6h7c2.2 0 4 1.6 4 3.6v7.8Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-                <span>Comment</span>
-              </button>
-              <button class="postAct" type="button" aria-label="Share (coming soon)">
-                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                  <path d="M14 5h5v5M10 14 19 5M19 13v4a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
-                </svg>
-                <span>Share</span>
-              </button>
-            </div>
+            <?php
+            $postId = (int)$p['id'];
+            $stats = $interactionMap[$postId] ?? ['likes' => 0, 'comments' => 0, 'shares' => 0, 'liked' => false, 'shared' => false];
+            $isLoggedIn = (bool)$me;
+            require __DIR__ . '/_post_actions_bar.php';
+            ?>
           </div>
         </article>
       <?php endforeach; ?>
