@@ -16,7 +16,7 @@ function trux_fetch_feed(int $limit = 20, ?int $beforeId = null): array {
 
     if ($beforeId !== null && $beforeId > 0) {
         $stmt = $db->prepare(
-            'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, u.username
+            'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username
              FROM posts p
              JOIN users u ON u.id = p.user_id
              WHERE p.id < ?
@@ -30,7 +30,7 @@ function trux_fetch_feed(int $limit = 20, ?int $beforeId = null): array {
     }
 
     $stmt = $db->prepare(
-        'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, u.username
+        'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username
          FROM posts p
          JOIN users u ON u.id = p.user_id
          ORDER BY p.id DESC
@@ -44,7 +44,7 @@ function trux_fetch_feed(int $limit = 20, ?int $beforeId = null): array {
 function trux_fetch_post_by_id(int $postId): ?array {
     $db = trux_db();
     $stmt = $db->prepare(
-        'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, u.username
+        'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username
          FROM posts p
          JOIN users u ON u.id = p.user_id
          WHERE p.id = ?
@@ -80,6 +80,18 @@ function trux_delete_post_if_owner(int $postId, int $ownerUserId): bool {
     return $del->rowCount() > 0;
 }
 
+function trux_update_post_if_owner(int $postId, int $ownerUserId, string $body): bool {
+    $body = trim($body);
+    if ($postId <= 0 || $ownerUserId <= 0 || $body === '' || mb_strlen($body) > 2000) {
+        return false;
+    }
+
+    $db = trux_db();
+    $stmt = $db->prepare('UPDATE posts SET body = ?, edited_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?');
+    $stmt->execute([$body, $postId, $ownerUserId]);
+    return $stmt->rowCount() > 0;
+}
+
 function trux_fetch_user_by_username(string $username): ?array {
     $db = trux_db();
     $stmt = $db->prepare('SELECT id, username, email, created_at FROM users WHERE username = ? LIMIT 1');
@@ -94,7 +106,7 @@ function trux_fetch_posts_by_user(int $userId, int $limit = 30, ?int $beforeId =
 
     if ($beforeId !== null && $beforeId > 0) {
         $stmt = $db->prepare(
-            'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, u.username
+            'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username
              FROM posts p
              JOIN users u ON u.id = p.user_id
              WHERE p.user_id = ? AND p.id < ?
@@ -109,7 +121,7 @@ function trux_fetch_posts_by_user(int $userId, int $limit = 30, ?int $beforeId =
     }
 
     $stmt = $db->prepare(
-        'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, u.username
+        'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username
          FROM posts p
          JOIN users u ON u.id = p.user_id
          WHERE p.user_id = ?
@@ -225,6 +237,51 @@ function trux_add_post_comment(int $postId, int $userId, string $body, ?int $par
     }
 }
 
+function trux_fetch_comment_by_id(int $commentId): ?array {
+    if ($commentId <= 0) return null;
+
+    $db = trux_db();
+    $stmt = $db->prepare(
+        'SELECT c.id, c.post_id, c.parent_comment_id, c.user_id, c.reply_to_user_id, c.body, c.created_at, c.edited_at, u.username
+         FROM post_comments c
+         JOIN users u ON u.id = c.user_id
+         WHERE c.id = ?
+         LIMIT 1'
+    );
+    $stmt->execute([$commentId]);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}
+
+function trux_update_comment_if_owner(int $commentId, int $ownerUserId, string $body): bool {
+    $body = trim($body);
+    if ($commentId <= 0 || $ownerUserId <= 0 || $body === '' || mb_strlen($body) > 1000) {
+        return false;
+    }
+
+    $db = trux_db();
+    $stmt = $db->prepare('UPDATE post_comments SET body = ?, edited_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?');
+    $stmt->execute([$body, $commentId, $ownerUserId]);
+    return $stmt->rowCount() > 0;
+}
+
+function trux_delete_comment_if_owner(int $commentId, int $ownerUserId): ?int {
+    if ($commentId <= 0 || $ownerUserId <= 0) return null;
+
+    $db = trux_db();
+    $stmt = $db->prepare('SELECT post_id FROM post_comments WHERE id = ? AND user_id = ? LIMIT 1');
+    $stmt->execute([$commentId, $ownerUserId]);
+    $row = $stmt->fetch();
+    if (!$row) return null;
+
+    $postId = (int)$row['post_id'];
+    $del = $db->prepare('DELETE FROM post_comments WHERE id = ? AND user_id = ?');
+    $del->execute([$commentId, $ownerUserId]);
+    if ($del->rowCount() <= 0) return null;
+
+    return $postId;
+}
+
 function trux_fetch_post_comments(int $postId, int $limit = 80): array {
     if ($postId <= 0) return [];
     $limit = max(1, min(200, $limit));
@@ -233,9 +290,9 @@ function trux_fetch_post_comments(int $postId, int $limit = 80): array {
 
     try {
         $sql = '
-            SELECT t.id, t.post_id, t.parent_comment_id, t.user_id, t.reply_to_user_id, t.body, t.created_at, u.username, ru.username AS reply_to_username
+            SELECT t.id, t.post_id, t.parent_comment_id, t.user_id, t.reply_to_user_id, t.body, t.created_at, t.edited_at, u.username, ru.username AS reply_to_username
             FROM (
-                SELECT c.id, c.post_id, c.parent_comment_id, c.user_id, c.reply_to_user_id, c.body, c.created_at
+                SELECT c.id, c.post_id, c.parent_comment_id, c.user_id, c.reply_to_user_id, c.body, c.created_at, c.edited_at
                 FROM post_comments c
                 WHERE c.post_id = ?
                 ORDER BY c.id DESC

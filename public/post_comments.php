@@ -24,6 +24,8 @@ if (!trux_post_exists($postId)) {
     exit;
 }
 
+$me = trux_current_user();
+$viewerId = $me ? (int)$me['id'] : 0;
 $comments = trux_fetch_post_comments($postId, 120);
 $payload = [];
 foreach ($comments as $c) {
@@ -36,9 +38,13 @@ foreach ($comments as $c) {
         'reply_to_username' => isset($c['reply_to_username']) ? (string)$c['reply_to_username'] : '',
         'username' => (string)$c['username'],
         'body' => (string)$c['body'],
+        'is_owner' => $viewerId > 0 && $viewerId === (int)$c['user_id'],
         'created_at' => (string)$c['created_at'],
         'time_ago' => trux_time_ago((string)$c['created_at']),
         'exact_time' => trux_format_exact_time((string)$c['created_at']),
+        'edited_at' => isset($c['edited_at']) && $c['edited_at'] !== null ? (string)$c['edited_at'] : '',
+        'edited_time_ago' => !empty($c['edited_at']) ? trux_time_ago((string)$c['edited_at']) : '',
+        'edited_exact_time' => !empty($c['edited_at']) ? trux_format_exact_time((string)$c['edited_at']) : '',
     ];
 }
 

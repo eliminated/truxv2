@@ -37,7 +37,7 @@ function trux_search_posts(string $term, int $limit = 20, ?int $beforeId = null)
 
     if ($beforeId !== null && $beforeId > 0) {
         $stmt = $db->prepare(
-            "SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, u.username
+            "SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username
              FROM posts p
              JOIN users u ON u.id = p.user_id
              WHERE p.id < ? AND (p.body LIKE ? ESCAPE '\\\\' OR u.username LIKE ? ESCAPE '\\\\')
@@ -53,7 +53,7 @@ function trux_search_posts(string $term, int $limit = 20, ?int $beforeId = null)
     }
 
     $stmt = $db->prepare(
-        "SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, u.username
+        "SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username
          FROM posts p
          JOIN users u ON u.id = p.user_id
          WHERE p.body LIKE ? ESCAPE '\\\\' OR u.username LIKE ? ESCAPE '\\\\'

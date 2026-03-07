@@ -4,10 +4,13 @@ TruX is a lightweight PHP + MySQL/MariaDB social feed with:
 - User registration + login/logout (sessions)
 - Create posts (text + optional image upload)
 - View global feed, single post pages, and user profiles
-- Owner-only post deletion (CSRF-protected)
+- Owner-only action menus for posts, comments, and replies
+- Edit/delete for authored posts, comments, and replies
 - Basic search (users + post text)
-- Post interactions: likes, comments, shares
+- Post interactions: likes, comments, replies, shares
+- AJAX interactions for post create, like, share, comment, and edit flows
 - Split comment dock (post preview + comments side-by-side)
+- Edited markers for edited posts/comments/replies
 - Pagination on feed + profiles + search results
 - Pretty timestamps ("5 minutes ago") with exact time on hover
 
@@ -44,7 +47,14 @@ TruX is a lightweight PHP + MySQL/MariaDB social feed with:
 5) Configure a vhost pointing DocumentRoot to the /public folder.
 
 ## Updating Existing Databases
-If your `users` table was created before UI settings existed, run this migration:
+Apply any migrations your database has not received yet:
+
+- `database/migrations/20260301_add_user_ui_preferences.sql`
+- `database/migrations/20260307_add_post_interactions.sql`
+- `database/migrations/20260307_add_comment_replies.sql`
+- `database/migrations/20260307_add_edited_timestamps.sql`
+
+If you only need the UI preference columns, run:
 
 ```sql
 ALTER TABLE users
@@ -52,7 +62,15 @@ ALTER TABLE users
   ADD COLUMN IF NOT EXISTS ui_classic_appearance TINYINT(1) NOT NULL DEFAULT 0;
 ```
 
-Or apply: `database/migrations/20260301_add_user_ui_preferences.sql`
+If you need the edited timestamp columns, run:
+
+```sql
+ALTER TABLE posts
+  ADD COLUMN IF NOT EXISTS edited_at DATETIME NULL DEFAULT NULL AFTER created_at;
+
+ALTER TABLE post_comments
+  ADD COLUMN IF NOT EXISTS edited_at DATETIME NULL DEFAULT NULL AFTER created_at;
+```
 
 ## Implemented vs not present
 Implemented:
@@ -60,13 +78,16 @@ Implemented:
 - Create posts + uploads (validated + re-encoded)
 - View feed, single post, profile
 - Pagination (feed/profile/search)
-- Owner-only delete posts
+- Owner-only edit/delete action menus for posts, comments, replies
 - Search (users + post text)
-- Likes (toggle), comments, shares (toggle)
+- Likes (toggle), comments, replies, shares (toggle)
+- AJAX create/edit/interaction flows without full page reloads
 - Side-by-side comments popup on post cards
+- Live-updating created/edited relative timestamps
 
 Not present:
 - DMs/notifications
+- Functional bookmarks
 - Admin/moderation tools, reports
 - Password reset email flow
 

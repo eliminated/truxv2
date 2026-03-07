@@ -198,6 +198,161 @@
       .replaceAll('"', "&quot;")
       .replaceAll("'", "&#39;");
 
+  const readJson = async (res) => {
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { ok: false, error: text || "Request failed." };
+    }
+  };
+
+  const bodyToHtml = (value) => esc(value).replaceAll("\n", "<br>");
+
+  const editedMetaMarkup = (editedAt, editedTimeAgo, editedExactTime) => {
+    if (!editedAt) return "";
+    return `
+      <span class="editedMeta">
+        <span class="editedMeta__label">EDITED AT</span>
+        <span
+          class="editedMeta__time"
+          data-time-ago="1"
+          data-time-source="${esc(editedAt)}"
+          title="${esc(editedExactTime || editedAt)}">${esc(editedTimeAgo || editedAt)}</span>
+      </span>
+    `;
+  };
+
+  const getCsrfToken = () => {
+    const input = document.querySelector("input[name='_csrf']");
+    return input instanceof HTMLInputElement ? input.value : "";
+  };
+
+  const ownerMenuMarkup = (entityType, entityId) => `
+    <div class="contentMenu" data-content-menu="1">
+      <button
+        class="contentMenu__trigger"
+        type="button"
+        aria-label="Open ${esc(entityType)} actions"
+        data-content-menu-trigger="1">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M6.5 12a1.5 1.5 0 1 0 0-.01V12Zm5.5 0a1.5 1.5 0 1 0 0-.01V12Zm5.5 0a1.5 1.5 0 1 0 0-.01V12Z" fill="currentColor" />
+        </svg>
+      </button>
+      <div class="contentMenu__panel" role="menu" aria-label="${esc(entityType)} actions">
+        <button
+          class="contentMenu__item"
+          type="button"
+          role="menuitem"
+          data-owner-edit="1"
+          data-owner-type="${esc(entityType)}"
+          data-owner-id="${entityId}">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M4 20h4.2l9.8-9.8-4.2-4.2L4 15.8V20Zm11.1-13.9 4.2 4.2 1.4-1.4a1.5 1.5 0 0 0 0-2.1l-2.1-2.1a1.5 1.5 0 0 0-2.1 0l-1.4 1.4Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+          </svg>
+          <span>Edit</span>
+        </button>
+        <button
+          class="contentMenu__item contentMenu__item--placeholder"
+          type="button"
+          role="menuitem"
+          aria-disabled="true">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="m7 5 5-2 5 2v14l-5-2-5 2V5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+          </svg>
+          <span>Bookmark</span>
+        </button>
+        <button
+          class="contentMenu__item contentMenu__item--danger"
+          type="button"
+          role="menuitem"
+          data-owner-delete="1"
+          data-owner-type="${esc(entityType)}"
+          data-owner-id="${entityId}">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M4.75 7.5h14.5M9.5 7.5V5.75a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1V7.5M7.5 7.5l.9 11.2a2 2 0 0 0 2 1.8h3.2a2 2 0 0 0 2-1.8l.9-11.2M10.25 11v6.25M13.75 11v6.25" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span>Delete</span>
+        </button>
+      </div>
+    </div>
+  `;
+
+  const closeAllContentMenus = (exceptMenu) => {
+    document.querySelectorAll("[data-content-menu='1']").forEach((menu) => {
+      if (!(menu instanceof HTMLElement)) return;
+      if (exceptMenu && menu === exceptMenu) return;
+      menu.classList.remove("is-open");
+      const post = menu.closest(".post");
+      if (post instanceof HTMLElement) {
+        post.classList.remove("post--menuOpen");
+      }
+    });
+  };
+
+  const updatePostBodies = (postId, body) => {
+    document
+      .querySelectorAll(`.post[data-post-id="${postId}"] .post__body`)
+      .forEach((node) => {
+        node.innerHTML = bodyToHtml(body);
+      });
+  };
+
+  const setPostEditedState = (postId, editedAt, editedTimeAgo, editedExactTime) => {
+    document
+      .querySelectorAll(`.post[data-post-id="${postId}"] .post__subRow`)
+      .forEach((row) => {
+        if (!(row instanceof HTMLElement)) return;
+
+        let node = row.querySelector(`[data-post-edited-for="${postId}"]`);
+        if (!editedAt) {
+          if (node instanceof HTMLElement) node.remove();
+          return;
+        }
+
+        if (!(node instanceof HTMLElement)) {
+          node = document.createElement("span");
+          node.className = "editedMeta";
+          node.setAttribute("data-post-edited-for", String(postId));
+          const dot = row.querySelector(".post__dot");
+          if (dot instanceof HTMLElement) {
+            row.insertBefore(node, dot);
+          } else {
+            row.appendChild(node);
+          }
+        }
+
+        node.innerHTML = `
+          <span class="editedMeta__label">EDITED AT</span>
+          <span
+            class="editedMeta__time"
+            data-time-ago="1"
+            data-time-source="${esc(editedAt)}"
+            title="${esc(editedExactTime || editedAt)}">${esc(editedTimeAgo || editedAt)}</span>
+        `;
+      });
+    window.dispatchEvent(new CustomEvent("trux:times:refresh"));
+  };
+
+  const removePostCards = (postId) => {
+    const posts = Array.from(document.querySelectorAll(`.post[data-post-id="${postId}"]`));
+    if (posts.length === 0) return;
+
+    const singlePost = posts.find(
+      (node) => node instanceof HTMLElement && node.classList.contains("post--single")
+    );
+    const parent = singlePost instanceof HTMLElement ? singlePost.parentElement : null;
+
+    if (parent && singlePost instanceof HTMLElement) {
+      const flash = document.createElement("div");
+      flash.className = "flash flash--success";
+      flash.innerHTML = `Post deleted. <a href="/" data-no-fx="1">Back to feed</a>`;
+      parent.insertBefore(flash, singlePost);
+    }
+
+    posts.forEach((node) => node.remove());
+  };
+
   const isOpen = () => !dock.hasAttribute("hidden");
 
   const setCommentCount = (postId, count) => {
@@ -273,13 +428,17 @@
           </a>
           <a class="commentDock__user" href="/profile.php?u=${encodeURIComponent(c.username)}">@${esc(c.username)}</a>
         </div>
-        <span
-          class="commentDock__time"
-          data-time-ago="1"
-          data-time-source="${esc(c.created_at)}"
-          title="${esc(c.exact_time)}">${esc(c.time_ago)}</span>
+        <div class="commentDock__metaEnd">
+          <span
+            class="commentDock__time"
+            data-time-ago="1"
+            data-time-source="${esc(c.created_at)}"
+            title="${esc(c.exact_time)}">${esc(c.time_ago)}</span>
+          ${editedMetaMarkup(c.edited_at, c.edited_time_ago, c.edited_exact_time)}
+          ${c.is_owner ? ownerMenuMarkup("comment", c.id) : ""}
+        </div>
       </div>
-      <div class="commentDock__body">${esc(c.body).replaceAll("\n", "<br>")}</div>
+      <div class="commentDock__body">${bodyToHtml(c.body)}</div>
       <div class="commentDock__actions">
         <button
           type="button"
@@ -403,7 +562,143 @@
     }
   };
 
-  document.addEventListener("click", (e) => {
+  document.addEventListener("click", async (e) => {
+    if (!(e.target instanceof Element)) return;
+
+    const menuTrigger = e.target.closest("[data-content-menu-trigger='1']");
+    if (menuTrigger instanceof HTMLButtonElement) {
+      e.preventDefault();
+      const menu = menuTrigger.closest("[data-content-menu='1']");
+      if (!(menu instanceof HTMLElement)) return;
+      const willOpen = !menu.classList.contains("is-open");
+      closeAllContentMenus(willOpen ? menu : null);
+      menu.classList.toggle("is-open", willOpen);
+      const post = menu.closest(".post");
+      if (post instanceof HTMLElement) {
+        post.classList.toggle("post--menuOpen", willOpen);
+      }
+      return;
+    }
+
+    const ownerEditBtn = e.target.closest("[data-owner-edit='1']");
+    if (ownerEditBtn instanceof HTMLButtonElement) {
+      e.preventDefault();
+      closeAllContentMenus();
+
+      const entityType = ownerEditBtn.getAttribute("data-owner-type") || "";
+      const entityId = Number(ownerEditBtn.getAttribute("data-owner-id") || "0");
+      const csrf = getCsrfToken();
+      if (!entityType || !entityId || !csrf) {
+        window.alert("Action unavailable right now.");
+        return;
+      }
+
+      const isPost = entityType === "post";
+      const sourceNode = isPost
+        ? document.querySelector(`.post[data-post-id="${entityId}"] .post__body`)
+        : document.querySelector(`[data-comment-id="${entityId}"] .commentDock__body`);
+      const currentBody = sourceNode instanceof HTMLElement ? sourceNode.innerText.trim() : "";
+      const nextBody = window.prompt(
+        isPost ? "Edit your post" : "Edit your comment",
+        currentBody
+      );
+      if (nextBody === null) return;
+
+      const trimmedBody = nextBody.trim();
+      if (!trimmedBody) {
+        window.alert(isPost ? "Post cannot be empty." : "Comment cannot be empty.");
+        return;
+      }
+
+      const endpoint = isPost ? "/edit_post.php?format=json" : "/edit_comment.php?format=json";
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { Accept: "application/json" },
+          body: new URLSearchParams({
+            _csrf: csrf,
+            id: String(entityId),
+            body: trimmedBody,
+          }),
+        });
+        const data = await readJson(res);
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Could not save changes.");
+        }
+
+        if (isPost) {
+          updatePostBodies(entityId, String(data.body || trimmedBody));
+          setPostEditedState(
+            entityId,
+            String(data.edited_at || ""),
+            String(data.edited_time_ago || ""),
+            String(data.edited_exact_time || "")
+          );
+        } else {
+          await loadComments(Number(data.post_id || currentPostId || 0));
+        }
+      } catch (err) {
+        window.alert(err instanceof Error ? err.message : "Could not save changes.");
+      }
+      return;
+    }
+
+    const ownerDeleteBtn = e.target.closest("[data-owner-delete='1']");
+    if (ownerDeleteBtn instanceof HTMLButtonElement) {
+      e.preventDefault();
+      closeAllContentMenus();
+
+      const entityType = ownerDeleteBtn.getAttribute("data-owner-type") || "";
+      const entityId = Number(ownerDeleteBtn.getAttribute("data-owner-id") || "0");
+      const csrf = getCsrfToken();
+      if (!entityType || !entityId || !csrf) {
+        window.alert("Action unavailable right now.");
+        return;
+      }
+
+      const isPost = entityType === "post";
+      const confirmed = window.confirm(
+        isPost ? "Delete this post?" : "Delete this comment?"
+      );
+      if (!confirmed) return;
+
+      const endpoint = isPost ? "/delete_post.php?format=json" : "/delete_comment.php?format=json";
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { Accept: "application/json" },
+          body: new URLSearchParams({
+            _csrf: csrf,
+            id: String(entityId),
+          }),
+        });
+        const data = await readJson(res);
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Could not delete.");
+        }
+
+        if (isPost) {
+          if (currentPostId === entityId) {
+            lastTrigger = null;
+            closeDock();
+          }
+          removePostCards(entityId);
+        } else {
+          if (typeof data.comments_count === "number") {
+            setCommentCount(Number(data.post_id || currentPostId || 0), data.comments_count);
+          }
+          await loadComments(Number(data.post_id || currentPostId || 0));
+        }
+      } catch (err) {
+        window.alert(err instanceof Error ? err.message : "Could not delete.");
+      }
+      return;
+    }
+
+    if (!e.target.closest("[data-content-menu='1']")) {
+      closeAllContentMenus();
+    }
+
     const openBtn = e.target.closest("[data-comment-open]");
     if (openBtn instanceof HTMLElement) {
       e.preventDefault();
@@ -439,6 +734,7 @@
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      closeAllContentMenus();
       closeDock();
     }
   });

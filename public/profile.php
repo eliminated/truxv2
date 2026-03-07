@@ -131,6 +131,7 @@ require_once __DIR__ . '/_header.php';
       <?php endif; ?>
 
       <?php foreach ($posts as $p): ?>
+        <?php $editedAt = isset($p['edited_at']) && $p['edited_at'] !== null ? (string)$p['edited_at'] : ''; ?>
         <article class="card post" data-post-id="<?= (int)$p['id'] ?>">
           <div class="card__body">
             <div class="post__head">
@@ -148,6 +149,18 @@ require_once __DIR__ . '/_header.php';
                     data-time-source="<?= trux_e((string)$p['created_at']) ?>">
                     <?= trux_e(trux_time_ago((string)$p['created_at'])) ?>
                   </span>
+                  <?php if ($editedAt !== ''): ?>
+                    <span class="editedMeta" data-post-edited-for="<?= (int)$p['id'] ?>">
+                      <span class="editedMeta__label">EDITED AT</span>
+                      <span
+                        class="editedMeta__time"
+                        title="<?= trux_e(trux_format_exact_time($editedAt)) ?>"
+                        data-time-ago="1"
+                        data-time-source="<?= trux_e($editedAt) ?>">
+                        <?= trux_e(trux_time_ago($editedAt)) ?>
+                      </span>
+                    </span>
+                  <?php endif; ?>
                   <span class="post__dot" aria-hidden="true">&bull;</span>
                   <a class="post__id" href="/post.php?id=<?= (int)$p['id'] ?>">#<?= (int)$p['id'] ?></a>
                 </div>
@@ -155,15 +168,11 @@ require_once __DIR__ . '/_header.php';
 
               <?php if ($me && (int)$p['user_id'] === (int)$me['id']): ?>
                 <div class="post__actions">
-                  <form class="inline" method="post" action="/delete_post.php" data-confirm="Delete this post?">
-                    <?= trux_csrf_field() ?>
-                    <input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
-                    <button class="iconBtn iconBtn--danger" type="submit" aria-label="Delete post" title="Delete">
-                      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                        <path d="M4.75 7.5h14.5M9.5 7.5V5.75a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1V7.5M7.5 7.5l.9 11.2a2 2 0 0 0 2 1.8h3.2a2 2 0 0 0 2-1.8l.9-11.2M10.25 11v6.25M13.75 11v6.25" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
-                      </svg>
-                    </button>
-                  </form>
+                  <?php
+                  $entityType = 'post';
+                  $entityId = (int)$p['id'];
+                  require __DIR__ . '/_owner_actions_menu.php';
+                  ?>
                 </div>
               <?php endif; ?>
             </div>

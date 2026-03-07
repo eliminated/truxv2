@@ -1,4 +1,49 @@
 # Omincus Updates (Beta Versions)
+## Omnicus v0.3.1 - Owner Actions, Edit History & Menu Fixes
+
+**Branch**: Beta
+**Date**: 2026-03-07
+
+***
+
+### Added
+
+- Owner-only action menus for posts, comments, and replies
+- Edit and delete controls for authored posts, comments, and replies
+- Bookmark action placeholder in owner menus
+- Edit timestamp indicators for edited posts, comments, and replies
+- New migration: `database/migrations/20260307_add_edited_timestamps.sql`
+
+***
+
+### Changed
+
+- Owner actions now use shared SVG-based menu controls instead of delete-only buttons
+- Edited timestamp markers are rendered only for items that have actually been edited
+- README setup and migration notes now reflect the current interaction system
+
+***
+
+### Fixed
+
+- Post owner action menu clipping against card borders
+- Post owner action menu stacking over neighboring feed/profile cards
+
+***
+
+### Technical
+
+- Added nullable `edited_at` columns to `posts` and `post_comments`
+- Post edit and comment edit JSON endpoints now return edited timestamp metadata
+- Comment API now returns edited timestamp metadata for comments and replies
+- Client-side post edit flow now inserts or updates `EDITED AT` markers without page reload
+
+***
+
+### Notes
+
+- This release tightens authored-content controls and edit history visibility while resolving dropdown layering issues on stacked post cards.
+
 ## Omnicus v0.3.0 - Post Interactions & Split Comment Dock
 
 **Branch**: Beta
