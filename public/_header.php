@@ -5,13 +5,9 @@ declare(strict_types=1);
 $user = trux_current_user();
 $error = trux_flash_get('error');
 $success = trux_flash_get('success');
-$uiPrefs = trux_get_ui_preferences();
 
 $q = trux_str_param('q', '');
-$bodyClasses = [$uiPrefs['classic_appearance'] ? 'appearance--classic' : 'cyber--balanced'];
-if ($uiPrefs['reduce_motion']) {
-  $bodyClasses[] = 'motion--reduced';
-}
+$bodyClasses = ['appearance--classic', 'motion--reduced'];
 ?>
 <!doctype html>
 <html lang="en">
@@ -25,11 +21,6 @@ if ($uiPrefs['reduce_motion']) {
 </head>
 
 <body class="<?= trux_e(implode(' ', $bodyClasses)) ?>">
-  <!-- Page transition overlay -->
-  <div id="pageFX" class="pagefx" aria-hidden="true">
-    <div class="pagefx__bar"></div>
-  </div>
-
   <header class="topbar">
     <div class="container topbar__inner">
       <a class="brand" href="/"><?= trux_e(TRUX_APP_NAME) ?></a>
@@ -82,7 +73,7 @@ if ($uiPrefs['reduce_motion']) {
               </span>
               <a class="menu__item" role="menuitem" href="/settings.php">
                 Settings
-                <span class="muted">Display</span>
+                <span class="muted">Account</span>
               </a>
 
               <div class="menu__divider"></div>
@@ -102,7 +93,7 @@ if ($uiPrefs['reduce_motion']) {
     </div>
   </header>
 
-  <main class="container page-enter">
+  <main class="container">
     <?php if ($error): ?>
       <div class="flash flash--error"><?= trux_e($error) ?></div>
     <?php endif; ?>

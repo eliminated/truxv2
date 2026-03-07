@@ -4,50 +4,33 @@ require_once __DIR__ . '/_bootstrap.php';
 
 trux_require_login();
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $reduceMotion = isset($_POST['reduce_motion']) && (string)($_POST['reduce_motion'] ?? '') === '1';
-    $classicAppearance = isset($_POST['classic_appearance']) && (string)($_POST['classic_appearance'] ?? '') === '1';
-
-    trux_set_ui_preferences($reduceMotion, $classicAppearance);
-    trux_flash_set('success', 'Display settings updated.');
-    trux_redirect('/settings.php');
-}
-
-$uiPrefs = trux_get_ui_preferences();
-
 require_once __DIR__ . '/_header.php';
 ?>
 
 <section class="hero">
   <h1>Settings</h1>
-  <p class="muted">Tune visuals for smoother browsing on lower-memory devices. Saved to your account.</p>
+  <p class="muted">Visual controls have been removed. This page remains available for future account and app settings.</p>
 </section>
 
 <section class="card settingsCard">
   <div class="card__body">
-    <form class="form settingsForm" method="post" action="/settings.php">
-      <?= trux_csrf_field() ?>
-
-      <label class="settingRow">
+    <div class="form settingsForm">
+      <div class="settingRow">
         <span class="settingRow__label">
-          <strong>Reduce motions</strong>
-          <small class="muted">Turns off heavy motion effects and transition overlay.</small>
+          <strong>Visual settings</strong>
+          <small class="muted">The interface now uses the fixed classic baseline across the site.</small>
         </span>
-        <input type="checkbox" name="reduce_motion" value="1" <?= $uiPrefs['reduce_motion'] ? 'checked' : '' ?>>
-      </label>
-
-      <label class="settingRow">
-        <span class="settingRow__label">
-          <strong>Classic appearance</strong>
-          <small class="muted">Uses a simpler style without neon borders, glows, and glass effects.</small>
-        </span>
-        <input type="checkbox" name="classic_appearance" value="1" <?= $uiPrefs['classic_appearance'] ? 'checked' : '' ?>>
-      </label>
-
-      <div class="row">
-        <button class="btn" type="submit">Save settings</button>
+        <strong class="muted">Removed</strong>
       </div>
-    </form>
+
+      <div class="settingRow">
+        <span class="settingRow__label">
+          <strong>More settings</strong>
+          <small class="muted">Account and application preferences can be added here later without changing navigation again.</small>
+        </span>
+        <strong class="muted">Coming soon</strong>
+      </div>
+    </div>
   </div>
 </section>
 

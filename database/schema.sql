@@ -9,8 +9,6 @@ CREATE TABLE IF NOT EXISTS users (
   username VARCHAR(32) NOT NULL,
   email VARCHAR(255) NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
-  ui_reduce_motion TINYINT(1) NOT NULL DEFAULT 0,
-  ui_classic_appearance TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_users_username (username),

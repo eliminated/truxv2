@@ -11,8 +11,10 @@ TruX is a lightweight PHP + MySQL/MariaDB social feed with:
 - AJAX interactions for post create, like, share, comment, and edit flows
 - Split comment dock (post preview + comments side-by-side)
 - Edited markers for edited posts/comments/replies
+- Settings page placeholder for future account/app options
 - Pagination on feed + profiles + search results
 - Pretty timestamps ("5 minutes ago") with exact time on hover
+- Classic static UI is enforced site-wide (no animated theme)
 
 ## Requirements
 - PHP 8.1+ (PDO MySQL + fileinfo extensions enabled)
@@ -49,18 +51,10 @@ TruX is a lightweight PHP + MySQL/MariaDB social feed with:
 ## Updating Existing Databases
 Apply any migrations your database has not received yet:
 
-- `database/migrations/20260301_add_user_ui_preferences.sql`
 - `database/migrations/20260307_add_post_interactions.sql`
 - `database/migrations/20260307_add_comment_replies.sql`
 - `database/migrations/20260307_add_edited_timestamps.sql`
-
-If you only need the UI preference columns, run:
-
-```sql
-ALTER TABLE users
-  ADD COLUMN IF NOT EXISTS ui_reduce_motion TINYINT(1) NOT NULL DEFAULT 0,
-  ADD COLUMN IF NOT EXISTS ui_classic_appearance TINYINT(1) NOT NULL DEFAULT 0;
-```
+- `database/migrations/20260307_drop_user_ui_preferences.sql`
 
 If you need the edited timestamp columns, run:
 
@@ -71,6 +65,12 @@ ALTER TABLE posts
 ALTER TABLE post_comments
   ADD COLUMN IF NOT EXISTS edited_at DATETIME NULL DEFAULT NULL AFTER created_at;
 ```
+
+## UI Baseline
+- The site now runs in a fixed classic interface with reduced motion enabled globally.
+- Animated loading overlays, neon border effects, and other decorative motion paths are intentionally disabled.
+- The Settings page remains available, but the old visual toggles and stored visual preferences have been removed.
+- Existing databases can remove obsolete visual preference columns with `database/migrations/20260307_drop_user_ui_preferences.sql`.
 
 ## Implemented vs not present
 Implemented:
@@ -84,6 +84,8 @@ Implemented:
 - AJAX create/edit/interaction flows without full page reloads
 - Side-by-side comments popup on post cards
 - Live-updating created/edited relative timestamps
+- Static classic UI baseline without transition effects or decorative animations
+- Settings page placeholder without visual preference controls
 
 Not present:
 - DMs/notifications

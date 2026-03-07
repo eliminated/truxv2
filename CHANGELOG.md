@@ -1,4 +1,32 @@
 # Omincus Updates (Beta Versions)
+## Omnicus v0.3.2 - Static UI Baseline & Settings Cleanup
+
+**Branch**: Beta
+**Date**: 2026-03-07
+
+***
+
+### Changed
+
+- The application now runs on a fixed classic, reduced-motion interface across all pages
+- Animated loading overlays, futuristic border effects, and optional visual modes are no longer part of the active UI
+- The Settings page remains available as an account/settings placeholder, but visual controls have been removed
+- README now documents the static UI baseline and visual preference cleanup path
+
+***
+
+### Technical
+
+- Removed the runtime visual preference layer from bootstrap
+- Removed `users.ui_reduce_motion` and `users.ui_classic_appearance` from the active schema definition
+- Added cleanup migration: `database/migrations/20260307_drop_user_ui_preferences.sql`
+
+***
+
+### Notes
+
+- This release formalizes the simpler visual baseline so development can prioritize missing product features over decorative interface options.
+
 ## Omnicus v0.3.1 - Owner Actions, Edit History & Menu Fixes
 
 **Branch**: Beta
