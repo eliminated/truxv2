@@ -38,11 +38,17 @@ if ($me && !$isSelf) {
 }
 
 $joinedDate = '-';
+$joinedDateRaw = '';
+$joinedDateExact = '';
 if (!empty($profileUser['created_at']) && is_string($profileUser['created_at'])) {
     try {
-        $joinedDate = (new DateTimeImmutable((string)$profileUser['created_at']))->format('Y-m-d');
+        $joinedDateRaw = (string)$profileUser['created_at'];
+        $joinedDate = trux_time_ago($joinedDateRaw);
+        $joinedDateExact = trux_format_exact_time($joinedDateRaw);
     } catch (Exception $e) {
         $joinedDate = '-';
+        $joinedDateRaw = '';
+        $joinedDateExact = '';
     }
 }
 
@@ -73,7 +79,15 @@ require_once __DIR__ . '/_header.php';
           <div class="profileStat__label">Following</div>
         </div>
         <div class="profileStat">
-          <div class="profileStat__value"><?= trux_e($joinedDate) ?></div>
+          <div
+            class="profileStat__value"
+            <?php if ($joinedDateRaw !== ''): ?>
+              data-time-ago="1"
+              data-time-source="<?= trux_e($joinedDateRaw) ?>"
+              title="<?= trux_e($joinedDateExact) ?>"
+            <?php endif; ?>>
+            <?= trux_e($joinedDate) ?>
+          </div>
           <div class="profileStat__label">Joined</div>
         </div>
       </div>
@@ -127,7 +141,11 @@ require_once __DIR__ . '/_header.php';
                   <a class="post__user" href="/profile.php?u=<?= trux_e((string)$p['username']) ?>">@<?= trux_e((string)$p['username']) ?></a>
                 </div>
                 <div class="post__subRow">
-                  <span class="post__time" title="<?= trux_e(trux_format_exact_time((string)$p['created_at'])) ?>">
+                  <span
+                    class="post__time"
+                    title="<?= trux_e(trux_format_exact_time((string)$p['created_at'])) ?>"
+                    data-time-ago="1"
+                    data-time-source="<?= trux_e((string)$p['created_at']) ?>">
                     <?= trux_e(trux_time_ago((string)$p['created_at'])) ?>
                   </span>
                   <span class="post__dot" aria-hidden="true">&bull;</span>

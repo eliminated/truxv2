@@ -28,6 +28,8 @@ if (!trux_is_logged_in()) {
 
 $id = $_POST['id'] ?? null;
 $body = $_POST['body'] ?? null;
+$parentIdRaw = $_POST['parent_id'] ?? null;
+$replyToUserRaw = $_POST['reply_to_user_id'] ?? null;
 if (!is_string($id) || !preg_match('/^\d+$/', $id)) {
     if ($isJson) {
         header('Content-Type: application/json; charset=utf-8');
@@ -52,6 +54,36 @@ if ($text === '' || mb_strlen($text) > 1000) {
 }
 
 $postId = (int)$id;
+$parentId = null;
+if (is_string($parentIdRaw) && $parentIdRaw !== '') {
+    if (!preg_match('/^\d+$/', $parentIdRaw)) {
+        if ($isJson) {
+            header('Content-Type: application/json; charset=utf-8');
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'error' => 'Invalid parent comment id.']);
+            exit;
+        }
+        trux_flash_set('error', 'Invalid parent comment id.');
+        trux_redirect('/');
+    }
+    $parentId = (int)$parentIdRaw;
+}
+
+$replyToUserId = null;
+if (is_string($replyToUserRaw) && $replyToUserRaw !== '') {
+    if (!preg_match('/^\d+$/', $replyToUserRaw)) {
+        if ($isJson) {
+            header('Content-Type: application/json; charset=utf-8');
+            http_response_code(400);
+            echo json_encode(['ok' => false, 'error' => 'Invalid reply user id.']);
+            exit;
+        }
+        trux_flash_set('error', 'Invalid reply user id.');
+        trux_redirect('/');
+    }
+    $replyToUserId = (int)$replyToUserRaw;
+}
+
 if (!trux_post_exists($postId)) {
     if ($isJson) {
         header('Content-Type: application/json; charset=utf-8');
@@ -64,7 +96,7 @@ if (!trux_post_exists($postId)) {
 }
 
 $me = trux_current_user();
-$ok = $me ? trux_add_post_comment($postId, (int)$me['id'], $text) : false;
+$ok = $me ? trux_add_post_comment($postId, (int)$me['id'], $text, $parentId, $replyToUserId) : false;
 if (!$ok) {
     if ($isJson) {
         header('Content-Type: application/json; charset=utf-8');

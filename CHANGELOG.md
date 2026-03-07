@@ -22,9 +22,14 @@
 - Right pane shows live comments + comment form
 - Works from feed and profile post cards
 - Also wired on search results and single post page
+- Comment reply support in comment dock
+- Nested reply thread rendering inside each post comment list
+- Reply composer state with target-aware hidden fields (`parent_id`, `reply_to_user_id`)
+- Default `@mention` prefill when replying (including replying to a reply)
 - Shared post action partial: `public/_post_actions_bar.php`
 - Profile menu placeholder item
 - Added `Notifications` entry under profile dropdown (`Coming soon`)
+- New migration: `database/migrations/20260307_add_comment_replies.sql`
 
 ***
 
@@ -35,6 +40,11 @@
 - Added active states for liked/shared buttons
 - Added comment modal scripts and styling in `public/assets/app.js` and `public/assets/style.css`
 - Styled profile dropdown notification placeholder as disabled/non-interactive
+- Comment list pane is now explicitly scrollable as threads grow
+- Added profile icons next to usernames in comments and replies
+- New post creation now supports AJAX submit without page reload
+- Like/share actions now support AJAX toggles without page reload
+- Time-ago labels now auto-refresh for posts, comments/replies, and joined timestamps
 
 ***
 
@@ -53,6 +63,8 @@
 - `public/share_post.php`
 - `public/comment_post.php`
 - `public/post_comments.php`
+- Extended comment schema with `parent_comment_id` and `reply_to_user_id`
+- Added JSON response mode (`?format=json`) for `new_post.php`, `like_post.php`, and `share_post.php`
 - Added reusable global comment dock markup in `public/_footer.php`
 - Added interaction map wiring in:
 - `public/index.php`
@@ -66,9 +78,6 @@
 ### Notes
 
 - This release turns core social actions from placeholder to functional interaction loops while keeping in-context commenting via split dock UX.
-
-## Omnicus v0.1 - Initial Release
-Initial Releases
 
 ## Omnicus v0.2.0 — UI Overhaul & Follow System
 
@@ -230,3 +239,7 @@ Initial Releases
 - This hotfix focuses on lowering GPU/CPU/RAM pressure without removing the core visual identity
 
 - Users can now choose visual fidelity level per account for smoother browsing on lower-end devices
+
+## Omnicus v0.1 - Initial Release
+Initial Releases
+

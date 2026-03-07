@@ -57,7 +57,11 @@ require_once __DIR__ . '/_header.php';
             <li>
               <a href="/profile.php?u=<?= trux_e((string)$u['username']) ?>">@<?= trux_e((string)$u['username']) ?></a>
               <span class="muted">&bull; joined</span>
-              <span class="muted" title="<?= trux_e(trux_format_exact_time((string)$u['created_at'])) ?>">
+              <span
+                class="muted"
+                title="<?= trux_e(trux_format_exact_time((string)$u['created_at'])) ?>"
+                data-time-ago="1"
+                data-time-source="<?= trux_e((string)$u['created_at']) ?>">
                 <?= trux_e(trux_time_ago((string)$u['created_at'])) ?>
               </span>
             </li>
@@ -88,7 +92,11 @@ require_once __DIR__ . '/_header.php';
                 <a class="post__user" href="/profile.php?u=<?= trux_e((string)$p['username']) ?>">@<?= trux_e((string)$p['username']) ?></a>
               </div>
               <div class="post__subRow">
-                <span class="post__time" title="<?= trux_e(trux_format_exact_time((string)$p['created_at'])) ?>">
+                <span
+                  class="post__time"
+                  title="<?= trux_e(trux_format_exact_time((string)$p['created_at'])) ?>"
+                  data-time-ago="1"
+                  data-time-source="<?= trux_e((string)$p['created_at']) ?>">
                   <?= trux_e(trux_time_ago((string)$p['created_at'])) ?>
                 </span>
                 <span class="post__dot" aria-hidden="true">&bull;</span>

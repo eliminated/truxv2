@@ -4,6 +4,7 @@ require_once __DIR__ . '/_bootstrap.php';
 
 trux_require_login();
 $user = trux_current_user();
+$isJson = trux_str_param('format', '') === 'json';
 
 $body = '';
 $error = null;
@@ -30,10 +31,43 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($error === null) {
             $postId = trux_create_post((int)$user['id'], $body, $imagePath);
+            if ($isJson) {
+                $post = trux_fetch_post_by_id($postId);
+                header('Content-Type: application/json; charset=utf-8');
+                echo json_encode([
+                    'ok' => true,
+                    'post' => [
+                        'id' => $postId,
+                        'url' => '/post.php?id=' . $postId,
+                        'user_id' => (int)($post['user_id'] ?? $user['id']),
+                        'username' => (string)($post['username'] ?? $user['username']),
+                        'body' => (string)($post['body'] ?? $body),
+                        'image_path' => isset($post['image_path']) ? (string)$post['image_path'] : null,
+                        'created_at' => (string)($post['created_at'] ?? ''),
+                        'time_ago' => isset($post['created_at']) ? trux_time_ago((string)$post['created_at']) : 'just now',
+                    ],
+                    'message' => 'Posted!',
+                ]);
+                exit;
+            }
             trux_flash_set('success', 'Posted!');
             trux_redirect('/post.php?id=' . $postId);
         }
     }
+
+    if ($isJson && $error !== null) {
+        header('Content-Type: application/json; charset=utf-8');
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'error' => $error]);
+        exit;
+    }
+}
+
+if ($isJson && $_SERVER['REQUEST_METHOD'] !== 'POST') {
+    header('Content-Type: application/json; charset=utf-8');
+    http_response_code(405);
+    echo json_encode(['ok' => false, 'error' => 'Method not allowed.']);
+    exit;
 }
 
 require_once __DIR__ . '/_header.php';
@@ -47,7 +81,7 @@ require_once __DIR__ . '/_header.php';
       <div class="flash flash--error"><?= trux_e($error) ?></div>
     <?php endif; ?>
 
-    <form method="post" action="/new_post.php" enctype="multipart/form-data" class="form">
+    <form method="post" action="/new_post.php" enctype="multipart/form-data" class="form" data-ajax-new-post="1" data-no-fx="1">
       <?= trux_csrf_field() ?>
 
       <label class="field">

@@ -36,7 +36,11 @@ require_once __DIR__ . '/_header.php';
           <a class="post__user" href="/profile.php?u=<?= trux_e((string)$post['username']) ?>">@<?= trux_e((string)$post['username']) ?></a>
         </div>
         <div class="post__subRow">
-          <span class="post__time" title="<?= trux_e(trux_format_exact_time((string)$post['created_at'])) ?>">
+          <span
+            class="post__time"
+            title="<?= trux_e(trux_format_exact_time((string)$post['created_at'])) ?>"
+            data-time-ago="1"
+            data-time-source="<?= trux_e((string)$post['created_at']) ?>">
             <?= trux_e(trux_time_ago((string)$post['created_at'])) ?>
           </span>
           <span class="post__dot" aria-hidden="true">&bull;</span>

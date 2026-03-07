@@ -27,6 +27,12 @@ declare(strict_types=1);
           <form class="commentDock__form" method="post" action="/comment_post.php" data-comment-form="1" data-no-fx="1">
             <input type="hidden" name="_csrf" value="<?= trux_e(trux_csrf_token()) ?>">
             <input type="hidden" name="id" value="" data-comment-post-id="1">
+            <input type="hidden" name="parent_id" value="" data-comment-parent-id="1">
+            <input type="hidden" name="reply_to_user_id" value="" data-comment-reply-user-id="1">
+            <div class="commentDock__replying muted" data-comment-replying="1" hidden>
+              Replying to <span data-comment-replying-user="1"></span>
+              <button type="button" class="commentDock__replyCancel" data-comment-reply-cancel="1">Cancel</button>
+            </div>
             <label class="field">
               <span>Add a comment</span>
               <textarea name="body" rows="3" maxlength="1000" required placeholder="Write your comment..."></textarea>

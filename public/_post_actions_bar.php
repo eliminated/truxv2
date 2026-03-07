@@ -12,7 +12,7 @@ $isLoggedIn = (bool)$isLoggedIn;
 ?>
 <div class="post__actionsBar" aria-label="Post actions">
   <?php if ($isLoggedIn): ?>
-    <form class="postActForm" method="post" action="/like_post.php">
+    <form class="postActForm" method="post" action="/like_post.php" data-ajax-action="1" data-action-kind="like" data-post-id="<?= $postId ?>" data-no-fx="1">
       <?= trux_csrf_field() ?>
       <input type="hidden" name="id" value="<?= $postId ?>">
       <button class="postAct<?= $liked ? ' is-active' : '' ?>" type="submit" aria-label="<?= $liked ? 'Unlike post' : 'Like post' ?>">
@@ -48,7 +48,7 @@ $isLoggedIn = (bool)$isLoggedIn;
   </button>
 
   <?php if ($isLoggedIn): ?>
-    <form class="postActForm" method="post" action="/share_post.php">
+    <form class="postActForm" method="post" action="/share_post.php" data-ajax-action="1" data-action-kind="share" data-post-id="<?= $postId ?>" data-no-fx="1">
       <?= trux_csrf_field() ?>
       <input type="hidden" name="id" value="<?= $postId ?>">
       <button class="postAct<?= $shared ? ' is-active' : '' ?>" type="submit" aria-label="<?= $shared ? 'Unshare post' : 'Share post' ?>">

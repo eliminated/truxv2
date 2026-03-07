@@ -30,7 +30,10 @@ foreach ($comments as $c) {
     $payload[] = [
         'id' => (int)$c['id'],
         'post_id' => (int)$c['post_id'],
+        'parent_comment_id' => isset($c['parent_comment_id']) && $c['parent_comment_id'] !== null ? (int)$c['parent_comment_id'] : null,
         'user_id' => (int)$c['user_id'],
+        'reply_to_user_id' => isset($c['reply_to_user_id']) && $c['reply_to_user_id'] !== null ? (int)$c['reply_to_user_id'] : null,
+        'reply_to_username' => isset($c['reply_to_username']) ? (string)$c['reply_to_username'] : '',
         'username' => (string)$c['username'],
         'body' => (string)$c['body'],
         'created_at' => (string)$c['created_at'],

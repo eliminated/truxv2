@@ -181,7 +181,7 @@ function trux_toggle_post_share(int $postId, int $userId): bool {
     }
 }
 
-function trux_add_post_comment(int $postId, int $userId, string $body): bool {
+function trux_add_post_comment(int $postId, int $userId, string $body, ?int $parentCommentId = null, ?int $replyToUserId = null): bool {
     $body = trim($body);
     if ($postId <= 0 || $userId <= 0 || $body === '' || mb_strlen($body) > 1000) return false;
     if (!trux_post_exists($postId)) return false;
@@ -189,8 +189,36 @@ function trux_add_post_comment(int $postId, int $userId, string $body): bool {
     $db = trux_db();
 
     try {
-        $stmt = $db->prepare('INSERT INTO post_comments (post_id, user_id, body) VALUES (?, ?, ?)');
-        $stmt->execute([$postId, $userId, $body]);
+        $parentId = (int)($parentCommentId ?? 0);
+        $replyUserId = (int)($replyToUserId ?? 0);
+
+        if ($parentId > 0) {
+            $parentStmt = $db->prepare('SELECT id, post_id, user_id FROM post_comments WHERE id = ? LIMIT 1');
+            $parentStmt->execute([$parentId]);
+            $parent = $parentStmt->fetch();
+            if (!$parent || (int)$parent['post_id'] !== $postId) {
+                return false;
+            }
+
+            if ($replyUserId <= 0) {
+                $replyUserId = (int)$parent['user_id'];
+            }
+        } else {
+            $parentId = 0;
+            $replyUserId = 0;
+        }
+
+        $stmt = $db->prepare(
+            'INSERT INTO post_comments (post_id, parent_comment_id, user_id, reply_to_user_id, body)
+             VALUES (?, ?, ?, ?, ?)'
+        );
+        $stmt->execute([
+            $postId,
+            $parentId > 0 ? $parentId : null,
+            $userId,
+            $replyUserId > 0 ? $replyUserId : null,
+            $body
+        ]);
         return $stmt->rowCount() > 0;
     } catch (PDOException) {
         return false;
@@ -205,15 +233,16 @@ function trux_fetch_post_comments(int $postId, int $limit = 80): array {
 
     try {
         $sql = '
-            SELECT t.id, t.post_id, t.user_id, t.body, t.created_at, u.username
+            SELECT t.id, t.post_id, t.parent_comment_id, t.user_id, t.reply_to_user_id, t.body, t.created_at, u.username, ru.username AS reply_to_username
             FROM (
-                SELECT c.id, c.post_id, c.user_id, c.body, c.created_at
+                SELECT c.id, c.post_id, c.parent_comment_id, c.user_id, c.reply_to_user_id, c.body, c.created_at
                 FROM post_comments c
                 WHERE c.post_id = ?
                 ORDER BY c.id DESC
                 LIMIT ?
             ) t
             JOIN users u ON u.id = t.user_id
+            LEFT JOIN users ru ON ru.id = t.reply_to_user_id
             ORDER BY t.id ASC
         ';
         $stmt = $db->prepare($sql);
