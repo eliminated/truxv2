@@ -1,4 +1,111 @@
 # Omincus Updates (Beta Versions)
+## Omnicus v0.3.6 - Notifications & Preferences
+
+**Branch**: Beta
+**Date**: 2026-03-08
+
+***
+
+### Added
+
+- Working notifications feed at `public/notifications.php`
+- Notification delivery for post likes, comment votes, mentions, follows, new post comments, and replies
+- Notification preferences section in Settings
+- New migration: `database/migrations/20260308_add_notifications.sql`
+
+***
+
+### Changed
+
+- Profile menu notifications entry now links to the live notifications page
+- Settings now stores per-user notification preferences instead of showing only placeholders
+- Post and comment mention detection now feeds the notifications system
+
+***
+
+### Technical
+
+- Added `notifications` table for notification event storage
+- Added per-user notification preference columns on `users`
+- Added notification helper layer in `src/notifications.php`
+- Notification event deduplication now uses a stable `event_key`
+
+***
+
+### Notes
+
+- Comment vote notifications currently fire on upvotes only, which matches the app’s closest equivalent to comment likes.
+
+## Omnicus v0.3.5 - Mention Autocomplete
+
+**Branch**: Beta
+**Date**: 2026-03-08
+
+***
+
+### Added
+
+- Inline mention autocomplete while typing in post and comment textareas
+- New JSON endpoint: `public/mention_suggestions.php`
+- Clickable `@username` links in rendered posts and comment bodies
+
+***
+
+### Changed
+
+- Comment payloads now include rendered rich-text HTML so mentions and hashtags display consistently in the live comment dock
+- Compose forms now show a suggestion list above the textarea when a username mention prefix is detected
+
+***
+
+### Technical
+
+- Added prefix-based username lookup helper in `src/search.php`
+- Added shared mention normalization and rich-text rendering helpers in `src/helpers.php`
+- Client-side mention autocomplete supports mouse selection plus arrow, enter, tab, and escape keyboard handling
+
+***
+
+### Notes
+
+- Mention suggestions currently target the real textarea composers only; modal prompt-based edit flows remain plain text.
+
+## Omnicus v0.3.4 - Hashtag Search & Tag Links
+
+**Branch**: Beta
+**Date**: 2026-03-08
+
+***
+
+### Added
+
+- Hashtag extraction and storage for posts
+- Clickable hashtag links inside post bodies
+- Hashtag-only search filter on the search page
+- New migration: `database/migrations/20260308_add_post_hashtags.sql`
+
+***
+
+### Changed
+
+- Post create and post edit flows now sync hashtag records automatically
+- Search now supports exact hashtag matching instead of plain text-only lookup
+- Hashtag searches also fall back to raw post body matching so older posts remain discoverable
+
+***
+
+### Technical
+
+- Added `post_hashtags` table for normalized per-post hashtag indexing
+- Added hashtag helpers for extraction, normalization, and rendering
+- AJAX post edit responses now return rendered post body HTML for hashtag links
+
+***
+
+### Notes
+
+- This release adds a basic tagging layer without changing comment search or introducing hashtag administration.
+
 ## Omnicus v0.3.3 - Comment Vote System
 
 **Branch**: Beta

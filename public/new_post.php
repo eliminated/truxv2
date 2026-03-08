@@ -42,6 +42,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'user_id' => (int)($post['user_id'] ?? $user['id']),
                         'username' => (string)($post['username'] ?? $user['username']),
                         'body' => (string)($post['body'] ?? $body),
+                        'body_html' => trux_render_post_body((string)($post['body'] ?? $body)),
                         'image_path' => isset($post['image_path']) ? (string)$post['image_path'] : null,
                         'created_at' => (string)($post['created_at'] ?? ''),
                         'time_ago' => isset($post['created_at']) ? trux_time_ago((string)$post['created_at']) : 'just now',
@@ -86,8 +87,8 @@ require_once __DIR__ . '/_header.php';
 
       <label class="field">
         <span>What’s happening?</span>
-        <textarea name="body" rows="5" maxlength="2000" required><?= trux_e($body) ?></textarea>
-        <small class="muted">Up to 2000 characters.</small>
+        <textarea name="body" rows="5" maxlength="2000" required data-mention-input="1"><?= trux_e($body) ?></textarea>
+        <small class="muted">Up to 2000 characters. Hashtags like <code>#php</code> and <code>#release_notes</code> are supported.</small>
       </label>
 
       <label class="field">

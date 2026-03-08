@@ -1,13 +1,41 @@
 <?php
 declare(strict_types=1);
 
+function trux_sync_post_hashtags(int $postId, string $body): void {
+    if ($postId <= 0) {
+        return;
+    }
+
+    try {
+        $db = trux_db();
+        $tags = trux_extract_hashtags($body);
+
+        $deleteStmt = $db->prepare('DELETE FROM post_hashtags WHERE post_id = ?');
+        $deleteStmt->execute([$postId]);
+
+        if (!$tags) {
+            return;
+        }
+
+        $insertStmt = $db->prepare('INSERT INTO post_hashtags (post_id, hashtag) VALUES (?, ?)');
+        foreach ($tags as $tag) {
+            $insertStmt->execute([$postId, $tag]);
+        }
+    } catch (PDOException) {
+        // The app can keep working until the hashtag migration is applied.
+    }
+}
+
 function trux_create_post(int $userId, string $body, ?string $imagePath): int {
     $body = trim($body);
 
     $db = trux_db();
     $stmt = $db->prepare('INSERT INTO posts (user_id, body, image_path) VALUES (?, ?, ?)');
     $stmt->execute([$userId, $body, $imagePath]);
-    return (int)$db->lastInsertId();
+    $postId = (int)$db->lastInsertId();
+    trux_sync_post_hashtags($postId, $body);
+    trux_notify_mentions_for_post($postId, $userId, $body);
+    return $postId;
 }
 
 function trux_fetch_feed(int $limit = 20, ?int $beforeId = null): array {
@@ -37,6 +65,46 @@ function trux_fetch_feed(int $limit = 20, ?int $beforeId = null): array {
          LIMIT ?'
     );
     $stmt->bindValue(1, $limit, PDO::PARAM_INT);
+    $stmt->execute();
+    return $stmt->fetchAll();
+}
+
+function trux_fetch_following_feed(int $viewerId, int $limit = 20, ?int $beforeId = null): array {
+    if ($viewerId <= 0) {
+        return [];
+    }
+
+    $limit = max(1, min(50, $limit));
+    $db = trux_db();
+
+    $sql = '
+        SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username
+        FROM posts p
+        JOIN users u ON u.id = p.user_id
+        WHERE (
+            p.user_id = :viewer_id
+            OR EXISTS (
+                SELECT 1
+                FROM follows f
+                WHERE f.follower_id = :viewer_follow_id
+                  AND f.following_id = p.user_id
+            )
+        )
+    ';
+
+    if ($beforeId !== null && $beforeId > 0) {
+        $sql .= ' AND p.id < :before_id';
+    }
+
+    $sql .= ' ORDER BY p.id DESC LIMIT :limit_rows';
+
+    $stmt = $db->prepare($sql);
+    $stmt->bindValue(':viewer_id', $viewerId, PDO::PARAM_INT);
+    $stmt->bindValue(':viewer_follow_id', $viewerId, PDO::PARAM_INT);
+    if ($beforeId !== null && $beforeId > 0) {
+        $stmt->bindValue(':before_id', $beforeId, PDO::PARAM_INT);
+    }
+    $stmt->bindValue(':limit_rows', $limit, PDO::PARAM_INT);
     $stmt->execute();
     return $stmt->fetchAll();
 }
@@ -89,7 +157,12 @@ function trux_update_post_if_owner(int $postId, int $ownerUserId, string $body):
     $db = trux_db();
     $stmt = $db->prepare('UPDATE posts SET body = ?, edited_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?');
     $stmt->execute([$body, $postId, $ownerUserId]);
-    return $stmt->rowCount() > 0;
+    $updated = $stmt->rowCount() > 0;
+    if ($updated) {
+        trux_sync_post_hashtags($postId, $body);
+        trux_notify_mentions_for_post($postId, $ownerUserId, $body);
+    }
+    return $updated;
 }
 
 function trux_fetch_user_by_username(string $username): ?array {
@@ -193,27 +266,29 @@ function trux_toggle_post_share(int $postId, int $userId): bool {
     }
 }
 
-function trux_add_post_comment(int $postId, int $userId, string $body, ?int $parentCommentId = null, ?int $replyToUserId = null): bool {
+function trux_add_post_comment(int $postId, int $userId, string $body, ?int $parentCommentId = null, ?int $replyToUserId = null): int {
     $body = trim($body);
-    if ($postId <= 0 || $userId <= 0 || $body === '' || mb_strlen($body) > 1000) return false;
-    if (!trux_post_exists($postId)) return false;
+    if ($postId <= 0 || $userId <= 0 || $body === '' || mb_strlen($body) > 1000) return 0;
+    if (!trux_post_exists($postId)) return 0;
 
     $db = trux_db();
 
     try {
         $parentId = (int)($parentCommentId ?? 0);
         $replyUserId = (int)($replyToUserId ?? 0);
+        $parentOwnerId = 0;
 
         if ($parentId > 0) {
             $parentStmt = $db->prepare('SELECT id, post_id, user_id FROM post_comments WHERE id = ? LIMIT 1');
             $parentStmt->execute([$parentId]);
             $parent = $parentStmt->fetch();
             if (!$parent || (int)$parent['post_id'] !== $postId) {
-                return false;
+                return 0;
             }
+            $parentOwnerId = (int)$parent['user_id'];
 
             if ($replyUserId <= 0) {
-                $replyUserId = (int)$parent['user_id'];
+                $replyUserId = $parentOwnerId;
             }
         } else {
             $parentId = 0;
@@ -231,9 +306,24 @@ function trux_add_post_comment(int $postId, int $userId, string $body, ?int $par
             $replyUserId > 0 ? $replyUserId : null,
             $body
         ]);
-        return $stmt->rowCount() > 0;
+        if ($stmt->rowCount() <= 0) {
+            return 0;
+        }
+
+        $commentId = (int)$db->lastInsertId();
+        $post = trux_fetch_post_by_id($postId);
+        $postOwnerId = (int)($post['user_id'] ?? 0);
+
+        if ($parentId > 0 && $parentOwnerId > 0) {
+            trux_notify_comment_reply($parentOwnerId, $userId, $postId, $commentId);
+        } elseif ($postOwnerId > 0) {
+            trux_notify_post_comment($postOwnerId, $userId, $postId, $commentId);
+        }
+
+        trux_notify_mentions_for_comment($postId, $commentId, $userId, $body);
+        return $commentId;
     } catch (PDOException) {
-        return false;
+        return 0;
     }
 }
 
@@ -262,7 +352,14 @@ function trux_update_comment_if_owner(int $commentId, int $ownerUserId, string $
     $db = trux_db();
     $stmt = $db->prepare('UPDATE post_comments SET body = ?, edited_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?');
     $stmt->execute([$body, $commentId, $ownerUserId]);
-    return $stmt->rowCount() > 0;
+    $updated = $stmt->rowCount() > 0;
+    if ($updated) {
+        $comment = trux_fetch_comment_by_id($commentId);
+        if ($comment) {
+            trux_notify_mentions_for_comment((int)$comment['post_id'], $commentId, $ownerUserId, $body);
+        }
+    }
+    return $updated;
 }
 
 function trux_delete_comment_if_owner(int $commentId, int $ownerUserId): ?int {

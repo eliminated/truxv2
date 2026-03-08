@@ -82,3 +82,155 @@ function trux_like_escape(string $s): string {
     // We'll use ESCAPE '\' in SQL.
     return str_replace(['\\', '%', '_'], ['\\\\', '\%', '\_'], $s);
 }
+
+function trux_extract_hashtags(string $body): array {
+    if ($body === '') {
+        return [];
+    }
+
+    preg_match_all('/(^|[^A-Za-z0-9_])#([A-Za-z0-9_]{1,50})\b/', $body, $matches);
+    if (!isset($matches[2]) || !is_array($matches[2])) {
+        return [];
+    }
+
+    $tags = [];
+    foreach ($matches[2] as $tag) {
+        if (!is_string($tag) || $tag === '') {
+            continue;
+        }
+        $tags[] = strtolower($tag);
+    }
+
+    return array_values(array_unique($tags));
+}
+
+function trux_normalize_hashtag(string $term): string {
+    $term = trim($term);
+    if ($term === '') {
+        return '';
+    }
+
+    if (str_starts_with($term, '#')) {
+        $term = substr($term, 1);
+    }
+
+    $term = trim($term);
+    if ($term === '') {
+        return '';
+    }
+
+    if (!preg_match('/^[A-Za-z0-9_]{1,50}$/', $term)) {
+        return '';
+    }
+
+    return strtolower($term);
+}
+
+function trux_normalize_mention_fragment(string $term): string {
+    $term = trim($term);
+    if ($term === '') {
+        return '';
+    }
+
+    if (str_starts_with($term, '@')) {
+        $term = substr($term, 1);
+    }
+
+    $term = trim($term);
+    if ($term === '') {
+        return '';
+    }
+
+    if (!preg_match('/^[A-Za-z0-9_]{1,32}$/', $term)) {
+        return '';
+    }
+
+    return $term;
+}
+
+function trux_extract_mentions(string $body): array {
+    if ($body === '') {
+        return [];
+    }
+
+    preg_match_all('/(^|[^A-Za-z0-9_])@([A-Za-z0-9_]{3,32})\b/', $body, $matches);
+    if (!isset($matches[2]) || !is_array($matches[2])) {
+        return [];
+    }
+
+    $mentions = [];
+    foreach ($matches[2] as $username) {
+        if (!is_string($username) || $username === '') {
+            continue;
+        }
+        $mentions[] = strtolower($username);
+    }
+
+    return array_values(array_unique($mentions));
+}
+
+function trux_render_rich_text(string $body): string {
+    $lines = preg_split("/\R/", $body);
+    if (!is_array($lines) || $lines === []) {
+        $lines = [$body];
+    }
+
+    $renderedLines = [];
+    foreach ($lines as $line) {
+        $escapedLine = trux_e((string)$line);
+        $withMentions = preg_replace_callback(
+            '/(^|[^A-Za-z0-9_])@([A-Za-z0-9_]{3,32})\b/',
+            static function (array $matches): string {
+                $prefix = (string)($matches[1] ?? '');
+                $username = (string)($matches[2] ?? '');
+                if ($username === '') {
+                    return (string)($matches[0] ?? '');
+                }
+
+                $href = '/profile.php?u=' . rawurlencode($username);
+
+                return $prefix
+                    . '<a class="mentionLink" href="'
+                    . trux_e($href)
+                    . '">@'
+                    . trux_e($username)
+                    . '</a>';
+            },
+            $escapedLine
+        );
+        $escapedLine = is_string($withMentions) ? $withMentions : $escapedLine;
+
+        $rendered = preg_replace_callback(
+            '/(^|[^A-Za-z0-9_])#([A-Za-z0-9_]{1,50})\b/',
+            static function (array $matches): string {
+                $prefix = (string)($matches[1] ?? '');
+                $rawTag = (string)($matches[2] ?? '');
+                if ($rawTag === '') {
+                    return (string)($matches[0] ?? '');
+                }
+
+                $normalized = strtolower($rawTag);
+                $href = '/search.php?q=' . rawurlencode('#' . $normalized) . '&filter=hashtags';
+
+                return $prefix
+                    . '<a class="hashtagLink" href="'
+                    . trux_e($href)
+                    . '">#'
+                    . trux_e($rawTag)
+                    . '</a>';
+            },
+            $escapedLine
+        );
+        $renderedLines[] = is_string($rendered) ? $rendered : $escapedLine;
+    }
+
+    return implode("<br>\n", $renderedLines);
+}
+
+function trux_render_post_body(string $body): string {
+    return trux_render_rich_text($body);
+}
+
+function trux_render_comment_body(string $body): string {
+    return trux_render_rich_text($body);
+}

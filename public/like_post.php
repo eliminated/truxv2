@@ -63,9 +63,18 @@ if (!trux_post_exists($postId)) {
 }
 
 trux_toggle_post_like($postId, (int)$me['id']);
+$post = trux_fetch_post_by_id($postId);
 if ($isJson) {
     $stats = trux_fetch_post_interactions([$postId], (int)$me['id']);
     $postStats = $stats[$postId] ?? ['likes' => 0, 'liked' => false];
+    if ($post) {
+        $recipientId = (int)($post['user_id'] ?? 0);
+        if (!empty($postStats['liked'])) {
+            trux_notify_post_like($recipientId, (int)$me['id'], $postId);
+        } else {
+            trux_remove_post_like_notification($recipientId, (int)$me['id'], $postId);
+        }
+    }
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode([
         'ok' => true,
@@ -74,6 +83,17 @@ if ($isJson) {
         'likes_count' => (int)$postStats['likes'],
     ]);
     exit;
+}
+
+if ($post) {
+    $recipientId = (int)($post['user_id'] ?? 0);
+    $stats = trux_fetch_post_interactions([$postId], (int)$me['id']);
+    $postStats = $stats[$postId] ?? ['liked' => false];
+    if (!empty($postStats['liked'])) {
+        trux_notify_post_like($recipientId, (int)$me['id'], $postId);
+    } else {
+        trux_remove_post_like_notification($recipientId, (int)$me['id'], $postId);
+    }
 }
 
 $back = $_SERVER['HTTP_REFERER'] ?? '';

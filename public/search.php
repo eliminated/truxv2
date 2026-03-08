@@ -4,19 +4,34 @@ require_once __DIR__ . '/_bootstrap.php';
 
 $q = trim(trux_str_param('q', ''));
 $before = trux_int_param('before', 0);
+$rawFilter = $_GET['filter'] ?? null;
+$requestedFilter = is_string($rawFilter) ? trim($rawFilter) : '';
+$searchFilter = $requestedFilter === 'hashtags' ? 'hashtags' : 'all';
 
 $term = $q;
 if (str_starts_with($term, '@')) {
     $term = ltrim($term, '@');
 }
 
+if ($requestedFilter === '' && str_starts_with($q, '#')) {
+    $searchFilter = 'hashtags';
+}
+
 $users = [];
 $posts = [];
 $nextBefore = null;
+$hashtag = $searchFilter === 'hashtags' ? trux_normalize_hashtag($term) : '';
+$hasValidSearch = $searchFilter === 'hashtags'
+    ? $hashtag !== ''
+    : $term !== '' && mb_strlen($term) >= 2;
 
-if ($term !== '' && mb_strlen($term) >= 2) {
-    $users = trux_search_users($term, 10);
-    $posts = trux_search_posts($term, 20, $before > 0 ? $before : null);
+if ($hasValidSearch) {
+    if ($searchFilter === 'hashtags') {
+        $posts = trux_search_posts_by_hashtag($hashtag, 20, $before > 0 ? $before : null);
+    } else {
+        $users = trux_search_users($term, 10);
+        $posts = trux_search_posts($term, 20, $before > 0 ? $before : null);
+    }
 
     if (count($posts) > 0) {
         $last = $posts[count($posts) - 1];
@@ -35,48 +50,87 @@ require_once __DIR__ . '/_header.php';
 
 <section class="hero">
   <h1>Search</h1>
-  <p class="muted">Find users or posts. Try "@username" or a keyword.</p>
+  <p class="muted">
+    <?php if ($searchFilter === 'hashtags'): ?>
+      Filter posts by hashtag. Try <code>#php</code> or <code>#updates</code>.
+    <?php else: ?>
+      Find users or posts. Try "@username", a keyword, or switch to hashtag-only search.
+    <?php endif; ?>
+  </p>
+
+  <div class="feedSwitch" aria-label="Search filter">
+    <a
+      class="feedSwitch__item<?= $searchFilter === 'all' ? ' is-active' : '' ?>"
+      href="/search.php?q=<?= urlencode($q) ?>&filter=all"
+      <?= $searchFilter === 'all' ? 'aria-current="page"' : '' ?>>
+      All
+    </a>
+    <a
+      class="feedSwitch__item<?= $searchFilter === 'hashtags' ? ' is-active' : '' ?>"
+      href="/search.php?q=<?= urlencode($q) ?>&filter=hashtags"
+      <?= $searchFilter === 'hashtags' ? 'aria-current="page"' : '' ?>>
+      Hashtags
+    </a>
+  </div>
 </section>
 
-<?php if ($term === '' || mb_strlen($term) < 2): ?>
+<?php if (!$hasValidSearch): ?>
   <div class="card">
     <div class="card__body">
-      Enter at least 2 characters to search.
+      <?php if ($searchFilter === 'hashtags'): ?>
+        Enter a hashtag using letters, numbers, or underscore. Examples: <code>#php</code>, <code>#release_notes</code>.
+      <?php else: ?>
+        Enter at least 2 characters to search.
+      <?php endif; ?>
     </div>
   </div>
 <?php else: ?>
 
-  <section class="card">
-    <div class="card__body">
-      <h2 class="h2">Users</h2>
-      <?php if (!$users): ?>
-        <div class="muted">No matching users.</div>
-      <?php else: ?>
-        <ul class="list clean">
-          <?php foreach ($users as $u): ?>
-            <li>
-              <a href="/profile.php?u=<?= trux_e((string)$u['username']) ?>">@<?= trux_e((string)$u['username']) ?></a>
-              <span class="muted">&bull; joined</span>
-              <span
-                class="muted"
-                title="<?= trux_e(trux_format_exact_time((string)$u['created_at'])) ?>"
-                data-time-ago="1"
-                data-time-source="<?= trux_e((string)$u['created_at']) ?>">
-                <?= trux_e(trux_time_ago((string)$u['created_at'])) ?>
-              </span>
-            </li>
-          <?php endforeach; ?>
-        </ul>
-      <?php endif; ?>
-    </div>
-  </section>
+  <?php if ($searchFilter !== 'hashtags'): ?>
+    <section class="card">
+      <div class="card__body">
+        <h2 class="h2">Users</h2>
+        <?php if (!$users): ?>
+          <div class="muted">No matching users.</div>
+        <?php else: ?>
+          <ul class="list clean">
+            <?php foreach ($users as $u): ?>
+              <li>
+                <a href="/profile.php?u=<?= trux_e((string)$u['username']) ?>">@<?= trux_e((string)$u['username']) ?></a>
+                <span class="muted">&bull; joined</span>
+                <span
+                  class="muted"
+                  title="<?= trux_e(trux_format_exact_time((string)$u['created_at'])) ?>"
+                  data-time-ago="1"
+                  data-time-source="<?= trux_e((string)$u['created_at']) ?>">
+                  <?= trux_e(trux_time_ago((string)$u['created_at'])) ?>
+                </span>
+              </li>
+            <?php endforeach; ?>
+          </ul>
+        <?php endif; ?>
+      </div>
+    </section>
+  <?php endif; ?>
 
   <section class="feed">
     <div class="card">
       <div class="card__body">
-        <h2 class="h2">Posts</h2>
+        <h2 class="h2">
+          <?php if ($searchFilter === 'hashtags'): ?>
+            Posts tagged #<?= trux_e($hashtag) ?>
+          <?php else: ?>
+            Posts
+          <?php endif; ?>
+        </h2>
         <?php if (!$posts): ?>
-          <div class="muted">No matching posts.</div>
+          <div class="muted">
+            <?php if ($searchFilter === 'hashtags'): ?>
+              No posts found for #<?= trux_e($hashtag) ?>.
+            <?php else: ?>
+              No matching posts.
+            <?php endif; ?>
+          </div>
         <?php endif; ?>
       </div>
     </div>
@@ -128,7 +182,7 @@ require_once __DIR__ . '/_header.php';
             <?php endif; ?>
           </div>
 
-          <div class="post__body"><?= nl2br(trux_e((string)$p['body'])) ?></div>
+          <div class="post__body"><?= trux_render_post_body((string)$p['body']) ?></div>
 
           <?php if (!empty($p['image_path'])): ?>
             <div class="post__image">
@@ -148,7 +202,11 @@ require_once __DIR__ . '/_header.php';
 
     <?php if ($nextBefore): ?>
       <div class="pager">
-        <a class="btn" href="/search.php?q=<?= urlencode($q) ?>&before=<?= (int)$nextBefore ?>">Load more</a>
+        <a
+          class="btn"
+          href="/search.php?q=<?= urlencode($q) ?>&filter=<?= urlencode($searchFilter) ?>&before=<?= (int)$nextBefore ?>">
+          Load more
+        </a>
       </div>
     <?php endif; ?>
   </section>

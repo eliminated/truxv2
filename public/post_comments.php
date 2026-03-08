@@ -41,6 +41,7 @@ foreach ($comments as $c) {
         'reply_to_username' => isset($c['reply_to_username']) ? (string)$c['reply_to_username'] : '',
         'username' => (string)$c['username'],
         'body' => (string)$c['body'],
+        'body_html' => trux_render_comment_body((string)$c['body']),
         'is_owner' => $viewerId > 0 && $viewerId === (int)$c['user_id'],
         'created_at' => (string)$c['created_at'],
         'time_ago' => trux_time_ago((string)$c['created_at']),

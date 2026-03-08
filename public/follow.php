@@ -63,9 +63,11 @@ try {
 
     if ($action === 'follow') {
         trux_follow((int)$me['id'], $targetId);
+        trux_notify_follow($targetId, (int)$me['id']);
         trux_flash_set('success', 'Now following @' . $targetUsername . '.');
     } else {
         trux_unfollow((int)$me['id'], $targetId);
+        trux_remove_follow_notification($targetId, (int)$me['id']);
         trux_flash_set('success', 'Unfollowed @' . $targetUsername . '.');
     }
 

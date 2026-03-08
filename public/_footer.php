@@ -35,7 +35,7 @@ declare(strict_types=1);
             </div>
             <label class="field">
               <span>Add a comment</span>
-              <textarea name="body" rows="3" maxlength="1000" required placeholder="Write your comment..."></textarea>
+              <textarea name="body" rows="3" maxlength="1000" required placeholder="Write your comment..." data-mention-input="1"></textarea>
             </label>
             <div class="row">
               <button class="btn btn--small" type="submit">Comment</button>

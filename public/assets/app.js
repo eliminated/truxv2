@@ -22,6 +22,249 @@
 })();
 
 (() => {
+  const INPUT_SELECTOR = "textarea[data-mention-input='1']";
+
+  const esc = (value) =>
+    String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#39;");
+
+  const autosize = (textarea) => {
+    textarea.style.height = "auto";
+    textarea.style.height = Math.min(textarea.scrollHeight, 420) + "px";
+  };
+
+  const extractMentionContext = (textarea) => {
+    if (!(textarea instanceof HTMLTextAreaElement)) return null;
+    if (textarea.selectionStart !== textarea.selectionEnd) return null;
+
+    const caret = textarea.selectionStart ?? 0;
+    const before = textarea.value.slice(0, caret);
+    const match = before.match(/(?:^|\s)@([A-Za-z0-9_]*)$/);
+    if (!match) return null;
+
+    const query = String(match[1] || "");
+    if (!query || !/^[A-Za-z0-9_]{1,32}$/.test(query)) {
+      return null;
+    }
+
+    const atIndex = before.lastIndexOf("@");
+    if (atIndex < 0) return null;
+
+    return {
+      query,
+      start: atIndex,
+      end: caret,
+    };
+  };
+
+  const initMentionInput = (textarea) => {
+    if (!(textarea instanceof HTMLTextAreaElement)) return;
+    if (textarea.dataset.mentionReady === "1") return;
+    textarea.dataset.mentionReady = "1";
+
+    const host = textarea.closest(".field") || textarea.parentElement;
+    if (!(host instanceof HTMLElement)) return;
+
+    const panel = document.createElement("div");
+    panel.className = "mentionSuggest";
+    panel.hidden = true;
+    panel.setAttribute("data-mention-panel", "1");
+    host.insertBefore(panel, textarea);
+
+    const state = {
+      items: [],
+      activeIndex: -1,
+      context: null,
+      requestId: 0,
+      abortController: null,
+    };
+
+    const hide = () => {
+      panel.hidden = true;
+      panel.innerHTML = "";
+      state.items = [];
+      state.activeIndex = -1;
+      state.context = null;
+    };
+
+    const applySelection = (username) => {
+      if (!state.context) return;
+      const replacement = `@${username} `;
+      const value = textarea.value;
+      textarea.value =
+        value.slice(0, state.context.start) +
+        replacement +
+        value.slice(state.context.end);
+
+      const nextCaret = state.context.start + replacement.length;
+      textarea.focus();
+      textarea.setSelectionRange(nextCaret, nextCaret);
+      autosize(textarea);
+      hide();
+    };
+
+    const render = (items, query, preserveIndex = false) => {
+      state.items = Array.isArray(items) ? items : [];
+      if (state.items.length === 0) {
+        state.activeIndex = -1;
+      } else if (!preserveIndex || state.activeIndex < 0 || state.activeIndex >= state.items.length) {
+        state.activeIndex = 0;
+      }
+
+      if (query === "") {
+        hide();
+        return;
+      }
+
+      panel.hidden = false;
+
+      if (state.items.length === 0) {
+        panel.innerHTML = '<div class="mentionSuggest__empty">No matching users.</div>';
+        return;
+      }
+
+      panel.innerHTML = `
+        <div class="mentionSuggest__label">Mention someone</div>
+        <div class="mentionSuggest__list">
+          ${state.items
+            .map(
+              (item, index) => `
+                <button
+                  class="mentionSuggest__item${index === state.activeIndex ? " is-active" : ""}"
+                  type="button"
+                  data-mention-option="1"
+                  data-mention-index="${index}"
+                  data-mention-username="${esc(item.username || "")}">
+                  <span class="mentionSuggest__name">@${esc(item.username || "")}</span>
+                </button>
+              `
+            )
+            .join("")}
+        </div>
+      `;
+    };
+
+    const fetchSuggestions = async () => {
+      const context = extractMentionContext(textarea);
+      state.context = context;
+      if (!context) {
+        hide();
+        return;
+      }
+
+      state.requestId += 1;
+      const currentRequestId = state.requestId;
+      if (state.abortController instanceof AbortController) {
+        state.abortController.abort();
+      }
+
+      const controller = new AbortController();
+      state.abortController = controller;
+
+      try {
+        const res = await fetch(
+          `/mention_suggestions.php?q=${encodeURIComponent(context.query)}`,
+          {
+            headers: { Accept: "application/json" },
+            signal: controller.signal,
+          }
+        );
+        const data = await res.json();
+        if (currentRequestId !== state.requestId) return;
+        if (!res.ok || !data.ok) {
+          hide();
+          return;
+        }
+
+        render(Array.isArray(data.users) ? data.users : [], context.query);
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") {
+          return;
+        }
+        hide();
+      }
+    };
+
+    textarea.addEventListener("input", () => {
+      void fetchSuggestions();
+    });
+
+    textarea.addEventListener("click", () => {
+      void fetchSuggestions();
+    });
+
+    textarea.addEventListener("focus", () => {
+      void fetchSuggestions();
+    });
+
+    textarea.addEventListener("keyup", (e) => {
+      if (["ArrowUp", "ArrowDown", "Enter", "Tab", "Escape"].includes(e.key)) {
+        return;
+      }
+      void fetchSuggestions();
+    });
+
+    textarea.addEventListener("keydown", (e) => {
+      if (panel.hidden || state.items.length === 0) return;
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        state.activeIndex = (state.activeIndex + 1) % state.items.length;
+        render(state.items, state.context?.query || "", true);
+        return;
+      }
+
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        state.activeIndex =
+          (state.activeIndex - 1 + state.items.length) % state.items.length;
+        render(state.items, state.context?.query || "", true);
+        return;
+      }
+
+      if (e.key === "Enter" || e.key === "Tab") {
+        if (state.activeIndex < 0 || !state.items[state.activeIndex]) return;
+        e.preventDefault();
+        applySelection(String(state.items[state.activeIndex].username || ""));
+        return;
+      }
+
+      if (e.key === "Escape") {
+        e.preventDefault();
+        hide();
+      }
+    });
+
+    panel.addEventListener("mousedown", (e) => {
+      e.preventDefault();
+    });
+
+    panel.addEventListener("click", (e) => {
+      const option = e.target.closest("[data-mention-option='1']");
+      if (!(option instanceof HTMLButtonElement)) return;
+      const username = option.getAttribute("data-mention-username") || "";
+      if (username) {
+        applySelection(username);
+      }
+    });
+
+    document.addEventListener("click", (e) => {
+      if (!(e.target instanceof Node)) return;
+      if (e.target === textarea || panel.contains(e.target)) return;
+      hide();
+    });
+  };
+
+  document.querySelectorAll(INPUT_SELECTOR).forEach((textarea) => {
+    initMentionInput(textarea);
+  });
+})();
+
+(() => {
   const TIME_SELECTOR = "[data-time-ago='1'][data-time-source]";
 
   const parseTimeSource = (raw) => {
@@ -208,6 +451,12 @@
   };
 
   const bodyToHtml = (value) => esc(value).replaceAll("\n", "<br>");
+  const getPostBodyHtml = (bodyHtml, fallbackBody) => {
+    if (typeof bodyHtml === "string" && bodyHtml !== "") {
+      return bodyHtml;
+    }
+    return bodyToHtml(fallbackBody || "");
+  };
   const commentScoreClass = (score) =>
     score < 0 ? " is-negative" : score > 0 ? " is-positive" : "";
 
@@ -292,11 +541,11 @@
     });
   };
 
-  const updatePostBodies = (postId, body) => {
+  const updatePostBodies = (postId, bodyHtml, fallbackBody = "") => {
     document
       .querySelectorAll(`.post[data-post-id="${postId}"] .post__body`)
       .forEach((node) => {
-        node.innerHTML = bodyToHtml(body);
+        node.innerHTML = getPostBodyHtml(bodyHtml, fallbackBody);
       });
   };
 
@@ -439,6 +688,10 @@
     const item = document.createElement("article");
     item.className = "commentDock__item";
     item.dataset.commentId = String(c.id);
+    const commentBodyHtml =
+      typeof c.body_html === "string" && c.body_html !== ""
+        ? c.body_html
+        : bodyToHtml(c.body || "");
     item.innerHTML = `
       <div class="commentDock__meta">
         <div class="commentDock__author">
@@ -459,7 +712,7 @@
           ${c.is_owner ? ownerMenuMarkup("comment", c.id) : ""}
         </div>
       </div>
-      <div class="commentDock__body">${bodyToHtml(c.body)}</div>
+      <div class="commentDock__body">${commentBodyHtml}</div>
       <div class="commentDock__actions">
         <div class="commentDock__voteGroup" aria-label="Comment votes">
           <button
@@ -673,7 +926,11 @@
         }
 
         if (isPost) {
-          updatePostBodies(entityId, String(data.body || trimmedBody));
+          updatePostBodies(
+            entityId,
+            String(data.body_html || ""),
+            String(data.body || trimmedBody)
+          );
           setPostEditedState(
             entityId,
             String(data.edited_at || ""),

@@ -8,6 +8,7 @@ $success = trux_flash_get('success');
 
 $q = trux_str_param('q', '');
 $bodyClasses = ['appearance--classic', 'motion--reduced'];
+$unreadNotificationCount = $user ? trux_count_unread_notifications((int)$user['id']) : 0;
 ?>
 <!doctype html>
 <html lang="en">
@@ -67,10 +68,14 @@ $bodyClasses = ['appearance--classic', 'motion--reduced'];
                 Profile
                 <span class="muted">@<?= trux_e($user['username']) ?></span>
               </a>
-              <span class="menu__item menu__item--placeholder" role="menuitem" aria-disabled="true">
+              <a class="menu__item" role="menuitem" href="/notifications.php">
                 Notifications
-                <span class="muted">Coming soon</span>
-              </span>
+                <?php if ($unreadNotificationCount > 0): ?>
+                  <span class="menuBadge"><?= (int)$unreadNotificationCount ?></span>
+                <?php else: ?>
+                  <span class="muted">All caught up</span>
+                <?php endif; ?>
+              </a>
               <a class="menu__item" role="menuitem" href="/settings.php">
                 Settings
                 <span class="muted">Account</span>

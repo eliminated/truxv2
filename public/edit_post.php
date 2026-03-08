@@ -81,6 +81,7 @@ if (!$ok) {
             'ok' => true,
             'post_id' => $postId,
             'body' => $text,
+            'body_html' => trux_render_post_body($text),
             'edited_at' => isset($post['edited_at']) && $post['edited_at'] !== null ? (string)$post['edited_at'] : '',
             'edited_time_ago' => !empty($post['edited_at']) ? trux_time_ago((string)$post['edited_at']) : '',
             'edited_exact_time' => !empty($post['edited_at']) ? trux_format_exact_time((string)$post['edited_at']) : '',

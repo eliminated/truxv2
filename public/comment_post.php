@@ -96,8 +96,8 @@ if (!trux_post_exists($postId)) {
 }
 
 $me = trux_current_user();
-$ok = $me ? trux_add_post_comment($postId, (int)$me['id'], $text, $parentId, $replyToUserId) : false;
-if (!$ok) {
+$commentId = $me ? trux_add_post_comment($postId, (int)$me['id'], $text, $parentId, $replyToUserId) : 0;
+if ($commentId <= 0) {
     if ($isJson) {
         header('Content-Type: application/json; charset=utf-8');
         http_response_code(500);
@@ -113,6 +113,7 @@ if (!$ok) {
         echo json_encode([
             'ok' => true,
             'post_id' => $postId,
+            'comment_id' => $commentId,
             'comments_count' => (int)$s['comments'],
         ]);
         exit;

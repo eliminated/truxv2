@@ -79,6 +79,12 @@ if (!$comment) {
 $viewerVote = trux_set_comment_vote($commentId, (int)$me['id'], $vote);
 $stats = trux_fetch_comment_vote_stats([$commentId], (int)$me['id']);
 $commentStats = $stats[$commentId] ?? ['score' => 0, 'viewer_vote' => $viewerVote];
+$recipientId = (int)($comment['user_id'] ?? 0);
+if ((int)$commentStats['viewer_vote'] === 1) {
+    trux_notify_comment_vote($recipientId, (int)$me['id'], (int)$comment['post_id'], $commentId);
+} else {
+    trux_remove_comment_vote_notification($recipientId, (int)$me['id'], (int)$comment['post_id'], $commentId);
+}
 
 if ($isJson) {
     header('Content-Type: application/json; charset=utf-8');

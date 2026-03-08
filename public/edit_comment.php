@@ -94,6 +94,7 @@ if (!$ok) {
             'comment_id' => $commentId,
             'post_id' => (int)$comment['post_id'],
             'body' => $text,
+            'body_html' => trux_render_comment_body($text),
             'edited_at' => isset($updatedComment['edited_at']) && $updatedComment['edited_at'] !== null ? (string)$updatedComment['edited_at'] : '',
             'edited_time_ago' => !empty($updatedComment['edited_at']) ? trux_time_ago((string)$updatedComment['edited_at']) : '',
             'edited_exact_time' => !empty($updatedComment['edited_at']) ? trux_format_exact_time((string)$updatedComment['edited_at']) : '',

@@ -9,6 +9,12 @@ CREATE TABLE IF NOT EXISTS users (
   username VARCHAR(32) NOT NULL,
   email VARCHAR(255) NOT NULL,
   password_hash VARCHAR(255) NOT NULL,
+  notify_post_likes TINYINT(1) NOT NULL DEFAULT 1,
+  notify_comment_votes TINYINT(1) NOT NULL DEFAULT 1,
+  notify_mentions TINYINT(1) NOT NULL DEFAULT 1,
+  notify_follows TINYINT(1) NOT NULL DEFAULT 1,
+  notify_post_comments TINYINT(1) NOT NULL DEFAULT 1,
+  notify_replies TINYINT(1) NOT NULL DEFAULT 1,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY uq_users_username (username),
@@ -44,6 +50,17 @@ CREATE TABLE IF NOT EXISTS follows (
     ON DELETE CASCADE
     ON UPDATE CASCADE,
   CONSTRAINT chk_follows_not_self CHECK (follower_id <> following_id)
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS post_hashtags (
+  hashtag VARCHAR(50) NOT NULL,
+  post_id BIGINT UNSIGNED NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (hashtag, post_id),
+  KEY idx_post_hashtags_post (post_id),
+  CONSTRAINT fk_post_hashtags_post FOREIGN KEY (post_id) REFERENCES posts(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
 ) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS post_likes (
@@ -113,6 +130,36 @@ CREATE TABLE IF NOT EXISTS post_shares (
     ON DELETE CASCADE
     ON UPDATE CASCADE,
   CONSTRAINT fk_post_shares_user FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS notifications (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  recipient_user_id BIGINT UNSIGNED NOT NULL,
+  actor_user_id BIGINT UNSIGNED NOT NULL,
+  type VARCHAR(32) NOT NULL,
+  event_key VARCHAR(120) NOT NULL,
+  post_id BIGINT UNSIGNED NULL,
+  comment_id BIGINT UNSIGNED NULL,
+  read_at DATETIME NULL DEFAULT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  UNIQUE KEY uq_notifications_event (recipient_user_id, event_key),
+  KEY idx_notifications_recipient (recipient_user_id, read_at, id),
+  KEY idx_notifications_actor (actor_user_id),
+  KEY idx_notifications_post (post_id),
+  KEY idx_notifications_comment (comment_id),
+  CONSTRAINT fk_notifications_recipient FOREIGN KEY (recipient_user_id) REFERENCES users(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_notifications_actor FOREIGN KEY (actor_user_id) REFERENCES users(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_notifications_post FOREIGN KEY (post_id) REFERENCES posts(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_notifications_comment FOREIGN KEY (comment_id) REFERENCES post_comments(id)
     ON DELETE CASCADE
     ON UPDATE CASCADE
 ) ENGINE=InnoDB;

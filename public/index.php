@@ -4,15 +4,29 @@ require_once __DIR__ . '/_bootstrap.php';
 
 $before = trux_int_param('before', 0);
 $limit = 20;
+$requestedFeed = trux_str_param('feed', 'all');
+$feedMode = $requestedFeed === 'following' ? 'following' : 'all';
 
-$posts = trux_fetch_feed($limit, $before > 0 ? $before : null);
+$me = trux_current_user();
+if (!$me && $feedMode === 'following') {
+    $feedMode = 'all';
+}
+
+$followingCount = 0;
+if ($feedMode === 'following' && $me) {
+    $followCounts = trux_follow_counts((int)$me['id']);
+    $followingCount = (int)($followCounts['following'] ?? 0);
+}
+
+$posts = $feedMode === 'following' && $me
+    ? trux_fetch_following_feed((int)$me['id'], $limit, $before > 0 ? $before : null)
+    : trux_fetch_feed($limit, $before > 0 ? $before : null);
 $nextBefore = null;
 if (count($posts) > 0) {
     $last = $posts[count($posts) - 1];
     $nextBefore = (int)$last['id'];
 }
 
-$me = trux_current_user();
 $interactionMap = trux_fetch_post_interactions(
     trux_collect_post_ids($posts),
     $me ? (int)$me['id'] : null
@@ -24,18 +38,50 @@ require_once __DIR__ . '/_header.php';
 <section class="hero">
   <h1>TruX Feed</h1>
   <p class="muted">
-    <?php if (trux_is_logged_in()): ?>
+    <?php if ($feedMode === 'following' && $me): ?>
+      Latest posts from people you follow, plus your own posts.
+    <?php elseif (trux_is_logged_in()): ?>
       Share something. Keep it real.
     <?php else: ?>
       Log in to post. You can still browse the feed.
     <?php endif; ?>
   </p>
+
+  <div class="feedSwitch" aria-label="Feed mode">
+    <a
+      class="feedSwitch__item<?= $feedMode === 'all' ? ' is-active' : '' ?>"
+      href="/"
+      <?= $feedMode === 'all' ? 'aria-current="page"' : '' ?>>
+      For You
+    </a>
+
+    <?php if ($me): ?>
+      <a
+        class="feedSwitch__item<?= $feedMode === 'following' ? ' is-active' : '' ?>"
+        href="/?feed=following"
+        <?= $feedMode === 'following' ? 'aria-current="page"' : '' ?>>
+        Following
+      </a>
+    <?php else: ?>
+      <a class="feedSwitch__item is-disabled" href="/login.php">
+        Following
+      </a>
+    <?php endif; ?>
+  </div>
 </section>
 
 <section class="feed">
   <?php if (!$posts): ?>
     <div class="card">
-      <div class="card__body">No posts yet. Be the first to post.</div>
+      <div class="card__body">
+        <?php if ($feedMode === 'following' && $me && $followingCount === 0): ?>
+          You are not following anyone yet. Find people to follow from search or browse the global feed first.
+        <?php elseif ($feedMode === 'following' && $me): ?>
+          No posts from people you follow yet. Check back later or switch to the global feed.
+        <?php else: ?>
+          No posts yet. Be the first to post.
+        <?php endif; ?>
+      </div>
     </div>
   <?php endif; ?>
 
@@ -86,7 +132,7 @@ require_once __DIR__ . '/_header.php';
           <?php endif; ?>
         </div>
 
-        <div class="post__body"><?= nl2br(trux_e((string)$p['body'])) ?></div>
+        <div class="post__body"><?= trux_render_post_body((string)$p['body']) ?></div>
 
         <?php if (!empty($p['image_path'])): ?>
           <div class="post__image">
@@ -106,7 +152,13 @@ require_once __DIR__ . '/_header.php';
 
   <?php if ($nextBefore): ?>
     <div class="pager">
-      <a class="btn" href="/?before=<?= (int)$nextBefore ?>">Load more</a>
+      <a
+        class="btn"
+        href="<?= $feedMode === 'following'
+          ? '/?feed=following&before=' . (int)$nextBefore
+          : '/?before=' . (int)$nextBefore ?>">
+        Load more
+      </a>
     </div>
   <?php endif; ?>
 </section>

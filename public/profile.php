@@ -177,7 +177,7 @@ require_once __DIR__ . '/_header.php';
               <?php endif; ?>
             </div>
 
-            <div class="post__body"><?= nl2br(trux_e((string)$p['body'])) ?></div>
+            <div class="post__body"><?= trux_render_post_body((string)$p['body']) ?></div>
 
             <?php if (!empty($p['image_path'])): ?>
               <div class="post__image">
