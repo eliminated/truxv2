@@ -27,10 +27,13 @@ if (!trux_post_exists($postId)) {
 $me = trux_current_user();
 $viewerId = $me ? (int)$me['id'] : 0;
 $comments = trux_fetch_post_comments($postId, 120);
+$voteStats = trux_fetch_comment_vote_stats(array_map(static fn(array $c): int => (int)$c['id'], $comments), $viewerId);
 $payload = [];
 foreach ($comments as $c) {
+    $commentId = (int)$c['id'];
+    $vote = $voteStats[$commentId] ?? ['score' => 0, 'viewer_vote' => 0];
     $payload[] = [
-        'id' => (int)$c['id'],
+        'id' => $commentId,
         'post_id' => (int)$c['post_id'],
         'parent_comment_id' => isset($c['parent_comment_id']) && $c['parent_comment_id'] !== null ? (int)$c['parent_comment_id'] : null,
         'user_id' => (int)$c['user_id'],
@@ -45,6 +48,8 @@ foreach ($comments as $c) {
         'edited_at' => isset($c['edited_at']) && $c['edited_at'] !== null ? (string)$c['edited_at'] : '',
         'edited_time_ago' => !empty($c['edited_at']) ? trux_time_ago((string)$c['edited_at']) : '',
         'edited_exact_time' => !empty($c['edited_at']) ? trux_format_exact_time((string)$c['edited_at']) : '',
+        'score' => (int)$vote['score'],
+        'viewer_vote' => (int)$vote['viewer_vote'],
     ];
 }
 

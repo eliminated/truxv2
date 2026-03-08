@@ -282,6 +282,100 @@ function trux_delete_comment_if_owner(int $commentId, int $ownerUserId): ?int {
     return $postId;
 }
 
+function trux_set_comment_vote(int $commentId, int $userId, int $vote): int {
+    if ($commentId <= 0 || $userId <= 0 || !in_array($vote, [-1, 1], true)) {
+        return 0;
+    }
+
+    $db = trux_db();
+
+    try {
+        $checkComment = $db->prepare('SELECT 1 FROM post_comments WHERE id = ? LIMIT 1');
+        $checkComment->execute([$commentId]);
+        if (!(bool)$checkComment->fetchColumn()) {
+            return 0;
+        }
+
+        $checkVote = $db->prepare('SELECT vote FROM post_comment_votes WHERE comment_id = ? AND user_id = ? LIMIT 1');
+        $checkVote->execute([$commentId, $userId]);
+        $existing = $checkVote->fetchColumn();
+
+        if ($existing !== false) {
+            $existingVote = (int)$existing;
+            if ($existingVote === $vote) {
+                $del = $db->prepare('DELETE FROM post_comment_votes WHERE comment_id = ? AND user_id = ?');
+                $del->execute([$commentId, $userId]);
+                return 0;
+            }
+
+            $upd = $db->prepare('UPDATE post_comment_votes SET vote = ? WHERE comment_id = ? AND user_id = ?');
+            $upd->execute([$vote, $commentId, $userId]);
+            return $vote;
+        }
+
+        $ins = $db->prepare('INSERT INTO post_comment_votes (comment_id, user_id, vote) VALUES (?, ?, ?)');
+        $ins->execute([$commentId, $userId, $vote]);
+        return $vote;
+    } catch (PDOException) {
+        return 0;
+    }
+}
+
+function trux_fetch_comment_vote_stats(array $commentIds, ?int $viewerId): array {
+    $ids = [];
+    foreach ($commentIds as $id) {
+        $n = (int)$id;
+        if ($n > 0) $ids[] = $n;
+    }
+    $ids = array_values(array_unique($ids));
+    if (!$ids) return [];
+
+    $out = [];
+    foreach ($ids as $id) {
+        $out[$id] = [
+            'score' => 0,
+            'viewer_vote' => 0,
+        ];
+    }
+
+    $db = trux_db();
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+    try {
+        $scoreStmt = $db->prepare("SELECT comment_id, COALESCE(SUM(vote), 0) AS score FROM post_comment_votes WHERE comment_id IN ($placeholders) GROUP BY comment_id");
+        foreach ($ids as $i => $id) {
+            $scoreStmt->bindValue($i + 1, $id, PDO::PARAM_INT);
+        }
+        $scoreStmt->execute();
+        foreach ($scoreStmt->fetchAll() as $row) {
+            $cid = (int)$row['comment_id'];
+            if (isset($out[$cid])) {
+                $out[$cid]['score'] = (int)$row['score'];
+            }
+        }
+
+        $viewer = (int)($viewerId ?? 0);
+        if ($viewer > 0) {
+            $voteStmt = $db->prepare("SELECT comment_id, vote FROM post_comment_votes WHERE user_id = ? AND comment_id IN ($placeholders)");
+            $voteStmt->bindValue(1, $viewer, PDO::PARAM_INT);
+            foreach ($ids as $i => $id) {
+                $voteStmt->bindValue($i + 2, $id, PDO::PARAM_INT);
+            }
+            $voteStmt->execute();
+            foreach ($voteStmt->fetchAll() as $row) {
+                $cid = (int)$row['comment_id'];
+                if (isset($out[$cid])) {
+                    $out[$cid]['viewer_vote'] = (int)$row['vote'];
+                }
+            }
+        }
+    } catch (PDOException) {
+        return $out;
+    }
+
+    return $out;
+}
+
 function trux_fetch_post_comments(int $postId, int $limit = 80): array {
     if ($postId <= 0) return [];
     $limit = max(1, min(200, $limit));

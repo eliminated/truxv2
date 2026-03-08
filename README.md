@@ -7,8 +7,8 @@ TruX is a lightweight PHP + MySQL/MariaDB social feed with:
 - Owner-only action menus for posts, comments, and replies
 - Edit/delete for authored posts, comments, and replies
 - Basic search (users + post text)
-- Post interactions: likes, comments, replies, shares
-- AJAX interactions for post create, like, share, comment, and edit flows
+- Post interactions: likes, comments, replies, comment votes, shares
+- AJAX interactions for post create, like, share, comment, comment vote, and edit flows
 - Split comment dock (post preview + comments side-by-side)
 - Edited markers for edited posts/comments/replies
 - Settings page placeholder for future account/app options
@@ -54,6 +54,7 @@ Apply any migrations your database has not received yet:
 - `database/migrations/20260307_add_post_interactions.sql`
 - `database/migrations/20260307_add_comment_replies.sql`
 - `database/migrations/20260307_add_edited_timestamps.sql`
+- `database/migrations/20260308_add_comment_votes.sql`
 - `database/migrations/20260307_drop_user_ui_preferences.sql`
 
 If you need the edited timestamp columns, run:
@@ -80,7 +81,7 @@ Implemented:
 - Pagination (feed/profile/search)
 - Owner-only edit/delete action menus for posts, comments, replies
 - Search (users + post text)
-- Likes (toggle), comments, replies, shares (toggle)
+- Likes (toggle), comments, replies, comment votes, shares (toggle)
 - AJAX create/edit/interaction flows without full page reloads
 - Side-by-side comments popup on post cards
 - Live-updating created/edited relative timestamps

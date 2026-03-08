@@ -1,4 +1,41 @@
 # Omincus Updates (Beta Versions)
+## Omnicus v0.3.3 - Comment Vote System
+
+**Branch**: Beta
+**Date**: 2026-03-08
+
+***
+
+### Added
+
+- Upvote and downvote controls for comments and replies
+- SVG-based vote icons for comment voting UI
+- Negative score display when downvotes exceed upvotes
+- New vote endpoint: `public/vote_comment.php`
+- New migration: `database/migrations/20260308_add_comment_votes.sql`
+
+***
+
+### Changed
+
+- Comment API responses now include per-comment vote score and the current viewer's vote state
+- Comment dock actions now support live AJAX vote toggles without page reload
+- Comment and reply action rows now show vote controls alongside reply actions
+
+***
+
+### Technical
+
+- Added `post_comment_votes` table to track per-user votes on comments and replies
+- Added comment vote helpers in `src/posts.php` for vote toggling and vote aggregate retrieval
+- Score calculation now uses net vote total so values can go below zero when downvotes outnumber upvotes
+
+***
+
+### Notes
+
+- This release extends interaction parity from posts to comment threads while keeping the reply dock fully live and refresh-free.
+
 ## Omnicus v0.3.2 - Static UI Baseline & Settings Cleanup
 
 **Branch**: Beta

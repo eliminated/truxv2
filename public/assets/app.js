@@ -208,6 +208,8 @@
   };
 
   const bodyToHtml = (value) => esc(value).replaceAll("\n", "<br>");
+  const commentScoreClass = (score) =>
+    score < 0 ? " is-negative" : score > 0 ? " is-positive" : "";
 
   const editedMetaMarkup = (editedAt, editedTimeAgo, editedExactTime) => {
     if (!editedAt) return "";
@@ -362,6 +364,25 @@
     });
   };
 
+  const setCommentVoteState = (commentId, score, viewerVote) => {
+    document
+      .querySelectorAll(`[data-comment-score-for="${commentId}"]`)
+      .forEach((node) => {
+        if (!(node instanceof HTMLElement)) return;
+        node.textContent = String(score);
+        node.classList.toggle("is-positive", score > 0);
+        node.classList.toggle("is-negative", score < 0);
+      });
+
+    document
+      .querySelectorAll(`[data-comment-vote="1"][data-comment-id="${commentId}"]`)
+      .forEach((node) => {
+        if (!(node instanceof HTMLButtonElement)) return;
+        const voteValue = Number(node.getAttribute("data-vote-value") || "0");
+        node.classList.toggle("is-active", voteValue === viewerVote);
+      });
+  };
+
   const setReplyState = (commentId, userId, username) => {
     if (!(form instanceof HTMLFormElement)) return;
     const textarea = form.querySelector("textarea[name='body']");
@@ -440,6 +461,31 @@
       </div>
       <div class="commentDock__body">${bodyToHtml(c.body)}</div>
       <div class="commentDock__actions">
+        <div class="commentDock__voteGroup" aria-label="Comment votes">
+          <button
+            type="button"
+            class="commentDock__voteBtn commentDock__voteBtn--up${c.viewer_vote === 1 ? " is-active" : ""}"
+            data-comment-vote="1"
+            data-comment-id="${c.id}"
+            data-vote-value="1"
+            aria-label="Upvote comment">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M12 5 5.5 13h4.1v6h4.8v-6h4.1L12 5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+            </svg>
+          </button>
+          <span class="commentDock__score${commentScoreClass(Number(c.score || 0))}" data-comment-score-for="${c.id}">${Number(c.score || 0)}</span>
+          <button
+            type="button"
+            class="commentDock__voteBtn commentDock__voteBtn--down${c.viewer_vote === -1 ? " is-active" : ""}"
+            data-comment-vote="1"
+            data-comment-id="${c.id}"
+            data-vote-value="-1"
+            aria-label="Downvote comment">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="m12 19 6.5-8h-4.1V5H9.6v6H5.5L12 19Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+            </svg>
+          </button>
+        </div>
         <button
           type="button"
           class="commentDock__replyBtn"
@@ -721,6 +767,54 @@
       const username = replyBtn.getAttribute("data-comment-username") || "";
       if (commentId > 0 && userId > 0 && username !== "") {
         setReplyState(commentId, userId, username);
+      }
+      return;
+    }
+
+    const voteBtn = e.target.closest("[data-comment-vote='1']");
+    if (voteBtn instanceof HTMLButtonElement) {
+      e.preventDefault();
+      const commentId = Number(voteBtn.getAttribute("data-comment-id") || "0");
+      const voteValue = Number(voteBtn.getAttribute("data-vote-value") || "0");
+      if (!commentId || ![-1, 1].includes(voteValue)) return;
+
+      const csrf = getCsrfToken();
+      if (!csrf) {
+        window.location.href = "/login.php";
+        return;
+      }
+
+      const relatedButtons = document.querySelectorAll(`[data-comment-vote="1"][data-comment-id="${commentId}"]`);
+      relatedButtons.forEach((node) => {
+        if (node instanceof HTMLButtonElement) node.disabled = true;
+      });
+
+      try {
+        const res = await fetch("/vote_comment.php?format=json", {
+          method: "POST",
+          headers: { Accept: "application/json" },
+          body: new URLSearchParams({
+            _csrf: csrf,
+            id: String(commentId),
+            vote: String(voteValue),
+          }),
+        });
+        const data = await readJson(res);
+        if (res.status === 401 && data.login_url) {
+          window.location.href = String(data.login_url);
+          return;
+        }
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Could not vote on comment.");
+        }
+
+        setCommentVoteState(commentId, Number(data.score || 0), Number(data.viewer_vote || 0));
+      } catch (err) {
+        window.alert(err instanceof Error ? err.message : "Could not vote on comment.");
+      } finally {
+        relatedButtons.forEach((node) => {
+          if (node instanceof HTMLButtonElement) node.disabled = false;
+        });
       }
       return;
     }

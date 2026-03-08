@@ -1788,6 +1788,67 @@ body.commentDock-open {
   gap: 10px;
 }
 
+.commentDock__voteGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.commentDock__voteBtn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid rgba(122, 167, 255, .24);
+  background: rgba(12, 20, 34, .72);
+  color: #b7c8dc;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  transition: border-color .18s ease, background .18s ease, color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+
+.commentDock__voteBtn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.commentDock__voteBtn:hover,
+.commentDock__voteBtn:focus-visible {
+  transform: translateY(-1px);
+  border-color: rgba(116, 219, 255, .62);
+  box-shadow: 0 0 0 3px rgba(92, 211, 255, .14);
+}
+
+.commentDock__voteBtn--up.is-active {
+  color: #7df0a7;
+  border-color: rgba(69, 212, 131, .48);
+  background: rgba(69, 212, 131, .14);
+}
+
+.commentDock__voteBtn--down.is-active {
+  color: #ffb8c8;
+  border-color: rgba(255, 92, 122, .44);
+  background: rgba(255, 92, 122, .14);
+}
+
+.commentDock__score {
+  min-width: 24px;
+  text-align: center;
+  font-size: 13px;
+  font-weight: 800;
+  color: #d8e4f4;
+}
+
+.commentDock__score.is-positive {
+  color: #88e8ad;
+}
+
+.commentDock__score.is-negative {
+  color: #ffb3c5;
+}
+
 .commentDock__replyBtn {
   border: 1px solid rgba(122, 167, 255, .28);
   background: rgba(12, 20, 34, .72);
