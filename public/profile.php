@@ -33,8 +33,10 @@ $interactionMap = trux_fetch_post_interactions(
 $isSelf = $me && (int)$me['id'] === (int)$profileUser['id'];
 $followCounts = trux_follow_counts((int)$profileUser['id']);
 $isFollowing = false;
+$isMuted = false;
 if ($me && !$isSelf) {
     $isFollowing = trux_is_following((int)$me['id'], (int)$profileUser['id']);
+    $isMuted = trux_has_muted_user((int)$me['id'], (int)$profileUser['id']);
 }
 
 $joinedDate = '-';
@@ -103,16 +105,28 @@ require_once __DIR__ . '/_header.php';
             <span class="btn__text">Log in to follow</span>
           </button>
         <?php else: ?>
-          <form class="profileFollowForm" method="post" action="/follow.php">
-            <?= trux_csrf_field() ?>
-            <input type="hidden" name="action" value="<?= $isFollowing ? 'unfollow' : 'follow' ?>">
-            <input type="hidden" name="user_id" value="<?= (int)$profileUser['id'] ?>">
-            <input type="hidden" name="user" value="<?= trux_e((string)$profileUser['username']) ?>">
-            <button class="btn btn--neonFollow<?= $isFollowing ? ' is-following' : '' ?>" type="submit">
-              <span class="btn__icon" aria-hidden="true"><?= $isFollowing ? '&#10003;' : '+' ?></span>
-              <span class="btn__text"><?= $isFollowing ? 'Following' : 'Follow' ?></span>
-            </button>
-          </form>
+          <div class="profileActions">
+            <form class="profileFollowForm" method="post" action="/follow.php">
+              <?= trux_csrf_field() ?>
+              <input type="hidden" name="action" value="<?= $isFollowing ? 'unfollow' : 'follow' ?>">
+              <input type="hidden" name="user_id" value="<?= (int)$profileUser['id'] ?>">
+              <input type="hidden" name="user" value="<?= trux_e((string)$profileUser['username']) ?>">
+              <button class="btn btn--neonFollow<?= $isFollowing ? ' is-following' : '' ?>" type="submit">
+                <span class="btn__icon" aria-hidden="true"><?= $isFollowing ? '&#10003;' : '+' ?></span>
+                <span class="btn__text"><?= $isFollowing ? 'Following' : 'Follow' ?></span>
+              </button>
+            </form>
+
+            <form class="profileMuteForm" method="post" action="/mute_user.php">
+              <?= trux_csrf_field() ?>
+              <input type="hidden" name="action" value="<?= $isMuted ? 'unmute' : 'mute' ?>">
+              <input type="hidden" name="user_id" value="<?= (int)$profileUser['id'] ?>">
+              <input type="hidden" name="user" value="<?= trux_e((string)$profileUser['username']) ?>">
+              <button class="btn btn--small btn--ghost<?= $isMuted ? ' is-active' : '' ?>" type="submit">
+                <?= $isMuted ? 'Muted' : 'Mute' ?>
+              </button>
+            </form>
+          </div>
         <?php endif; ?>
       </div>
     </div>

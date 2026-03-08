@@ -188,6 +188,10 @@ function trux_create_notification(int $recipientUserId, int $actorUserId, string
         return;
     }
 
+    if (trux_has_muted_user($recipientUserId, $actorUserId)) {
+        return;
+    }
+
     $prefKey = trux_notification_pref_for_type($type);
     if ($prefKey !== null) {
         $prefs = trux_fetch_notification_preferences($recipientUserId);
@@ -214,6 +218,24 @@ function trux_create_notification(int $recipientUserId, int $actorUserId, string
         ]);
     } catch (PDOException) {
         // Notifications should not break primary actions if the migration is missing.
+    }
+}
+
+function trux_remove_notifications_from_actor(int $recipientUserId, int $actorUserId): void {
+    if ($recipientUserId <= 0 || $actorUserId <= 0) {
+        return;
+    }
+
+    try {
+        $db = trux_db();
+        $stmt = $db->prepare(
+            'DELETE FROM notifications
+             WHERE recipient_user_id = ?
+               AND actor_user_id = ?'
+        );
+        $stmt->execute([$recipientUserId, $actorUserId]);
+    } catch (PDOException) {
+        // Ignore when the table is unavailable.
     }
 }
 
@@ -303,13 +325,20 @@ function trux_count_unread_notifications(int $userId): int {
     try {
         $db = trux_db();
         $stmt = $db->prepare(
-            'SELECT COUNT(*)
+            'SELECT actor_user_id
              FROM notifications
              WHERE recipient_user_id = ?
                AND read_at IS NULL'
         );
         $stmt->execute([$userId]);
-        return (int)$stmt->fetchColumn();
+        $count = 0;
+        foreach ($stmt->fetchAll() as $row) {
+            $actorUserId = (int)($row['actor_user_id'] ?? 0);
+            if ($actorUserId <= 0 || !trux_has_muted_user($userId, $actorUserId)) {
+                $count++;
+            }
+        }
+        return $count;
     } catch (PDOException) {
         return 0;
     }
@@ -323,8 +352,9 @@ function trux_fetch_notifications(int $userId, int $limit = 50): array {
     $limit = max(1, min(100, $limit));
     try {
         $db = trux_db();
+        $queryLimit = min(300, max($limit * 3, $limit));
         $stmt = $db->prepare(
-            'SELECT n.id, n.type, n.post_id, n.comment_id, n.read_at, n.created_at, actor.username AS actor_username
+            'SELECT n.id, n.type, n.post_id, n.comment_id, n.read_at, n.created_at, n.actor_user_id, actor.username AS actor_username
              FROM notifications n
              JOIN users actor ON actor.id = n.actor_user_id
              WHERE n.recipient_user_id = ?
@@ -332,9 +362,21 @@ function trux_fetch_notifications(int $userId, int $limit = 50): array {
              LIMIT ?'
         );
         $stmt->bindValue(1, $userId, PDO::PARAM_INT);
-        $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+        $stmt->bindValue(2, $queryLimit, PDO::PARAM_INT);
         $stmt->execute();
-        return $stmt->fetchAll();
+        $rows = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $actorId = (int)($row['actor_user_id'] ?? 0);
+            if ($actorId > 0 && trux_has_muted_user($userId, $actorId)) {
+                continue;
+            }
+
+            $rows[] = $row;
+            if (count($rows) >= $limit) {
+                break;
+            }
+        }
+        return $rows;
     } catch (PDOException) {
         return [];
     }

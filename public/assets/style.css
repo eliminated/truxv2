@@ -928,7 +928,19 @@ textarea {
   align-items: center;
 }
 
+.profileActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .profileFollowForm {
+  margin: 0;
+}
+
+.profileMuteForm {
   margin: 0;
 }
 
@@ -996,6 +1008,12 @@ textarea {
   filter: saturate(.6);
   transform: none;
   box-shadow: 0 0 0 1px rgba(120, 132, 156, .16);
+}
+
+.btn--ghost.is-active {
+  border-color: rgba(255, 196, 108, .42);
+  background: rgba(255, 196, 108, .10);
+  color: #fff0cf;
 }
 
 .profile__feed {
@@ -2832,6 +2850,10 @@ body.commentDock-open {
 .settingSection__head {
   display: grid;
   gap: 4px;
+}
+
+.settingsSectionStandalone {
+  margin-top: 20px;
 }
 
 .settingRow {

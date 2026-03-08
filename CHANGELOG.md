@@ -1,4 +1,40 @@
 # Omincus Updates (Beta Versions)
+## Omnicus v0.3.7 - Muted Users
+
+**Branch**: Beta
+**Date**: 2026-03-08
+
+***
+
+### Added
+
+- User mute and unmute support
+- New endpoint: `public/mute_user.php`
+- Muted users section in Settings
+- New migration: `database/migrations/20260308_add_muted_users.sql`
+
+***
+
+### Changed
+
+- Notifications from muted users are no longer created
+- Existing notifications from a user are cleared when that user is muted
+- Profile pages now expose a mute toggle alongside follow controls
+
+***
+
+### Technical
+
+- Added `muted_users` relationship table
+- Added mute helpers in `src/mutes.php`
+- Notification unread counts and notification feed queries now exclude muted actors
+
+***
+
+### Notes
+
+- Muting only suppresses notifications; it does not block profiles, posts, follows, or search visibility.
+
 ## Omnicus v0.3.6 - Notifications & Preferences
 
 **Branch**: Beta
