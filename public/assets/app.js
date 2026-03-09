@@ -22,6 +22,41 @@
 })();
 
 (() => {
+  let stack = null;
+
+  const ensureStack = () => {
+    if (stack instanceof HTMLElement) return stack;
+    stack = document.createElement("div");
+    stack.className = "toastStack";
+    stack.setAttribute("aria-live", "polite");
+    stack.setAttribute("aria-atomic", "true");
+    document.body.appendChild(stack);
+    return stack;
+  };
+
+  window.truxToast = (message, type = "success") => {
+    if (!message) return;
+
+    const host = ensureStack();
+    const toast = document.createElement("div");
+    toast.className = `toast toast--${type}`;
+    toast.textContent = String(message);
+    host.appendChild(toast);
+
+    window.requestAnimationFrame(() => {
+      toast.classList.add("is-visible");
+    });
+
+    window.setTimeout(() => {
+      toast.classList.remove("is-visible");
+      window.setTimeout(() => {
+        toast.remove();
+      }, 220);
+    }, 2200);
+  };
+})();
+
+(() => {
   const INPUT_SELECTOR = "textarea[data-mention-input='1']";
 
   const esc = (value) =>
@@ -479,7 +514,7 @@
     return input instanceof HTMLInputElement ? input.value : "";
   };
 
-  const ownerMenuMarkup = (entityType, entityId) => `
+  const ownerMenuMarkup = (entityType, entityId, bookmarked = false) => `
     <div class="contentMenu" data-content-menu="1">
       <button
         class="contentMenu__trigger"
@@ -504,14 +539,17 @@
           <span>Edit</span>
         </button>
         <button
-          class="contentMenu__item contentMenu__item--placeholder"
+          class="contentMenu__item${bookmarked ? " is-active" : ""}"
           type="button"
           role="menuitem"
-          aria-disabled="true">
+          data-owner-bookmark="1"
+          data-owner-type="${esc(entityType)}"
+          aria-label="${bookmarked ? "Remove bookmark" : "Bookmark"}"
+          data-owner-id="${entityId}">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path d="m7 5 5-2 5 2v14l-5-2-5 2V5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
           </svg>
-          <span>Bookmark</span>
+          <span data-owner-bookmark-label="1">${bookmarked ? "Saved" : "Bookmark"}</span>
         </button>
         <button
           class="contentMenu__item contentMenu__item--danger"
@@ -632,6 +670,43 @@
       });
   };
 
+  const setCommentBookmarkState = (commentId, bookmarked) => {
+    document
+      .querySelectorAll(`[data-comment-bookmark="1"][data-comment-id="${commentId}"]`)
+      .forEach((node) => {
+        if (!(node instanceof HTMLButtonElement)) return;
+        node.classList.toggle("is-active", !!bookmarked);
+        node.setAttribute("aria-label", bookmarked ? "Remove bookmark" : "Bookmark comment");
+        const label = node.querySelector("[data-comment-bookmark-label='1']");
+        if (label instanceof HTMLElement) {
+          label.textContent = bookmarked ? "Saved" : "Bookmark";
+        }
+      });
+
+    document
+      .querySelectorAll(`[data-owner-bookmark="1"][data-owner-type="comment"][data-owner-id="${commentId}"]`)
+      .forEach((node) => {
+        if (!(node instanceof HTMLButtonElement)) return;
+        node.classList.toggle("is-active", !!bookmarked);
+        node.setAttribute("aria-label", bookmarked ? "Remove bookmark" : "Bookmark");
+        const label = node.querySelector("[data-owner-bookmark-label='1']");
+        if (label instanceof HTMLElement) {
+          label.textContent = bookmarked ? "Saved" : "Bookmark";
+        }
+      });
+  };
+
+  const highlightComment = (commentId) => {
+    const target = document.querySelector(`.commentDock__item[data-comment-id="${commentId}"]`);
+    if (!(target instanceof HTMLElement)) return;
+
+    target.classList.add("is-highlighted");
+    target.scrollIntoView({ behavior: "smooth", block: "center" });
+    window.setTimeout(() => {
+      target.classList.remove("is-highlighted");
+    }, 2400);
+  };
+
   const setReplyState = (commentId, userId, username) => {
     if (!(form instanceof HTMLFormElement)) return;
     const textarea = form.querySelector("textarea[name='body']");
@@ -709,7 +784,7 @@
             data-time-source="${esc(c.created_at)}"
             title="${esc(c.exact_time)}">${esc(c.time_ago)}</span>
           ${editedMetaMarkup(c.edited_at, c.edited_time_ago, c.edited_exact_time)}
-          ${c.is_owner ? ownerMenuMarkup("comment", c.id) : ""}
+          ${c.is_owner ? ownerMenuMarkup("comment", c.id, !!c.bookmarked) : ""}
         </div>
       </div>
       <div class="commentDock__body">${commentBodyHtml}</div>
@@ -739,13 +814,23 @@
             </svg>
           </button>
         </div>
-        <button
-          type="button"
-          class="commentDock__replyBtn"
-          data-comment-reply="1"
-          data-comment-id="${c.id}"
-          data-comment-user-id="${c.user_id}"
-          data-comment-username="${esc(c.username)}">Reply</button>
+        <div class="commentDock__actionButtons">
+          <button
+            type="button"
+            class="commentDock__bookmarkBtn${c.bookmarked ? " is-active" : ""}"
+            data-comment-bookmark="1"
+            data-comment-id="${c.id}"
+            aria-label="${c.bookmarked ? "Remove bookmark" : "Bookmark comment"}">
+            <span data-comment-bookmark-label="1">${c.bookmarked ? "Saved" : "Bookmark"}</span>
+          </button>
+          <button
+            type="button"
+            class="commentDock__replyBtn"
+            data-comment-reply="1"
+            data-comment-id="${c.id}"
+            data-comment-user-id="${c.user_id}"
+            data-comment-username="${esc(c.username)}">Reply</button>
+        </div>
       </div>
     `;
 
@@ -776,7 +861,7 @@
     window.dispatchEvent(new CustomEvent("trux:times:refresh"));
   };
 
-  const loadComments = async (postId) => {
+  const loadComments = async (postId, focusCommentId = 0) => {
     if (!list) return;
     list.innerHTML = `<div class="muted">Loading comments...</div>`;
     if (empty) empty.hidden = true;
@@ -790,7 +875,9 @@
 
       renderComments(data.comments || []);
       setCommentCount(postId, Number(data.count || 0));
-      if (listWrap instanceof HTMLElement) {
+      if (focusCommentId > 0) {
+        window.requestAnimationFrame(() => highlightComment(focusCommentId));
+      } else if (listWrap instanceof HTMLElement) {
         listWrap.scrollTop = listWrap.scrollHeight;
       }
     } catch (err) {
@@ -823,8 +910,9 @@
     postPane.appendChild(clone);
   };
 
-  const openDock = (trigger) => {
+  const openDock = (trigger, options = {}) => {
     const postId = Number(trigger.getAttribute("data-post-id") || "0");
+    const focusCommentId = Number(options.commentId || "0");
     if (!postId) return;
 
     currentPostId = postId;
@@ -840,7 +928,7 @@
     dock.removeAttribute("hidden");
     document.body.classList.add("commentDock-open");
     clearReplyState();
-    loadComments(postId);
+    loadComments(postId, focusCommentId);
 
     const input = form ? form.querySelector("textarea[name='body']") : null;
     if (input instanceof HTMLTextAreaElement) {
@@ -946,6 +1034,56 @@
       return;
     }
 
+    const ownerBookmarkBtn = e.target.closest("[data-owner-bookmark='1']");
+    if (ownerBookmarkBtn instanceof HTMLButtonElement) {
+      e.preventDefault();
+      closeAllContentMenus();
+
+      const entityType = ownerBookmarkBtn.getAttribute("data-owner-type") || "";
+      const entityId = Number(ownerBookmarkBtn.getAttribute("data-owner-id") || "0");
+      const csrf = getCsrfToken();
+      if (!entityType || !entityId || !csrf) {
+        window.alert("Action unavailable right now.");
+        return;
+      }
+
+      const endpoint =
+        entityType === "post" ? "/bookmark_post.php?format=json" : "/bookmark_comment.php?format=json";
+
+      ownerBookmarkBtn.disabled = true;
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { Accept: "application/json" },
+          body: new URLSearchParams({
+            _csrf: csrf,
+            id: String(entityId),
+          }),
+        });
+        const data = await readJson(res);
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Could not update bookmark.");
+        }
+
+        if (entityType === "post") {
+          setActionActive("bookmark", entityId, !!data.bookmarked);
+          if (!data.bookmarked && window.location.pathname.endsWith("/bookmarks.php")) {
+            removePostCards(entityId);
+          }
+        } else {
+          setCommentBookmarkState(entityId, !!data.bookmarked);
+        }
+        if (typeof window.truxToast === "function") {
+          window.truxToast(data.bookmarked ? "Saved to bookmarks" : "Removed from bookmarks");
+        }
+      } catch (err) {
+        window.alert(err instanceof Error ? err.message : "Could not update bookmark.");
+      } finally {
+        ownerBookmarkBtn.disabled = false;
+      }
+      return;
+    }
+
     const ownerDeleteBtn = e.target.closest("[data-owner-delete='1']");
     if (ownerDeleteBtn instanceof HTMLButtonElement) {
       e.preventDefault();
@@ -1024,6 +1162,55 @@
       const username = replyBtn.getAttribute("data-comment-username") || "";
       if (commentId > 0 && userId > 0 && username !== "") {
         setReplyState(commentId, userId, username);
+      }
+      return;
+    }
+
+    const bookmarkBtn = e.target.closest("[data-comment-bookmark='1']");
+    if (bookmarkBtn instanceof HTMLButtonElement) {
+      e.preventDefault();
+      const commentId = Number(bookmarkBtn.getAttribute("data-comment-id") || "0");
+      if (!commentId) return;
+
+      const csrf = getCsrfToken();
+      if (!csrf) {
+        window.location.href = "/login.php";
+        return;
+      }
+
+      const relatedButtons = document.querySelectorAll(`[data-comment-bookmark="1"][data-comment-id="${commentId}"]`);
+      relatedButtons.forEach((node) => {
+        if (node instanceof HTMLButtonElement) node.disabled = true;
+      });
+
+      try {
+        const res = await fetch("/bookmark_comment.php?format=json", {
+          method: "POST",
+          headers: { Accept: "application/json" },
+          body: new URLSearchParams({
+            _csrf: csrf,
+            id: String(commentId),
+          }),
+        });
+        const data = await readJson(res);
+        if (res.status === 401 && data.login_url) {
+          window.location.href = String(data.login_url);
+          return;
+        }
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Could not update bookmark.");
+        }
+
+        setCommentBookmarkState(commentId, !!data.bookmarked);
+        if (typeof window.truxToast === "function") {
+          window.truxToast(data.bookmarked ? "Saved to bookmarks" : "Removed from bookmarks");
+        }
+      } catch (err) {
+        window.alert(err instanceof Error ? err.message : "Could not update bookmark.");
+      } finally {
+        relatedButtons.forEach((node) => {
+          if (node instanceof HTMLButtonElement) node.disabled = false;
+        });
       }
       return;
     }
@@ -1133,6 +1320,16 @@
       }
     });
   }
+
+  const params = new URLSearchParams(window.location.search);
+  const autoCommentId = Number(params.get("comment_id") || "0");
+  const autoPostId = Number(params.get("id") || "0");
+  if (autoCommentId > 0 && autoPostId > 0) {
+    const autoTrigger = document.querySelector(`[data-comment-open="1"][data-post-id="${autoPostId}"]`);
+    if (autoTrigger instanceof HTMLElement) {
+      window.setTimeout(() => openDock(autoTrigger, { commentId: autoCommentId }), 80);
+    }
+  }
 })();
 
 (() => {
@@ -1164,6 +1361,20 @@
     });
   };
 
+  const setOwnerBookmarkState = (postId, bookmarked) => {
+    document
+      .querySelectorAll(`[data-owner-bookmark="1"][data-owner-type="post"][data-owner-id="${postId}"]`)
+      .forEach((node) => {
+        if (!(node instanceof HTMLButtonElement)) return;
+        node.classList.toggle("is-active", !!bookmarked);
+        node.setAttribute("aria-label", bookmarked ? "Remove bookmark" : "Bookmark");
+        const label = node.querySelector("[data-owner-bookmark-label='1']");
+        if (label instanceof HTMLElement) {
+          label.textContent = bookmarked ? "Saved" : "Bookmark";
+        }
+      });
+  };
+
   const setActionActive = (kind, postId, active) => {
     document
       .querySelectorAll(`form[data-ajax-action="1"][data-action-kind="${kind}"][data-post-id="${postId}"] .postAct`)
@@ -1173,6 +1384,13 @@
           btn.setAttribute("aria-label", active ? "Unlike post" : "Like post");
         } else if (kind === "share") {
           btn.setAttribute("aria-label", active ? "Unshare post" : "Share post");
+        } else if (kind === "bookmark") {
+          btn.setAttribute("aria-label", active ? "Remove bookmark" : "Bookmark post");
+          const label = btn.querySelector("[data-action-label='bookmark']");
+          if (label instanceof HTMLElement) {
+            label.textContent = active ? "Saved" : "Bookmark";
+          }
+          setOwnerBookmarkState(postId, active);
         }
       });
   };
@@ -1183,6 +1401,16 @@
     btn.disabled = loading;
     btn.classList.toggle("is-loading", loading);
   };
+
+  document
+    .querySelectorAll('form[data-ajax-action="1"][data-action-kind="bookmark"]')
+    .forEach((form) => {
+      if (!(form instanceof HTMLFormElement)) return;
+      const postId = Number(form.dataset.postId || "0");
+      const button = form.querySelector(".postAct");
+      if (!postId || !(button instanceof HTMLElement)) return;
+      setOwnerBookmarkState(postId, button.classList.contains("is-active"));
+    });
 
   document.addEventListener("submit", async (e) => {
     const form = e.target;
@@ -1217,6 +1445,14 @@
           setActionCount("share", postId, data.shares_count);
         }
         setActionActive("share", postId, !!data.shared);
+      } else if (kind === "bookmark") {
+        setActionActive("bookmark", postId, !!data.bookmarked);
+        if (!data.bookmarked && window.location.pathname.endsWith("/bookmarks.php")) {
+          removePostCards(postId);
+        }
+        if (typeof window.truxToast === "function") {
+          window.truxToast(data.bookmarked ? "Saved to bookmarks" : "Removed from bookmarks");
+        }
       }
     } catch (err) {
       window.alert(err instanceof Error ? err.message : "Action failed.");
@@ -1294,4 +1530,94 @@
       }
     }
   });
+})();
+
+(() => {
+  if (!window.location.pathname.endsWith("/bookmarks.php")) return;
+
+  const STORAGE_KEY = "trux.bookmarks.scroll";
+  const currentUrl = `${window.location.pathname}${window.location.search}`;
+
+  const saveScrollState = (targetUrl) => {
+    try {
+      window.sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({
+          target: targetUrl || currentUrl,
+          scrollY: Math.max(0, Math.round(window.scrollY || window.pageYOffset || 0)),
+        })
+      );
+    } catch {
+      // Ignore storage failures.
+    }
+  };
+
+  const readScrollState = () => {
+    try {
+      const raw = window.sessionStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      if (!data || typeof data !== "object") return null;
+      return {
+        target:
+          typeof data.target === "string" && data.target !== ""
+            ? data.target
+            : "",
+        scrollY:
+          typeof data.scrollY === "number" && Number.isFinite(data.scrollY)
+            ? Math.max(0, data.scrollY)
+            : 0,
+      };
+    } catch {
+      return null;
+    }
+  };
+
+  const clearScrollState = () => {
+    try {
+      window.sessionStorage.removeItem(STORAGE_KEY);
+    } catch {
+      // Ignore storage failures.
+    }
+  };
+
+  const restoreScrollState = () => {
+    const saved = readScrollState();
+    if (!saved || saved.target !== currentUrl) return;
+
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: saved.scrollY, left: 0, behavior: "auto" });
+    });
+
+    window.setTimeout(() => {
+      window.scrollTo({ top: saved.scrollY, left: 0, behavior: "auto" });
+      clearScrollState();
+    }, 80);
+  };
+
+  document.addEventListener("click", (e) => {
+    const link = e.target.closest("a");
+    if (!(link instanceof HTMLAnchorElement)) return;
+
+    const href = link.getAttribute("href");
+    if (!href) return;
+
+    try {
+      const url = new URL(href, window.location.origin);
+      if (url.origin !== window.location.origin) return;
+      if (!url.pathname.endsWith("/bookmarks.php")) return;
+      saveScrollState(`${url.pathname}${url.search}`);
+    } catch {
+      // Ignore invalid URLs.
+    }
+  });
+
+  document.addEventListener("submit", (e) => {
+    const form = e.target;
+    if (!(form instanceof HTMLFormElement)) return;
+    saveScrollState(currentUrl);
+  });
+
+  window.addEventListener("pageshow", restoreScrollState);
+  restoreScrollState();
 })();

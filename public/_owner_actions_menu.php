@@ -30,14 +30,16 @@ $entityId = isset($entityId) ? (int)$entityId : 0;
     </button>
 
     <button
-      class="contentMenu__item contentMenu__item--placeholder"
+      class="contentMenu__item"
       type="button"
       role="menuitem"
-      aria-disabled="true">
+      data-owner-bookmark="1"
+      data-owner-type="<?= trux_e($entityType) ?>"
+      data-owner-id="<?= $entityId ?>">
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="m7 5 5-2 5 2v14l-5-2-5 2V5Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
       </svg>
-      <span>Bookmark</span>
+      <span data-owner-bookmark-label="1">Bookmark</span>
     </button>
 
     <button

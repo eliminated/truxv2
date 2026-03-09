@@ -512,6 +512,18 @@ function trux_collect_post_ids(array $posts): array {
     return array_values(array_unique($ids));
 }
 
+function trux_collect_comment_ids(array $comments): array {
+    $ids = [];
+    foreach ($comments as $comment) {
+        $id = (int)($comment['id'] ?? 0);
+        if ($id > 0) {
+            $ids[] = $id;
+        }
+    }
+
+    return array_values(array_unique($ids));
+}
+
 function trux_fetch_post_interactions(array $postIds, ?int $viewerId): array {
     $ids = [];
     foreach ($postIds as $id) {
@@ -529,6 +541,7 @@ function trux_fetch_post_interactions(array $postIds, ?int $viewerId): array {
             'shares' => 0,
             'liked' => false,
             'shared' => false,
+            'bookmarked' => false,
         ];
     }
 
@@ -590,6 +603,18 @@ function trux_fetch_post_interactions(array $postIds, ?int $viewerId): array {
             foreach ($sharesMineStmt->fetchAll() as $row) {
                 $pid = (int)$row['post_id'];
                 if (isset($out[$pid])) $out[$pid]['shared'] = true;
+            }
+
+            $bookmarksMineSql = "SELECT post_id FROM post_bookmarks WHERE user_id = ? AND post_id IN ($placeholders)";
+            $bookmarksMineStmt = $db->prepare($bookmarksMineSql);
+            $bookmarksMineStmt->bindValue(1, $viewer, PDO::PARAM_INT);
+            foreach ($ids as $i => $id) {
+                $bookmarksMineStmt->bindValue($i + 2, $id, PDO::PARAM_INT);
+            }
+            $bookmarksMineStmt->execute();
+            foreach ($bookmarksMineStmt->fetchAll() as $row) {
+                $pid = (int)$row['post_id'];
+                if (isset($out[$pid])) $out[$pid]['bookmarked'] = true;
             }
         }
     } catch (PDOException) {

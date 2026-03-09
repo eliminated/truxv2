@@ -126,6 +126,10 @@ require_once __DIR__ . '/_header.php';
                 <?= $isMuted ? 'Muted' : 'Mute' ?>
               </button>
             </form>
+
+            <a class="btn btn--small btn--ghost" href="/messages.php?with=<?= trux_e(rawurlencode((string)$profileUser['username'])) ?>">
+              Message
+            </a>
           </div>
         <?php endif; ?>
       </div>

@@ -645,6 +645,41 @@ h1 {
   background: rgba(69, 212, 131, .10);
 }
 
+.toastStack {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 1200;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast {
+  min-width: 180px;
+  max-width: min(320px, calc(100vw - 36px));
+  border-radius: 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 255, 255, .10);
+  box-shadow: 0 16px 36px rgba(3, 8, 18, .34);
+  background: rgba(10, 16, 28, .96);
+  color: #eef5ff;
+  transform: translateY(10px);
+  opacity: 0;
+  transition: opacity .18s ease, transform .18s ease;
+}
+
+.toast.is-visible {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.toast--success {
+  border-color: rgba(69, 212, 131, .35);
+  background: rgba(16, 34, 23, .96);
+}
+
 /* Forms */
 .form {
   display: grid;
@@ -942,6 +977,129 @@ textarea {
 
 .profileMuteForm {
   margin: 0;
+}
+
+.messagesLayout {
+  display: grid;
+  grid-template-columns: minmax(260px, 320px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.messagesSidebar,
+.messagesThread {
+  min-width: 0;
+}
+
+.messagesSidebar__head,
+.messagesThread__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.messagesList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.messagesList__item {
+  display: grid;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+  border: 1px solid rgba(122, 167, 255, .16);
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: rgba(8, 14, 24, .72);
+}
+
+.messagesList__item:hover,
+.messagesList__item:focus-visible,
+.messagesList__item.is-active {
+  border-color: rgba(116, 219, 255, .42);
+  background: rgba(12, 22, 37, .88);
+  box-shadow: 0 0 0 3px rgba(92, 211, 255, .10);
+}
+
+.messagesList__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.messagesList__user {
+  font-weight: 800;
+  color: #eef5ff;
+}
+
+.messagesList__time,
+.messagesList__preview {
+  font-size: 12px;
+}
+
+.messagesList__preview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.messagesThread__messages {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 280px;
+  margin-bottom: 16px;
+}
+
+.messagesThread__empty {
+  min-height: 280px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.messageBubble {
+  max-width: min(680px, 100%);
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(122, 167, 255, .16);
+  background: rgba(8, 14, 24, .78);
+}
+
+.messageBubble--mine {
+  margin-left: auto;
+  border-color: rgba(69, 212, 131, .22);
+  background: rgba(12, 28, 20, .82);
+}
+
+.messageBubble__meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 12px;
+}
+
+.messageBubble__author {
+  font-weight: 800;
+  color: #eef5ff;
+}
+
+.messageBubble__body {
+  line-height: 1.55;
+  color: #e9f1ff;
+}
+
+.messagesComposer {
+  border-top: 1px solid rgba(122, 167, 255, .16);
+  padding-top: 16px;
 }
 
 .btn--neonFollow {
@@ -1378,6 +1536,10 @@ a.post__id:focus-visible {
   border-color: rgba(122, 167, 255, .18);
   background: rgba(122, 167, 255, .10);
   color: #f4f8ff;
+}
+
+.contentMenu__item.is-active {
+  color: #ffe18f;
 }
 
 .contentMenu__item--placeholder,
@@ -1914,6 +2076,13 @@ body.commentDock-open {
   gap: 10px;
 }
 
+.commentDock__actionButtons {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
 .commentDock__voteGroup {
   display: inline-flex;
   align-items: center;
@@ -1986,11 +2155,35 @@ body.commentDock-open {
   cursor: pointer;
 }
 
+.commentDock__bookmarkBtn {
+  border: 1px solid rgba(122, 167, 255, .28);
+  background: rgba(12, 20, 34, .72);
+  color: #b9c9dd;
+  border-radius: 999px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.commentDock__bookmarkBtn:hover,
+.commentDock__bookmarkBtn:focus-visible,
 .commentDock__replyBtn:hover,
 .commentDock__replyBtn:focus-visible {
   color: #e2f2ff;
   border-color: rgba(116, 219, 255, .62);
   box-shadow: 0 0 0 3px rgba(92, 211, 255, .14);
+}
+
+.commentDock__bookmarkBtn.is-active {
+  color: #ffe18f;
+  border-color: rgba(255, 210, 84, .46);
+  background: rgba(255, 210, 84, .12);
+}
+
+.commentDock__item.is-highlighted {
+  border-color: rgba(255, 210, 84, .7);
+  box-shadow: 0 0 0 3px rgba(255, 210, 84, .14);
 }
 
 .commentDock__children {
@@ -2814,6 +3007,10 @@ body.commentDock-open {
   .feedSwitch__item {
     flex: 1 1 0;
     min-width: 0;
+  }
+
+  .messagesLayout {
+    grid-template-columns: 1fr;
   }
 }
 

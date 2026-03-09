@@ -9,6 +9,7 @@ $success = trux_flash_get('success');
 $q = trux_str_param('q', '');
 $bodyClasses = ['appearance--classic', 'motion--reduced'];
 $unreadNotificationCount = $user ? trux_count_unread_notifications((int)$user['id']) : 0;
+$unreadMessageCount = $user ? trux_count_unread_direct_messages((int)$user['id']) : 0;
 ?>
 <!doctype html>
 <html lang="en">
@@ -68,6 +69,14 @@ $unreadNotificationCount = $user ? trux_count_unread_notifications((int)$user['i
                 Profile
                 <span class="muted">@<?= trux_e($user['username']) ?></span>
               </a>
+              <a class="menu__item" role="menuitem" href="/messages.php">
+                Messages
+                <?php if ($unreadMessageCount > 0): ?>
+                  <span class="menuBadge"><?= (int)$unreadMessageCount ?></span>
+                <?php else: ?>
+                  <span class="muted">Inbox</span>
+                <?php endif; ?>
+              </a>
               <a class="menu__item" role="menuitem" href="/notifications.php">
                 Notifications
                 <?php if ($unreadNotificationCount > 0): ?>
@@ -75,6 +84,10 @@ $unreadNotificationCount = $user ? trux_count_unread_notifications((int)$user['i
                 <?php else: ?>
                   <span class="muted">All caught up</span>
                 <?php endif; ?>
+              </a>
+              <a class="menu__item" role="menuitem" href="/bookmarks.php">
+                Bookmarks
+                <span class="muted">Saved items</span>
               </a>
               <a class="menu__item" role="menuitem" href="/settings.php">
                 Settings

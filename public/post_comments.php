@@ -27,7 +27,9 @@ if (!trux_post_exists($postId)) {
 $me = trux_current_user();
 $viewerId = $me ? (int)$me['id'] : 0;
 $comments = trux_fetch_post_comments($postId, 120);
-$voteStats = trux_fetch_comment_vote_stats(array_map(static fn(array $c): int => (int)$c['id'], $comments), $viewerId);
+$commentIds = trux_collect_comment_ids($comments);
+$voteStats = trux_fetch_comment_vote_stats($commentIds, $viewerId);
+$bookmarkMap = trux_fetch_comment_bookmark_map($commentIds, $viewerId);
 $payload = [];
 foreach ($comments as $c) {
     $commentId = (int)$c['id'];
@@ -51,6 +53,7 @@ foreach ($comments as $c) {
         'edited_exact_time' => !empty($c['edited_at']) ? trux_format_exact_time((string)$c['edited_at']) : '',
         'score' => (int)$vote['score'],
         'viewer_vote' => (int)$vote['viewer_vote'],
+        'bookmarked' => (bool)($bookmarkMap[$commentId] ?? false),
     ];
 }
 

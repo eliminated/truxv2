@@ -1,4 +1,49 @@
 # Omincus Updates (Beta Versions)
+## Omnicus v0.3.8 - Bookmarks & Direct Messages
+
+**Branch**: Beta
+**Date**: 2026-03-09
+
+***
+
+### Added
+
+- Functional private bookmarks for posts, comments, and replies
+- New bookmarks page at `public/bookmarks.php`
+- Initial 1-to-1 DM inbox and thread view at `public/messages.php`
+- New message send endpoint: `public/send_message.php`
+- Profile message entry point and header inbox entry with unread badge
+- New migrations:
+  - `database/migrations/20260309_add_bookmarks.sql`
+  - `database/migrations/20260309_add_direct_messages.sql`
+
+***
+
+### Changed
+
+- Post action bars now support live bookmark toggles
+- Owner action menus for posts and comments now expose working bookmark actions instead of placeholders
+- Bookmark menus and buttons now keep their `Bookmark` / `Saved` labels in sync
+- Bookmark interactions now show non-blocking success toasts
+- Bookmarks page now supports filters plus paginated loading for posts and comments
+
+***
+
+### Technical
+
+- Added bookmark helper layer in `src/bookmarks.php`
+- Added DM helper layer in `src/messages.php`
+- Added `post_bookmarks` and `comment_bookmarks` tables for saved items
+- Added `direct_conversations` and `direct_messages` tables for the first DM MVP
+- Bootstrap now loads the DM helper stack and header unread counts now include DMs
+
+***
+
+### Notes
+
+- The DM release is intentionally limited to simple text-only 1-to-1 conversations
+- Realtime delivery, attachments, group chats, and message editing are not included in this version
+
 ## Omnicus v0.3.7 - Muted Users
 
 **Branch**: Beta

@@ -8,6 +8,7 @@ $commentsCount = (int)($stats['comments'] ?? 0);
 $sharesCount = (int)($stats['shares'] ?? 0);
 $liked = (bool)($stats['liked'] ?? false);
 $shared = (bool)($stats['shared'] ?? false);
+$bookmarked = (bool)($stats['bookmarked'] ?? false);
 $isLoggedIn = (bool)$isLoggedIn;
 ?>
 <div class="post__actionsBar" aria-label="Post actions">
@@ -66,6 +67,26 @@ $isLoggedIn = (bool)$isLoggedIn;
       </svg>
       <span>Share</span>
       <span class="postAct__count" data-share-count-for="<?= $postId ?>"><?= $sharesCount ?></span>
+    </a>
+  <?php endif; ?>
+
+  <?php if ($isLoggedIn): ?>
+    <form class="postActForm" method="post" action="/bookmark_post.php" data-ajax-action="1" data-action-kind="bookmark" data-post-id="<?= $postId ?>" data-no-fx="1">
+      <?= trux_csrf_field() ?>
+      <input type="hidden" name="id" value="<?= $postId ?>">
+      <button class="postAct<?= $bookmarked ? ' is-active' : '' ?>" type="submit" aria-label="<?= $bookmarked ? 'Remove bookmark' : 'Bookmark post' ?>">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M7 4.8h10a1 1 0 0 1 1 1V20l-6-3.8L6 20V5.8a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+        </svg>
+        <span data-action-label="bookmark"><?= $bookmarked ? 'Saved' : 'Bookmark' ?></span>
+      </button>
+    </form>
+  <?php else: ?>
+    <a class="postAct" href="/login.php" aria-label="Log in to bookmark this post">
+      <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path d="M7 4.8h10a1 1 0 0 1 1 1V20l-6-3.8L6 20V5.8a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+      </svg>
+      <span>Bookmark</span>
     </a>
   <?php endif; ?>
 </div>
