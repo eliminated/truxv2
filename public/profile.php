@@ -54,17 +54,59 @@ if (!empty($profileUser['created_at']) && is_string($profileUser['created_at']))
     }
 }
 
+$displayName = trim((string)($profileUser['display_name'] ?? ''));
+$bio = trim((string)($profileUser['bio'] ?? ''));
+$location = trim((string)($profileUser['location'] ?? ''));
+$avatarPath = trim((string)($profileUser['avatar_path'] ?? ''));
+$bannerPath = trim((string)($profileUser['banner_path'] ?? ''));
+$websiteUrl = trim((string)($profileUser['website_url'] ?? ''));
+$websiteLabel = '';
+if ($websiteUrl !== '') {
+    $validatedWebsite = filter_var($websiteUrl, FILTER_VALIDATE_URL);
+    if (is_string($validatedWebsite) && $validatedWebsite !== '') {
+        $websiteUrl = $validatedWebsite;
+        $websiteLabel = trux_profile_website_label($validatedWebsite);
+    } else {
+        $websiteUrl = '';
+    }
+}
+
 require_once __DIR__ . '/_header.php';
 ?>
 
 <div class="profile">
   <section class="profile__hero">
-    <div class="profile__banner" aria-hidden="true"></div>
+    <div class="profile__banner" aria-hidden="true">
+      <?php if ($bannerPath !== ''): ?>
+        <img class="profile__bannerImage" src="<?= trux_e($bannerPath) ?>" alt="" loading="lazy" decoding="async">
+      <?php endif; ?>
+    </div>
     <div class="profile__identity">
-      <div class="profile__avatar" aria-hidden="true"></div>
+      <div class="profile__avatar<?= $avatarPath !== '' ? ' profile__avatar--image' : '' ?>" aria-hidden="true">
+        <?php if ($avatarPath !== ''): ?>
+          <img class="profile__avatarImage" src="<?= trux_e($avatarPath) ?>" alt="">
+        <?php endif; ?>
+      </div>
       <div class="profile__titleBlock">
-        <h1 class="profile__username">@<?= trux_e((string)$profileUser['username']) ?></h1>
-        <div class="profile__subtitle">Cyber identity panel</div>
+        <h1 class="profile__username">
+          <?= $displayName !== '' ? trux_e($displayName) : '@' . trux_e((string)$profileUser['username']) ?>
+        </h1>
+        <div class="profile__subtitle">@<?= trux_e((string)$profileUser['username']) ?></div>
+        <?php if ($bio !== ''): ?>
+          <p class="profile__bio"><?= nl2br(trux_e($bio)) ?></p>
+        <?php endif; ?>
+        <?php if ($location !== '' || $websiteUrl !== ''): ?>
+          <div class="profileMeta">
+            <?php if ($location !== ''): ?>
+              <span class="profileMeta__item"><?= trux_e($location) ?></span>
+            <?php endif; ?>
+            <?php if ($websiteUrl !== ''): ?>
+              <a class="profileMeta__item" href="<?= trux_e($websiteUrl) ?>" target="_blank" rel="noopener noreferrer">
+                <?= trux_e($websiteLabel !== '' ? $websiteLabel : $websiteUrl) ?>
+              </a>
+            <?php endif; ?>
+          </div>
+        <?php endif; ?>
       </div>
     </div>
   </section>
@@ -95,10 +137,15 @@ require_once __DIR__ . '/_header.php';
       </div>
       <div class="profileStats__right">
         <?php if ($isSelf): ?>
-          <button class="btn btn--neonFollow is-disabled" type="button" disabled>
-            <span class="btn__icon" aria-hidden="true">&#8226;</span>
-            <span class="btn__text">This is you</span>
-          </button>
+          <a class="btn btn--neonFollow" href="/edit_profile.php">
+            <span class="btn__icon btn__icon--edit" aria-hidden="true">
+              <svg viewBox="0 0 24 24" fill="none" focusable="false">
+                <path d="M12 20h9" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
+                <path d="M16.5 3.5a2.121 2.121 0 1 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+            </span>
+            <span class="btn__text">Edit Profile</span>
+          </a>
         <?php elseif (!$me): ?>
           <button class="btn btn--neonFollow is-disabled" type="button" disabled>
             <span class="btn__icon" aria-hidden="true">+</span>

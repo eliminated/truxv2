@@ -7,7 +7,12 @@ function trux_fetch_user_by_id(int $userId): ?array {
     }
 
     $db = trux_db();
-    $stmt = $db->prepare('SELECT id, username, email, created_at FROM users WHERE id = ? LIMIT 1');
+    $stmt = $db->prepare(
+        'SELECT id, username, email, display_name, bio, location, website_url, avatar_path, banner_path, created_at
+         FROM users
+         WHERE id = ?
+         LIMIT 1'
+    );
     $stmt->execute([$userId]);
     $user = $stmt->fetch();
 

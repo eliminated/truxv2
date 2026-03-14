@@ -69,6 +69,19 @@ $unreadMessageCount = $user ? trux_count_unread_direct_messages((int)$user['id']
                 Profile
                 <span class="muted">@<?= trux_e($user['username']) ?></span>
               </a>
+              <a class="menu__item" role="menuitem" href="/edit_profile.php">
+                Edit Profile
+                <span class="muted">Name, bio, media</span>
+              </a>
+              <a class="menu__item" role="menuitem" href="/premium.php">
+                <span class="menu__itemLabel">
+                  <svg class="menu__itemIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                    <path fill="currentColor" d="M12 2L3 10l9 12 9-12-9-8Zm0 3.1L17.1 10 12 16.8 6.9 10 12 5.1Z" />
+                  </svg>
+                  Premium
+                </span>
+                <span class="muted">Coming soon</span>
+              </a>
               <a class="menu__item" role="menuitem" href="/messages.php">
                 Messages
                 <?php if ($unreadMessageCount > 0): ?>

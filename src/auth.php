@@ -9,7 +9,11 @@ function trux_current_user(): ?array {
     if (!trux_is_logged_in()) return null;
 
     $db = trux_db();
-    $stmt = $db->prepare('SELECT id, username, email, created_at FROM users WHERE id = ?');
+    $stmt = $db->prepare(
+        'SELECT id, username, email, display_name, bio, location, website_url, avatar_path, banner_path, created_at
+         FROM users
+         WHERE id = ?'
+    );
     $stmt->execute([$_SESSION['user_id']]);
     $u = $stmt->fetch();
     return $u ?: null;

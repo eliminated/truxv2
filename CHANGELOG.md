@@ -1,4 +1,46 @@
 # Omincus Updates (Beta Versions)
+## Omnicus v0.3.9 - Advanced Profiles & Premium Placeholder
+
+**Branch**: Beta
+**Date**: 2026-03-14
+
+***
+
+### Added
+
+- Advanced profile editing page at `public/edit_profile.php`
+- Real profile fields for display name, bio, location, website, avatar, and banner
+- Profile media upload support for avatar and banner images
+- Premium placeholder page at `public/premium.php`
+- New profile menu entry for Premium with a diamond icon and `Coming soon` status
+- New migration: `database/migrations/20260314_add_user_profile_fields.sql`
+
+***
+
+### Changed
+
+- Profile pages now render saved profile banner and avatar when available
+- Profile headers now show display name, bio, location, and website metadata
+- Self profile action now links directly to Edit Profile
+- Profile menu now includes an explicit Edit Profile shortcut
+- Premium page now outlines four planned placeholder tiers: Basic Premium, Premium, Advanced Premium, and Premium+
+- Premium tier cards now use progressive hover intensity so higher tiers feel more advanced on interaction
+
+***
+
+### Technical
+
+- Added profile helper layer in `src/profiles.php`
+- Added profile validation and website normalization for profile edit submissions
+- Added animated GIF detection for avatar uploads to enforce Premium placeholder gating
+- Updated user fetch queries to include profile fields in auth/profile/message contexts
+
+***
+
+### Notes
+
+- Animated profile photos are marked as Premium-only and currently remain unavailable while Premium is still placeholder-only.
+
 ## Omnicus v0.3.8 - Bookmarks & Direct Messages
 
 **Branch**: Beta

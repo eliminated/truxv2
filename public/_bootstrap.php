@@ -9,6 +9,7 @@ require_once dirname(__DIR__) . '/src/auth.php';
 require_once dirname(__DIR__) . '/src/posts.php';
 require_once dirname(__DIR__) . '/src/bookmarks.php';
 require_once dirname(__DIR__) . '/src/messages.php';
+require_once dirname(__DIR__) . '/src/profiles.php';
 require_once dirname(__DIR__) . '/src/follows.php';
 require_once dirname(__DIR__) . '/src/mutes.php';
 require_once dirname(__DIR__) . '/src/search.php';

@@ -167,7 +167,12 @@ function trux_update_post_if_owner(int $postId, int $ownerUserId, string $body):
 
 function trux_fetch_user_by_username(string $username): ?array {
     $db = trux_db();
-    $stmt = $db->prepare('SELECT id, username, email, created_at FROM users WHERE username = ? LIMIT 1');
+    $stmt = $db->prepare(
+        'SELECT id, username, email, display_name, bio, location, website_url, avatar_path, banner_path, created_at
+         FROM users
+         WHERE username = ?
+         LIMIT 1'
+    );
     $stmt->execute([$username]);
     $u = $stmt->fetch();
     return $u ?: null;
