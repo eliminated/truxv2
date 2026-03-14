@@ -22,8 +22,6 @@ if ($selectedConversationId > 0) {
         trux_flash_set('error', 'Conversation not found.');
         trux_redirect('/messages.php');
     }
-
-    trux_mark_direct_conversation_read($selectedConversationId, $viewerId);
 } elseif ($withUsername !== '') {
     $recipientUser = trux_fetch_user_by_username($withUsername);
     if (!$recipientUser || (int)$recipientUser['id'] === $viewerId) {
@@ -32,19 +30,12 @@ if ($selectedConversationId > 0) {
     }
 
     $selectedConversation = trux_fetch_direct_conversation_between($viewerId, (int)$recipientUser['id']);
-    if ($selectedConversation) {
-        trux_mark_direct_conversation_read((int)$selectedConversation['id'], $viewerId);
-    }
 }
 
 $conversations = trux_fetch_direct_conversations($viewerId, 50);
 
 if (!$selectedConversation && $withUsername === '' && $conversations) {
     $selectedConversation = trux_fetch_direct_conversation_for_user((int)$conversations[0]['id'], $viewerId);
-    if ($selectedConversation) {
-        trux_mark_direct_conversation_read((int)$selectedConversation['id'], $viewerId);
-        $conversations = trux_fetch_direct_conversations($viewerId, 50);
-    }
 }
 
 if ($selectedConversation) {
@@ -64,7 +55,7 @@ require_once __DIR__ . '/_header.php';
   <p class="muted">Private 1-to-1 conversations.</p>
 </section>
 
-<section class="messagesLayout">
+<section class="messagesLayout" data-messages-active-conversation-id="<?= $activeConversationId ?>">
   <aside class="card messagesSidebar">
     <div class="card__body">
       <div class="messagesSidebar__head">
@@ -125,7 +116,16 @@ require_once __DIR__ . '/_header.php';
               <?php endif; ?>
             </div>
           </div>
-          <a class="btn btn--small btn--ghost" href="/profile.php?u=<?= trux_e((string)$recipientUser['username']) ?>">View profile</a>
+          <div class="row">
+            <?php if ($activeConversationId > 0): ?>
+              <form method="post" action="/mark_conversation_read.php" class="inline" data-no-fx="1">
+                <?= trux_csrf_field() ?>
+                <input type="hidden" name="id" value="<?= $activeConversationId ?>">
+                <button class="btn btn--small btn--ghost" type="submit">Mark as read</button>
+              </form>
+            <?php endif; ?>
+            <a class="btn btn--small btn--ghost" href="/profile.php?u=<?= trux_e((string)$recipientUser['username']) ?>">View profile</a>
+          </div>
         </div>
 
         <div class="messagesThread__messages">

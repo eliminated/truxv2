@@ -17,6 +17,31 @@ if (!is_string($id) || !preg_match('/^\d+$/', $id)) {
     exit;
 }
 
+$beforeRaw = $_GET['before'] ?? null;
+$beforeId = null;
+if (is_string($beforeRaw) && $beforeRaw !== '') {
+    if (!preg_match('/^\d+$/', $beforeRaw)) {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'error' => 'Invalid before cursor.']);
+        exit;
+    }
+    $beforeId = (int)$beforeRaw;
+    if ($beforeId <= 0) {
+        $beforeId = null;
+    }
+}
+
+$limitRaw = $_GET['limit'] ?? null;
+$limit = 120;
+if (is_string($limitRaw) && $limitRaw !== '') {
+    if (!preg_match('/^\d+$/', $limitRaw)) {
+        http_response_code(400);
+        echo json_encode(['ok' => false, 'error' => 'Invalid limit value.']);
+        exit;
+    }
+    $limit = max(1, min(200, (int)$limitRaw));
+}
+
 $postId = (int)$id;
 if (!trux_post_exists($postId)) {
     http_response_code(404);
@@ -26,7 +51,9 @@ if (!trux_post_exists($postId)) {
 
 $me = trux_current_user();
 $viewerId = $me ? (int)$me['id'] : 0;
-$comments = trux_fetch_post_comments($postId, 120);
+$page = trux_fetch_post_comments_page($postId, $limit, $beforeId);
+$comments = is_array($page['comments'] ?? null) ? $page['comments'] : [];
+$totalCount = trux_count_post_comments($postId);
 $commentIds = trux_collect_comment_ids($comments);
 $voteStats = trux_fetch_comment_vote_stats($commentIds, $viewerId);
 $bookmarkMap = trux_fetch_comment_bookmark_map($commentIds, $viewerId);
@@ -61,5 +88,9 @@ echo json_encode([
     'ok' => true,
     'post_id' => $postId,
     'comments' => $payload,
-    'count' => count($payload),
+    'count' => $totalCount,
+    'loaded_count' => count($payload),
+    'total_count' => $totalCount,
+    'next_before' => isset($page['next_before']) && $page['next_before'] !== null ? (int)$page['next_before'] : null,
+    'has_more' => !empty($page['has_more']),
 ]);

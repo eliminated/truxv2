@@ -169,6 +169,56 @@ function trux_extract_mentions(string $body): array {
     return array_values(array_unique($mentions));
 }
 
+function trux_render_rich_text_line(string $line): string {
+    $pattern = '/(^|[^A-Za-z0-9_])(@[A-Za-z0-9_]{3,32}|#[A-Za-z0-9_]{1,50})\b/';
+    $cursor = 0;
+    $out = '';
+
+    $matched = preg_match_all($pattern, $line, $matches, PREG_OFFSET_CAPTURE);
+    if (is_int($matched) && $matched > 0) {
+        $count = count($matches[0]);
+        for ($i = 0; $i < $count; $i++) {
+            $fullOffset = (int)$matches[0][$i][1];
+            $prefix = (string)$matches[1][$i][0];
+            $token = (string)$matches[2][$i][0];
+            $prefixLen = strlen($prefix);
+            $tokenStart = $fullOffset + $prefixLen;
+
+            if ($tokenStart < $cursor || $token === '') {
+                continue;
+            }
+
+            $before = substr($line, $cursor, $tokenStart - $cursor);
+            if ($before !== false && $before !== '') {
+                $out .= trux_e($before);
+            }
+
+            $sigil = substr($token, 0, 1);
+            $term = substr($token, 1);
+
+            if ($sigil === '@') {
+                $href = '/profile.php?u=' . rawurlencode($term);
+                $out .= '<a class="mentionLink" href="' . trux_e($href) . '">@' . trux_e($term) . '</a>';
+            } elseif ($sigil === '#') {
+                $normalized = strtolower($term);
+                $href = '/search.php?q=' . rawurlencode('#' . $normalized) . '&filter=hashtags';
+                $out .= '<a class="hashtagLink" href="' . trux_e($href) . '">#' . trux_e($term) . '</a>';
+            } else {
+                $out .= trux_e($token);
+            }
+
+            $cursor = $tokenStart + strlen($token);
+        }
+    }
+
+    $tail = substr($line, $cursor);
+    if ($tail !== false && $tail !== '') {
+        $out .= trux_e($tail);
+    }
+
+    return $out;
+}
+
 function trux_render_rich_text(string $body): string {
     $lines = preg_split("/\R/", $body);
     if (!is_array($lines) || $lines === []) {
@@ -177,51 +227,7 @@ function trux_render_rich_text(string $body): string {
 
     $renderedLines = [];
     foreach ($lines as $line) {
-        $escapedLine = trux_e((string)$line);
-        $withMentions = preg_replace_callback(
-            '/(^|[^A-Za-z0-9_])@([A-Za-z0-9_]{3,32})\b/',
-            static function (array $matches): string {
-                $prefix = (string)($matches[1] ?? '');
-                $username = (string)($matches[2] ?? '');
-                if ($username === '') {
-                    return (string)($matches[0] ?? '');
-                }
-
-                $href = '/profile.php?u=' . rawurlencode($username);
-
-                return $prefix
-                    . '<a class="mentionLink" href="'
-                    . trux_e($href)
-                    . '">@'
-                    . trux_e($username)
-                    . '</a>';
-            },
-            $escapedLine
-        );
-        $escapedLine = is_string($withMentions) ? $withMentions : $escapedLine;
-
-        $rendered = preg_replace_callback(
-            '/(^|[^A-Za-z0-9_])#([A-Za-z0-9_]{1,50})\b/',
-            static function (array $matches): string {
-                $prefix = (string)($matches[1] ?? '');
-                $rawTag = (string)($matches[2] ?? '');
-                if ($rawTag === '') {
-                    return (string)($matches[0] ?? '');
-                }
-
-                $normalized = strtolower($rawTag);
-                $href = '/search.php?q=' . rawurlencode('#' . $normalized) . '&filter=hashtags';
-
-                return $prefix
-                    . '<a class="hashtagLink" href="'
-                    . trux_e($href)
-                    . '">#'
-                    . trux_e($rawTag)
-                    . '</a>';
-            },
-            $escapedLine
-        );
-        $renderedLines[] = is_string($rendered) ? $rendered : $escapedLine;
+        $renderedLines[] = trux_render_rich_text_line((string)$line);
     }
 
     return implode("<br>\n", $renderedLines);

@@ -138,18 +138,7 @@ function trux_profile_is_animated_gif_file(string $tmpPath): bool {
 }
 
 function trux_profile_delete_uploaded_file(?string $publicPath): void {
-    if (!is_string($publicPath) || $publicPath === '') {
-        return;
-    }
-
-    if (!preg_match('#^/uploads/[A-Za-z0-9._-]+$#', $publicPath)) {
-        return;
-    }
-
-    $abs = dirname(__DIR__) . '/public' . $publicPath;
-    if (is_file($abs)) {
-        @unlink($abs);
-    }
+    trux_delete_uploaded_file($publicPath);
 }
 
 function trux_profile_website_label(?string $websiteUrl): string {

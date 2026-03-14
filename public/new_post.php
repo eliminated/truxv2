@@ -3,8 +3,18 @@ declare(strict_types=1);
 require_once __DIR__ . '/_bootstrap.php';
 
 trux_require_login();
-$user = trux_current_user();
 $isJson = trux_str_param('format', '') === 'json';
+$user = trux_current_user();
+if (!$user) {
+    if ($isJson) {
+        header('Content-Type: application/json; charset=utf-8');
+        http_response_code(401);
+        echo json_encode(['ok' => false, 'error' => 'Please log in to continue.', 'login_url' => '/login.php']);
+        exit;
+    }
+    trux_flash_set('error', 'Please log in to continue.');
+    trux_redirect('/login.php');
+}
 
 $body = '';
 $error = null;
@@ -30,29 +40,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($error === null) {
-            $postId = trux_create_post((int)$user['id'], $body, $imagePath);
-            if ($isJson) {
-                $post = trux_fetch_post_by_id($postId);
-                header('Content-Type: application/json; charset=utf-8');
-                echo json_encode([
-                    'ok' => true,
-                    'post' => [
-                        'id' => $postId,
-                        'url' => '/post.php?id=' . $postId,
-                        'user_id' => (int)($post['user_id'] ?? $user['id']),
-                        'username' => (string)($post['username'] ?? $user['username']),
-                        'body' => (string)($post['body'] ?? $body),
-                        'body_html' => trux_render_post_body((string)($post['body'] ?? $body)),
-                        'image_path' => isset($post['image_path']) ? (string)$post['image_path'] : null,
-                        'created_at' => (string)($post['created_at'] ?? ''),
-                        'time_ago' => isset($post['created_at']) ? trux_time_ago((string)$post['created_at']) : 'just now',
-                    ],
-                    'message' => 'Posted!',
-                ]);
-                exit;
+            $postId = 0;
+            try {
+                $postId = trux_create_post((int)$user['id'], $body, $imagePath);
+            } catch (Throwable) {
+                if (is_string($imagePath) && $imagePath !== '') {
+                    trux_delete_uploaded_file($imagePath);
+                }
+                $error = 'Could not create post right now.';
             }
-            trux_flash_set('success', 'Posted!');
-            trux_redirect('/post.php?id=' . $postId);
+
+            if ($error === null && $postId <= 0) {
+                if (is_string($imagePath) && $imagePath !== '') {
+                    trux_delete_uploaded_file($imagePath);
+                }
+                $error = 'Could not create post right now.';
+            }
+
+            if ($error === null) {
+                if ($isJson) {
+                    $post = trux_fetch_post_by_id($postId);
+                    header('Content-Type: application/json; charset=utf-8');
+                    echo json_encode([
+                        'ok' => true,
+                        'post' => [
+                            'id' => $postId,
+                            'url' => '/post.php?id=' . $postId,
+                            'user_id' => (int)($post['user_id'] ?? $user['id']),
+                            'username' => (string)($post['username'] ?? $user['username']),
+                            'body' => (string)($post['body'] ?? $body),
+                            'body_html' => trux_render_post_body((string)($post['body'] ?? $body)),
+                            'image_path' => isset($post['image_path']) ? (string)$post['image_path'] : null,
+                            'created_at' => (string)($post['created_at'] ?? ''),
+                            'time_ago' => isset($post['created_at']) ? trux_time_ago((string)$post['created_at']) : 'just now',
+                        ],
+                        'message' => 'Posted!',
+                    ]);
+                    exit;
+                }
+                trux_flash_set('success', 'Posted!');
+                trux_redirect('/post.php?id=' . $postId);
+            }
         }
     }
 

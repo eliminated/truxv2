@@ -21,6 +21,33 @@ function trux_has_muted_user(int $userId, int $mutedUserId): bool {
     }
 }
 
+function trux_fetch_muted_user_id_map(int $userId): array {
+    if ($userId <= 0) {
+        return [];
+    }
+
+    try {
+        $db = trux_db();
+        $stmt = $db->prepare(
+            'SELECT muted_user_id
+             FROM muted_users
+             WHERE user_id = ?'
+        );
+        $stmt->execute([$userId]);
+
+        $map = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $mutedUserId = (int)($row['muted_user_id'] ?? 0);
+            if ($mutedUserId > 0) {
+                $map[$mutedUserId] = true;
+            }
+        }
+        return $map;
+    } catch (PDOException) {
+        return [];
+    }
+}
+
 function trux_mute_user(int $userId, int $mutedUserId): void {
     if ($userId <= 0 || $mutedUserId <= 0 || $userId === $mutedUserId) {
         return;

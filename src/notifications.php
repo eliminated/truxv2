@@ -331,10 +331,11 @@ function trux_count_unread_notifications(int $userId): int {
                AND read_at IS NULL'
         );
         $stmt->execute([$userId]);
+        $mutedUserIds = trux_fetch_muted_user_id_map($userId);
         $count = 0;
         foreach ($stmt->fetchAll() as $row) {
             $actorUserId = (int)($row['actor_user_id'] ?? 0);
-            if ($actorUserId <= 0 || !trux_has_muted_user($userId, $actorUserId)) {
+            if ($actorUserId <= 0 || !isset($mutedUserIds[$actorUserId])) {
                 $count++;
             }
         }
@@ -364,10 +365,11 @@ function trux_fetch_notifications(int $userId, int $limit = 50): array {
         $stmt->bindValue(1, $userId, PDO::PARAM_INT);
         $stmt->bindValue(2, $queryLimit, PDO::PARAM_INT);
         $stmt->execute();
+        $mutedUserIds = trux_fetch_muted_user_id_map($userId);
         $rows = [];
         foreach ($stmt->fetchAll() as $row) {
             $actorId = (int)($row['actor_user_id'] ?? 0);
-            if ($actorId > 0 && trux_has_muted_user($userId, $actorId)) {
+            if ($actorId > 0 && isset($mutedUserIds[$actorId])) {
                 continue;
             }
 

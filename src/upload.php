@@ -8,6 +8,21 @@ function trux_gd_required_or_error(): ?string {
     return null;
 }
 
+function trux_delete_uploaded_file(?string $publicPath): void {
+    if (!is_string($publicPath) || $publicPath === '') {
+        return;
+    }
+
+    if (!preg_match('#^/uploads/[A-Za-z0-9._-]+$#', $publicPath)) {
+        return;
+    }
+
+    $abs = dirname(__DIR__) . '/public' . $publicPath;
+    if (is_file($abs)) {
+        @unlink($abs);
+    }
+}
+
 function trux_handle_image_upload(array $file, string $publicUploadsDirAbs, string $publicUploadsUrlPrefix): array {
     // Returns: ['ok' => bool, 'path' => ?string, 'error' => ?string]
     if (!isset($file['error']) || !is_int($file['error'])) {

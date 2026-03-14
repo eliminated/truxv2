@@ -1,4 +1,55 @@
 # Omincus Updates (Beta Versions)
+## Omnicus v0.3.91 - Hotfix Rollup
+
+**Branch**: Beta
+**Date**: 2026-03-14
+
+***
+
+### Added
+
+- New endpoint: `public/mark_conversation_read.php`
+- Comment dock "Load older comments" control
+- Cursor-based comment paging metadata in `public/post_comments.php` (`before`, `next_before`, `has_more`, `total_count`)
+
+***
+
+### Changed
+
+- Notifications are no longer marked read on `GET /notifications.php`; they now use explicit POST action (`mark_all_read`)
+- Conversation read state is no longer mutated during `GET /messages.php`; reads now flow through POST
+- Comment dock now uses paged loading with stable scroll behavior when prepending older comments
+- Upload file deletion logic is now centralized via `trux_delete_uploaded_file()`
+
+***
+
+### Fixed
+
+- Apostrophes no longer get broken into accidental hashtag links (`#039`) when posts include hashtags/mentions
+- Comment dock no longer shows truncated/incorrect comment totals on large threads
+- Reply threads no longer lose hierarchy when parent comments are outside the initial page window
+- Removed CSRF-able read-state side effects caused by GET-based notification/message read mutations
+- Prevented null-user dereference edge cases in authenticated post create/delete handlers
+- Prevented orphaned uploaded images when post creation fails after upload succeeds
+- Reduced notification page/query overhead by removing per-row muted-user lookups (N+1 pattern)
+- Migration reruns no longer fail on duplicate keys/constraints in `20260307_add_comment_replies.sql`
+
+***
+
+### Technical
+
+- Added comment paging and ancestor expansion helpers in `src/posts.php`
+- Extended comments API payload with `total_count`, `loaded_count`, and cursor metadata
+- Added muted-user ID map helper in `src/mutes.php` and integrated map-based filtering in `src/notifications.php`
+- Added POST read-state endpoint and messaging page integration for safe read updates
+- Hardened post creation failure paths with upload cleanup and better defensive auth checks
+
+***
+
+### Notes
+
+- Apply migrations before deploying this hotfix, especially if re-running migration scripts on existing environments.
+
 ## Omnicus v0.3.9 - Advanced Profiles & Premium Placeholder
 
 **Branch**: Beta

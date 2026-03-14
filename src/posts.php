@@ -478,34 +478,202 @@ function trux_fetch_comment_vote_stats(array $commentIds, ?int $viewerId): array
     return $out;
 }
 
-function trux_fetch_post_comments(int $postId, int $limit = 80): array {
-    if ($postId <= 0) return [];
-    $limit = max(1, min(200, $limit));
+function trux_count_post_comments(int $postId): int {
+    if ($postId <= 0) {
+        return 0;
+    }
 
+    try {
+        $db = trux_db();
+        $stmt = $db->prepare('SELECT COUNT(*) FROM post_comments WHERE post_id = ?');
+        $stmt->execute([$postId]);
+        return (int)$stmt->fetchColumn();
+    } catch (PDOException) {
+        return 0;
+    }
+}
+
+function trux_fetch_post_comment_page_ids(int $postId, int $limit = 80, ?int $beforeId = null): array {
+    if ($postId <= 0) {
+        return [];
+    }
+
+    $limit = max(1, min(200, $limit));
     $db = trux_db();
 
     try {
-        $sql = '
-            SELECT t.id, t.post_id, t.parent_comment_id, t.user_id, t.reply_to_user_id, t.body, t.created_at, t.edited_at, u.username, ru.username AS reply_to_username
-            FROM (
-                SELECT c.id, c.post_id, c.parent_comment_id, c.user_id, c.reply_to_user_id, c.body, c.created_at, c.edited_at
-                FROM post_comments c
-                WHERE c.post_id = ?
-                ORDER BY c.id DESC
-                LIMIT ?
-            ) t
-            JOIN users u ON u.id = t.user_id
-            LEFT JOIN users ru ON ru.id = t.reply_to_user_id
-            ORDER BY t.id ASC
-        ';
-        $stmt = $db->prepare($sql);
-        $stmt->bindValue(1, $postId, PDO::PARAM_INT);
-        $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+        if ($beforeId !== null && $beforeId > 0) {
+            $stmt = $db->prepare(
+                'SELECT c.id
+                 FROM post_comments c
+                 WHERE c.post_id = ? AND c.id < ?
+                 ORDER BY c.id DESC
+                 LIMIT ?'
+            );
+            $stmt->bindValue(1, $postId, PDO::PARAM_INT);
+            $stmt->bindValue(2, $beforeId, PDO::PARAM_INT);
+            $stmt->bindValue(3, $limit, PDO::PARAM_INT);
+            $stmt->execute();
+        } else {
+            $stmt = $db->prepare(
+                'SELECT c.id
+                 FROM post_comments c
+                 WHERE c.post_id = ?
+                 ORDER BY c.id DESC
+                 LIMIT ?'
+            );
+            $stmt->bindValue(1, $postId, PDO::PARAM_INT);
+            $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+            $stmt->execute();
+        }
+
+        $ids = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $id = (int)($row['id'] ?? 0);
+            if ($id > 0) {
+                $ids[] = $id;
+            }
+        }
+        return array_values(array_unique($ids));
+    } catch (PDOException) {
+        return [];
+    }
+}
+
+function trux_expand_comment_ids_with_ancestors(array $commentIds): array {
+    $known = [];
+    $pending = [];
+    foreach ($commentIds as $id) {
+        $cid = (int)$id;
+        if ($cid <= 0 || isset($known[$cid])) {
+            continue;
+        }
+        $known[$cid] = true;
+        $pending[] = $cid;
+    }
+
+    if (!$pending) {
+        return [];
+    }
+
+    try {
+        $db = trux_db();
+        while ($pending) {
+            $placeholders = implode(',', array_fill(0, count($pending), '?'));
+            $stmt = $db->prepare(
+                "SELECT id, parent_comment_id
+                 FROM post_comments
+                 WHERE id IN ($placeholders)"
+            );
+            foreach ($pending as $i => $id) {
+                $stmt->bindValue($i + 1, $id, PDO::PARAM_INT);
+            }
+            $stmt->execute();
+
+            $next = [];
+            foreach ($stmt->fetchAll() as $row) {
+                $parentId = isset($row['parent_comment_id']) && $row['parent_comment_id'] !== null
+                    ? (int)$row['parent_comment_id']
+                    : 0;
+                if ($parentId <= 0 || isset($known[$parentId])) {
+                    continue;
+                }
+                $known[$parentId] = true;
+                $next[] = $parentId;
+            }
+
+            $pending = $next;
+        }
+    } catch (PDOException) {
+        // Return currently known ids if expansion fails.
+    }
+
+    return array_map('intval', array_keys($known));
+}
+
+function trux_fetch_comment_rows_by_ids(array $commentIds): array {
+    $ids = [];
+    foreach ($commentIds as $id) {
+        $cid = (int)$id;
+        if ($cid > 0) {
+            $ids[] = $cid;
+        }
+    }
+    $ids = array_values(array_unique($ids));
+    if (!$ids) {
+        return [];
+    }
+
+    $db = trux_db();
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+    try {
+        $stmt = $db->prepare(
+            "SELECT c.id, c.post_id, c.parent_comment_id, c.user_id, c.reply_to_user_id, c.body, c.created_at, c.edited_at,
+                    u.username, ru.username AS reply_to_username
+             FROM post_comments c
+             JOIN users u ON u.id = c.user_id
+             LEFT JOIN users ru ON ru.id = c.reply_to_user_id
+             WHERE c.id IN ($placeholders)
+             ORDER BY c.id ASC"
+        );
+        foreach ($ids as $i => $id) {
+            $stmt->bindValue($i + 1, $id, PDO::PARAM_INT);
+        }
         $stmt->execute();
         return $stmt->fetchAll();
     } catch (PDOException) {
         return [];
     }
+}
+
+function trux_fetch_post_comments_page(int $postId, int $limit = 80, ?int $beforeId = null): array {
+    if ($postId <= 0) {
+        return [
+            'comments' => [],
+            'next_before' => null,
+            'has_more' => false,
+        ];
+    }
+
+    $pageIds = trux_fetch_post_comment_page_ids($postId, $limit, $beforeId);
+    if (!$pageIds) {
+        return [
+            'comments' => [],
+            'next_before' => null,
+            'has_more' => false,
+        ];
+    }
+
+    $expandedIds = trux_expand_comment_ids_with_ancestors($pageIds);
+    $comments = trux_fetch_comment_rows_by_ids($expandedIds);
+
+    $oldestPageId = min($pageIds);
+    $hasMore = false;
+    try {
+        $db = trux_db();
+        $hasMoreStmt = $db->prepare(
+            'SELECT 1
+             FROM post_comments
+             WHERE post_id = ? AND id < ?
+             LIMIT 1'
+        );
+        $hasMoreStmt->execute([$postId, $oldestPageId]);
+        $hasMore = (bool)$hasMoreStmt->fetchColumn();
+    } catch (PDOException) {
+        $hasMore = false;
+    }
+
+    return [
+        'comments' => $comments,
+        'next_before' => $hasMore ? $oldestPageId : null,
+        'has_more' => $hasMore,
+    ];
+}
+
+function trux_fetch_post_comments(int $postId, int $limit = 80, ?int $beforeId = null): array {
+    $page = trux_fetch_post_comments_page($postId, $limit, $beforeId);
+    return is_array($page['comments'] ?? null) ? $page['comments'] : [];
 }
 
 function trux_collect_post_ids(array $posts): array {

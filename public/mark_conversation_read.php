@@ -1,5 +1,4 @@
 <?php
-
 declare(strict_types=1);
 require_once __DIR__ . '/_bootstrap.php';
 
@@ -22,9 +21,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         echo json_encode(['ok' => false, 'error' => 'Method not allowed.']);
         exit;
     }
-    http_response_code(405);
     trux_flash_set('error', 'Method not allowed.');
-    trux_redirect('/');
+    trux_redirect('/messages.php');
 }
 
 $id = $_POST['id'] ?? null;
@@ -32,14 +30,13 @@ if (!is_string($id) || !preg_match('/^\d+$/', $id)) {
     if ($isJson) {
         header('Content-Type: application/json; charset=utf-8');
         http_response_code(400);
-        echo json_encode(['ok' => false, 'error' => 'Invalid post id.']);
+        echo json_encode(['ok' => false, 'error' => 'Invalid conversation id.']);
         exit;
     }
-    trux_flash_set('error', 'Invalid post id.');
-    trux_redirect('/');
+    trux_flash_set('error', 'Invalid conversation id.');
+    trux_redirect('/messages.php');
 }
 
-$postId = (int)$id;
 $me = trux_current_user();
 if (!$me) {
     if ($isJson) {
@@ -52,31 +49,34 @@ if (!$me) {
     trux_redirect('/login.php');
 }
 
-$ok = trux_delete_post_if_owner($postId, (int)$me['id']);
-if (!$ok) {
+$conversationId = (int)$id;
+$viewerId = (int)$me['id'];
+$conversation = trux_fetch_direct_conversation_for_user($conversationId, $viewerId);
+if (!$conversation) {
     if ($isJson) {
         header('Content-Type: application/json; charset=utf-8');
-        http_response_code(400);
-        echo json_encode(['ok' => false, 'error' => 'Could not delete post (not found or not yours).']);
+        http_response_code(404);
+        echo json_encode(['ok' => false, 'error' => 'Conversation not found.']);
         exit;
     }
-    trux_flash_set('error', 'Could not delete post (not found or not yours).');
-} else {
-    if ($isJson) {
-        header('Content-Type: application/json; charset=utf-8');
-        echo json_encode([
-            'ok' => true,
-            'post_id' => $postId,
-        ]);
-        exit;
-    }
-    trux_flash_set('success', 'Post deleted.');
+    trux_flash_set('error', 'Conversation not found.');
+    trux_redirect('/messages.php');
 }
 
-// Redirect back
+trux_mark_direct_conversation_read($conversationId, $viewerId);
+
+if ($isJson) {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode([
+        'ok' => true,
+        'conversation_id' => $conversationId,
+    ]);
+    exit;
+}
+
 $back = $_SERVER['HTTP_REFERER'] ?? '';
 if (is_string($back) && $back !== '' && str_starts_with($back, TRUX_BASE_URL)) {
     trux_redirect(str_replace(TRUX_BASE_URL, '', $back));
 }
 
-trux_redirect('/');
+trux_redirect('/messages.php?id=' . $conversationId);

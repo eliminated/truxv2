@@ -464,9 +464,14 @@
   const replyingBox = dock.querySelector("[data-comment-replying]");
   const replyingUser = dock.querySelector("[data-comment-replying-user]");
   const openPostLink = dock.querySelector("[data-comment-open-post]");
+  const loadMoreBtn = dock.querySelector("[data-comment-load-more]");
 
   let currentPostId = 0;
   let lastTrigger = null;
+  let commentCursorBefore = null;
+  let commentHasMore = false;
+  let isLoadingMore = false;
+  let renderedComments = [];
 
   const esc = (value) =>
     String(value)
@@ -649,6 +654,40 @@
     nodes.forEach((n) => {
       n.textContent = String(count);
     });
+  };
+
+  const resetCommentPaging = () => {
+    commentCursorBefore = null;
+    commentHasMore = false;
+    isLoadingMore = false;
+    renderedComments = [];
+  };
+
+  const updateLoadMoreButton = () => {
+    if (!(loadMoreBtn instanceof HTMLButtonElement)) return;
+    loadMoreBtn.hidden = !commentHasMore;
+    loadMoreBtn.disabled = isLoadingMore;
+  };
+
+  const mergeUniqueComments = (existing, incoming) => {
+    const byId = new Map();
+    if (Array.isArray(existing)) {
+      existing.forEach((item) => {
+        const id = Number(item?.id || 0);
+        if (id > 0) byId.set(id, item);
+      });
+    }
+
+    if (Array.isArray(incoming)) {
+      incoming.forEach((item) => {
+        const id = Number(item?.id || 0);
+        if (id > 0) byId.set(id, item);
+      });
+    }
+
+    return Array.from(byId.values()).sort(
+      (a, b) => Number(a?.id || 0) - Number(b?.id || 0)
+    );
   };
 
   const setCommentVoteState = (commentId, score, viewerVote) => {
@@ -861,29 +900,81 @@
     window.dispatchEvent(new CustomEvent("trux:times:refresh"));
   };
 
-  const loadComments = async (postId, focusCommentId = 0) => {
-    if (!list) return;
-    list.innerHTML = `<div class="muted">Loading comments...</div>`;
-    if (empty) empty.hidden = true;
+  const loadComments = async (postId, options = {}) => {
+    if (!list) return [];
+
+    const focusCommentId = Number(options.focusCommentId || 0);
+    const append = !!options.append;
+    const existingComments = Array.isArray(options.existingComments)
+      ? options.existingComments
+      : [];
+
+    if (append && (!commentHasMore || commentCursorBefore === null)) {
+      return existingComments;
+    }
+
+    if (!append) {
+      list.innerHTML = `<div class="muted">Loading comments...</div>`;
+      if (empty) empty.hidden = true;
+      resetCommentPaging();
+      updateLoadMoreButton();
+    }
+
+    const previousScrollHeight =
+      append && listWrap instanceof HTMLElement ? listWrap.scrollHeight : 0;
+    const previousScrollTop =
+      append && listWrap instanceof HTMLElement ? listWrap.scrollTop : 0;
+
+    const params = new URLSearchParams({
+      id: String(postId),
+      limit: "120",
+    });
+    if (append && commentCursorBefore !== null && commentCursorBefore > 0) {
+      params.set("before", String(commentCursorBefore));
+    }
 
     try {
-      const res = await fetch(`/post_comments.php?id=${postId}`, {
+      const res = await fetch(`/post_comments.php?${params.toString()}`, {
         headers: { Accept: "application/json" },
       });
       const data = await res.json();
       if (!res.ok || !data.ok) throw new Error(data.error || "Could not load comments.");
 
-      renderComments(data.comments || []);
-      setCommentCount(postId, Number(data.count || 0));
-      if (focusCommentId > 0) {
+      const incoming = Array.isArray(data.comments) ? data.comments : [];
+      const nextComments = append
+        ? mergeUniqueComments(existingComments, incoming)
+        : incoming;
+
+      const nextBefore = Number(data.next_before || 0);
+      commentCursorBefore = nextBefore > 0 ? nextBefore : null;
+      commentHasMore = !!data.has_more && commentCursorBefore !== null;
+      updateLoadMoreButton();
+
+      renderComments(nextComments);
+
+      const totalCount = Number(data.total_count || data.count || nextComments.length || 0);
+      setCommentCount(postId, totalCount);
+
+      if (append && listWrap instanceof HTMLElement) {
+        const nextHeight = listWrap.scrollHeight;
+        const delta = Math.max(0, nextHeight - previousScrollHeight);
+        listWrap.scrollTop = previousScrollTop + delta;
+      } else if (focusCommentId > 0) {
         window.requestAnimationFrame(() => highlightComment(focusCommentId));
       } else if (listWrap instanceof HTMLElement) {
         listWrap.scrollTop = listWrap.scrollHeight;
       }
+
+      return nextComments;
     } catch (err) {
-      list.innerHTML = `<div class="flash flash--error">Could not load comments.</div>`;
-      if (empty) empty.hidden = true;
+      if (!append) {
+        list.innerHTML = `<div class="flash flash--error">Could not load comments.</div>`;
+        if (empty) empty.hidden = true;
+      }
+      commentHasMore = false;
+      updateLoadMoreButton();
       console.error(err);
+      return existingComments;
     }
   };
 
@@ -928,7 +1019,9 @@
     dock.removeAttribute("hidden");
     document.body.classList.add("commentDock-open");
     clearReplyState();
-    loadComments(postId, focusCommentId);
+    void loadComments(postId, { focusCommentId }).then((comments) => {
+      renderedComments = comments;
+    });
 
     const input = form ? form.querySelector("textarea[name='body']") : null;
     if (input instanceof HTMLTextAreaElement) {
@@ -944,6 +1037,8 @@
     currentPostId = 0;
     if (postIdField) postIdField.value = "";
     clearReplyState();
+    resetCommentPaging();
+    updateLoadMoreButton();
     if (lastTrigger && typeof lastTrigger.focus === "function") {
       lastTrigger.focus();
     }
@@ -1026,7 +1121,7 @@
             String(data.edited_exact_time || "")
           );
         } else {
-          await loadComments(Number(data.post_id || currentPostId || 0));
+          renderedComments = await loadComments(Number(data.post_id || currentPostId || 0));
         }
       } catch (err) {
         window.alert(err instanceof Error ? err.message : "Could not save changes.");
@@ -1128,7 +1223,7 @@
           if (typeof data.comments_count === "number") {
             setCommentCount(Number(data.post_id || currentPostId || 0), data.comments_count);
           }
-          await loadComments(Number(data.post_id || currentPostId || 0));
+          renderedComments = await loadComments(Number(data.post_id || currentPostId || 0));
         }
       } catch (err) {
         window.alert(err instanceof Error ? err.message : "Could not delete.");
@@ -1151,6 +1246,27 @@
     if (closeBtn instanceof HTMLElement) {
       e.preventDefault();
       closeDock();
+      return;
+    }
+
+    const loadMoreTrigger = e.target.closest("[data-comment-load-more='1']");
+    if (loadMoreTrigger instanceof HTMLButtonElement) {
+      e.preventDefault();
+      if (!currentPostId || isLoadingMore || !commentHasMore) {
+        return;
+      }
+
+      isLoadingMore = true;
+      updateLoadMoreButton();
+      try {
+        renderedComments = await loadComments(currentPostId, {
+          append: true,
+          existingComments: renderedComments,
+        });
+      } finally {
+        isLoadingMore = false;
+        updateLoadMoreButton();
+      }
       return;
     }
 
@@ -1312,7 +1428,7 @@
         if (typeof data.comments_count === "number") {
           setCommentCount(currentPostId, data.comments_count);
         }
-        await loadComments(currentPostId);
+        renderedComments = await loadComments(currentPostId);
       } catch (err) {
         window.alert(err instanceof Error ? err.message : "Could not add comment.");
       } finally {
@@ -1529,6 +1645,34 @@
         submitBtn.classList.remove("is-loading");
       }
     }
+  });
+})();
+
+(() => {
+  if (!window.location.pathname.endsWith("/messages.php")) return;
+
+  const layout = document.querySelector("[data-messages-active-conversation-id]");
+  if (!(layout instanceof HTMLElement)) return;
+
+  const conversationId = Number(
+    layout.getAttribute("data-messages-active-conversation-id") || "0"
+  );
+  if (!conversationId) return;
+
+  const csrfInput = document.querySelector("input[name='_csrf']");
+  if (!(csrfInput instanceof HTMLInputElement) || !csrfInput.value) return;
+
+  const payload = new URLSearchParams({
+    _csrf: csrfInput.value,
+    id: String(conversationId),
+  });
+
+  fetch("/mark_conversation_read.php?format=json", {
+    method: "POST",
+    headers: { Accept: "application/json" },
+    body: payload,
+  }).catch(() => {
+    // Ignore failures; message rendering should continue.
   });
 })();
 

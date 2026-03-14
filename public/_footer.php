@@ -22,6 +22,9 @@ declare(strict_types=1);
           <div class="commentDock__list" data-comment-list></div>
           <div class="commentDock__empty muted" data-comment-empty="1">No comments yet.</div>
         </div>
+        <div class="row">
+          <button class="btn btn--small btn--ghost" type="button" data-comment-load-more="1" hidden>Load older comments</button>
+        </div>
 
         <?php if (trux_is_logged_in()): ?>
           <form class="commentDock__form" method="post" action="/comment_post.php" data-comment-form="1" data-no-fx="1">
