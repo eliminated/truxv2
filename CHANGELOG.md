@@ -1,4 +1,29 @@
-# Omincus Updates (Beta Versions)
+# Omincus Updates
+## Omnicus v0.4.0 - Live Production Deployment
+
+**Branch**: Production
+**Date**: 2026-03-15
+
+***
+
+### Added
+
+- Public production deployment announcement for TruX Social
+- Official live URL reference: `https://truxsocial.org/`
+
+***
+
+### Changed
+
+- Release status promoted from beta iteration to a fully deployed public website
+- Changelog now tracks the first live production milestone as `v0.4.0`
+
+***
+
+### Notes
+
+- The website is now fully deployed and accessible at `https://truxsocial.org/`.
+
 ## Omnicus v0.3.91 - Hotfix Rollup
 
 **Branch**: Beta
