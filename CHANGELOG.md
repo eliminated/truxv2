@@ -1,4 +1,70 @@
 # Omincus Updates
+## Omnicus v0.4.5 - Discovery UI Overhaul
+
+**Branch**: Production
+**Date**: 2026-03-15
+
+***
+
+### Added
+
+- New dedicated Discovery module layout on the home feed
+- Purpose-built Discovery style components in `public/assets/style.css` (`discoveryBlock`, `discoveryGrid`, `discoveryPane`)
+- New `discoveryTag` card presentation for trending hashtags
+- New `discoveryUser` row presentation with aligned follow actions
+- Responsive Discovery behavior for tablet and mobile breakpoints
+
+***
+
+### Changed
+
+- Discovery 1.0 section no longer uses settings-style list rendering
+- Trending hashtags and suggested users now render in two structured content panes
+- Follow actions in Discovery suggestions are now visually aligned and easier to scan
+- Discovery content spacing, typography hierarchy, and card readability were improved
+
+***
+
+### Technical
+
+- Updated Discovery markup in `public/index.php` to use semantic pane/list components
+- Hardened follow redirect validation in `public/follow.php` to reject control-character payloads
+- Verified syntax with `C:\\xampp\\php\\php.exe -l public/index.php` and `public/follow.php`
+
+***
+
+## Omnicus v0.4.1 - Discovery & Ranking Algorithm 1.0
+
+**Branch**: Production
+**Date**: 2026-03-15
+
+***
+
+### Added
+
+- New discovery helper layer: `src/discovery.php`
+- Trending hashtags module on the home feed
+- Suggested users ("Who to follow") module on the home feed
+- Optional safe redirect support in `public/follow.php` (`redirect` POST parameter)
+
+***
+
+### Changed
+
+- The `For You` feed now uses Discovery Algorithm 1.0 instead of pure reverse-chronological order
+- Discovery ranking now combines freshness, engagement, and social-proximity signals
+- Home feed hero text and empty state now reflect discovery behavior
+
+***
+
+### Technical
+
+- Added discovery bootstrap include in `public/_bootstrap.php`
+- Discovery feed falls back to chronological feed if discovery-only tables are unavailable
+- User suggestions now use mutual connections, follower momentum, and recent posting activity
+
+***
+
 ## Omnicus v0.4.0 - Live Production Deployment
 
 **Branch**: Production

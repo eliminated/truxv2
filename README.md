@@ -20,6 +20,8 @@ TruX is a lightweight PHP + MySQL/MariaDB social feed with:
 - Edited markers for edited posts/comments/replies
 - Settings page placeholder for future account/app options
 - Pagination on feed + profiles + search results
+- Discovery 1.0 on the "For You" feed (freshness + engagement + social-graph ranking)
+- Home discovery modules: trending hashtags + suggested users
 - Pretty timestamps ("5 minutes ago") with exact time on hover
 - Classic static UI is enforced site-wide (no animated theme)
 
@@ -92,6 +94,7 @@ Implemented:
 - Create posts + uploads (validated + re-encoded)
 - View feed, single post, profile
 - Pagination (feed/profile/search)
+- Discovery ranking feed for "For You" with trending hashtag and user suggestion modules
 - Owner-only edit/delete action menus for posts, comments, replies
 - Search (users + post text)
 - Hashtags with clickable links and hashtag-only search

@@ -23,6 +23,20 @@ if (!is_string($action) || ($action !== 'follow' && $action !== 'unfollow')) {
     trux_redirect('/');
 }
 
+$rawRedirect = $_POST['redirect'] ?? '';
+$safeRedirect = '';
+if (is_string($rawRedirect)) {
+    $candidateRedirect = trim($rawRedirect);
+    if (
+        $candidateRedirect !== ''
+        && str_starts_with($candidateRedirect, '/')
+        && !str_starts_with($candidateRedirect, '//')
+        && !preg_match('/[\r\n]/', $candidateRedirect)
+    ) {
+        $safeRedirect = $candidateRedirect;
+    }
+}
+
 try {
     $targetUser = null;
 
@@ -55,10 +69,11 @@ try {
     $targetId = (int)$targetUser['id'];
     $targetUsername = (string)$targetUser['username'];
     $backToProfile = '/profile.php?u=' . urlencode($targetUsername);
+    $redirectPath = $safeRedirect !== '' ? $safeRedirect : $backToProfile;
 
     if ((int)$me['id'] === $targetId) {
         trux_flash_set('error', 'This is you.');
-        trux_redirect($backToProfile);
+        trux_redirect($redirectPath);
     }
 
     if ($action === 'follow') {
@@ -71,8 +86,11 @@ try {
         trux_flash_set('success', 'Unfollowed @' . $targetUsername . '.');
     }
 
-    trux_redirect($backToProfile);
+    trux_redirect($redirectPath);
 } catch (PDOException $e) {
     trux_flash_set('error', 'Could not update follow state right now.');
+    if ($safeRedirect !== '') {
+        trux_redirect($safeRedirect);
+    }
     trux_redirect('/');
 }

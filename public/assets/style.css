@@ -3110,6 +3110,154 @@ body.commentDock-open {
   }
 }
 
+/* Discovery modules */
+.discoveryBlock {
+  margin-bottom: 14px;
+}
+
+.discoveryBlock__body {
+  display: grid;
+  gap: 14px;
+}
+
+.discoveryBlock__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+
+.discoveryBlock__sub {
+  margin: 0;
+}
+
+.discoveryGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.discoveryPane {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, .10);
+  background: rgba(255, 255, 255, .02);
+}
+
+.discoveryPane__head {
+  display: grid;
+  gap: 4px;
+}
+
+.discoveryPane__desc {
+  margin: 0;
+}
+
+.discoveryEmpty {
+  padding: 8px 0;
+}
+
+.discoveryList {
+  display: grid;
+  gap: 8px;
+}
+
+.discoveryTag {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(122, 167, 255, .20);
+  background: rgba(122, 167, 255, .08);
+  text-decoration: none;
+  transition: border-color 160ms ease, background 160ms ease, transform 160ms ease;
+}
+
+.discoveryTag:hover {
+  text-decoration: none;
+  border-color: rgba(122, 167, 255, .38);
+  background: rgba(122, 167, 255, .12);
+  transform: translateY(-1px);
+}
+
+.discoveryTag__name {
+  color: var(--text);
+  font-weight: 800;
+}
+
+.discoveryTag__meta {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.discoveryUserList {
+  display: grid;
+  gap: 8px;
+}
+
+.discoveryUser {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, .09);
+  background: rgba(255, 255, 255, .02);
+}
+
+.discoveryUser__info {
+  min-width: 0;
+  display: grid;
+  gap: 4px;
+}
+
+.discoveryUser__line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.discoveryUser__name {
+  font-weight: 800;
+}
+
+.discoveryUser__meta {
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.discoveryUser form.inline {
+  display: inline-flex;
+  margin: 0;
+}
+
+.discoveryUser .btn {
+  white-space: nowrap;
+}
+
+@media (max-width: 860px) {
+  .discoveryGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .discoveryUser {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .discoveryUser form.inline,
+  .discoveryUser .btn {
+    width: 100%;
+  }
+}
+
 /* Settings page */
 .settingsCard {
   max-width: 760px;

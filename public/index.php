@@ -18,13 +18,30 @@ if ($feedMode === 'following' && $me) {
     $followingCount = (int)($followCounts['following'] ?? 0);
 }
 
+$viewerId = $me ? (int)$me['id'] : null;
 $posts = $feedMode === 'following' && $me
     ? trux_fetch_following_feed((int)$me['id'], $limit, $before > 0 ? $before : null)
-    : trux_fetch_feed($limit, $before > 0 ? $before : null);
+    : trux_fetch_discovery_feed($viewerId, $limit, $before > 0 ? $before : null);
 $nextBefore = null;
 if (count($posts) > 0) {
     $last = $posts[count($posts) - 1];
     $nextBefore = (int)$last['id'];
+}
+
+$trendingHashtags = [];
+$suggestedUsers = [];
+if ($feedMode === 'all') {
+    $trendingHashtags = trux_fetch_trending_hashtags(8, 24 * 10);
+    $suggestedUsers = trux_fetch_discovery_suggestions($viewerId, $me ? 6 : 7);
+}
+
+$feedReturnParams = ['feed' => $feedMode];
+if ($before > 0) {
+    $feedReturnParams['before'] = $before;
+}
+$feedReturnPath = '/?' . http_build_query($feedReturnParams);
+if ($feedMode === 'all' && $before <= 0) {
+    $feedReturnPath = '/';
 }
 
 $interactionMap = trux_fetch_post_interactions(
@@ -41,9 +58,9 @@ require_once __DIR__ . '/_header.php';
     <?php if ($feedMode === 'following' && $me): ?>
       Latest posts from people you follow, plus your own posts.
     <?php elseif (trux_is_logged_in()): ?>
-      Share something. Keep it real.
+      Discovery 1.0 ranks posts using freshness, engagement, and your social graph.
     <?php else: ?>
-      Log in to post. You can still browse the feed.
+      Explore trending content. Log in for personalized discovery.
     <?php endif; ?>
   </p>
 
@@ -70,6 +87,116 @@ require_once __DIR__ . '/_header.php';
   </div>
 </section>
 
+<?php if ($feedMode === 'all'): ?>
+  <section class="card discoveryBlock" aria-label="Discovery modules">
+    <div class="card__body discoveryBlock__body">
+      <div class="discoveryBlock__head">
+        <h2 class="h2">Discovery 1.0</h2>
+        <p class="muted discoveryBlock__sub">Signals: freshness, engagement, and social proximity</p>
+      </div>
+
+      <div class="discoveryGrid">
+        <article class="discoveryPane">
+          <div class="discoveryPane__head">
+            <h3 class="h2">Trending hashtags</h3>
+            <p class="muted discoveryPane__desc">Based on recent post activity.</p>
+          </div>
+
+          <?php if (!$trendingHashtags): ?>
+            <div class="muted discoveryEmpty">No trending hashtags yet.</div>
+          <?php else: ?>
+            <div class="discoveryList">
+              <?php foreach ($trendingHashtags as $tag): ?>
+                <?php
+                $hashtag = (string)($tag['hashtag'] ?? '');
+                $usageCount = (int)($tag['usage_count'] ?? 0);
+                $recentHits = (int)($tag['recent_hits'] ?? 0);
+                if ($hashtag === '') {
+                    continue;
+                }
+                ?>
+                <a class="discoveryTag" href="/search.php?q=<?= urlencode('#' . $hashtag) ?>&filter=hashtags">
+                  <span class="discoveryTag__name">#<?= trux_e($hashtag) ?></span>
+                  <span class="discoveryTag__meta">
+                    <?= number_format($usageCount) ?> post<?= $usageCount === 1 ? '' : 's' ?>
+                    <?php if ($recentHits > 0): ?>
+                      &middot; <?= number_format($recentHits) ?> in last 24h
+                    <?php endif; ?>
+                  </span>
+                </a>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+        </article>
+
+        <article class="discoveryPane">
+          <div class="discoveryPane__head">
+            <h3 class="h2"><?= $me ? 'Who to follow' : 'Suggested creators' ?></h3>
+            <p class="muted discoveryPane__desc">
+              <?= $me
+                ? 'Picked from mutual connections, follower momentum, and posting activity.'
+                : 'Picked from follower momentum and posting activity.' ?>
+            </p>
+          </div>
+
+          <?php if (!$suggestedUsers): ?>
+            <div class="muted discoveryEmpty">
+              <?= $me ? 'No suggestions yet. Check back as the network grows.' : 'No suggestions yet.' ?>
+            </div>
+          <?php else: ?>
+            <div class="discoveryUserList">
+              <?php foreach ($suggestedUsers as $suggestion): ?>
+                <?php
+                $suggestedId = (int)($suggestion['id'] ?? 0);
+                $suggestedUsername = (string)($suggestion['username'] ?? '');
+                if ($suggestedId <= 0 || $suggestedUsername === '') {
+                    continue;
+                }
+
+                $mutualCount = (int)($suggestion['mutual_count'] ?? 0);
+                $followerCount = (int)($suggestion['follower_count'] ?? 0);
+                $recentPosts = (int)($suggestion['recent_posts'] ?? 0);
+                $displayName = trim((string)($suggestion['display_name'] ?? ''));
+                ?>
+                <div class="discoveryUser">
+                  <div class="discoveryUser__info">
+                    <div class="discoveryUser__line">
+                      <a class="discoveryUser__name" href="/profile.php?u=<?= urlencode($suggestedUsername) ?>">@<?= trux_e($suggestedUsername) ?></a>
+                      <?php if ($displayName !== ''): ?>
+                        <span class="muted"><?= trux_e($displayName) ?></span>
+                      <?php endif; ?>
+                    </div>
+                    <div class="muted discoveryUser__meta">
+                      <?php if ($me && $mutualCount > 0): ?>
+                        <?= number_format($mutualCount) ?> mutual connection<?= $mutualCount === 1 ? '' : 's' ?> &middot;
+                      <?php endif; ?>
+                      <?= number_format($followerCount) ?> follower<?= $followerCount === 1 ? '' : 's' ?> &middot;
+                      <?= number_format($recentPosts) ?> recent post<?= $recentPosts === 1 ? '' : 's' ?>
+                    </div>
+                  </div>
+
+                  <?php if ($me): ?>
+                    <form method="post" action="/follow.php" class="inline" data-no-fx="1">
+                      <?= trux_csrf_field() ?>
+                      <input type="hidden" name="action" value="follow">
+                      <input type="hidden" name="user_id" value="<?= $suggestedId ?>">
+                      <input type="hidden" name="user" value="<?= trux_e($suggestedUsername) ?>">
+                      <input type="hidden" name="redirect" value="<?= trux_e($feedReturnPath) ?>">
+                      <button class="btn btn--small" type="submit">Follow</button>
+                    </form>
+                  <?php else: ?>
+                    <a class="btn btn--small btn--ghost" href="/profile.php?u=<?= urlencode($suggestedUsername) ?>">View</a>
+                  <?php endif; ?>
+                </div>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+        </article>
+      </div>
+    </div>
+  </section>
+<?php endif; ?>
+
 <section class="feed">
   <?php if (!$posts): ?>
     <div class="card">
@@ -79,7 +206,7 @@ require_once __DIR__ . '/_header.php';
         <?php elseif ($feedMode === 'following' && $me): ?>
           No posts from people you follow yet. Check back later or switch to the global feed.
         <?php else: ?>
-          No posts yet. Be the first to post.
+          Discovery does not have enough posts yet. Be the first to post.
         <?php endif; ?>
       </div>
     </div>

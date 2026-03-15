@@ -12,6 +12,7 @@ require_once dirname(__DIR__) . '/src/messages.php';
 require_once dirname(__DIR__) . '/src/profiles.php';
 require_once dirname(__DIR__) . '/src/follows.php';
 require_once dirname(__DIR__) . '/src/mutes.php';
+require_once dirname(__DIR__) . '/src/discovery.php';
 require_once dirname(__DIR__) . '/src/search.php';
 require_once dirname(__DIR__) . '/src/notifications.php';
 require_once dirname(__DIR__) . '/src/upload.php';
