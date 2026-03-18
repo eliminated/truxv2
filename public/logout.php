@@ -10,7 +10,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
       <div class="card__body">
         <h1>Logout</h1>
         <p class="muted">To log out, use the logout button in the top navigation.</p>
-        <a class="btn" href="/">Back</a>
+        <a class="btn" href="<?= TRUX_BASE_URL ?>/">Back</a>
       </div>
     </section>
     <?php

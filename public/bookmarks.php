@@ -121,10 +121,10 @@ $bookmarkBaseParams = static function (array $overrides = []) use ($bookmarkFilt
       <article class="card post" data-post-id="<?= (int)$p['id'] ?>">
         <div class="card__body">
           <div class="post__head">
-            <a class="post__avatar" href="/profile.php?u=<?= trux_e((string)$p['username']) ?>" aria-label="View @<?= trux_e((string)$p['username']) ?> profile"></a>
+            <a class="post__avatar" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$p['username']) ?>" aria-label="View @<?= trux_e((string)$p['username']) ?> profile"></a>
             <div class="post__meta">
               <div class="post__nameRow">
-                <a class="post__user" href="/profile.php?u=<?= trux_e((string)$p['username']) ?>">@<?= trux_e((string)$p['username']) ?></a>
+                <a class="post__user" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$p['username']) ?>">@<?= trux_e((string)$p['username']) ?></a>
               </div>
               <div class="post__subRow">
                 <span class="post__time" title="<?= trux_e(trux_format_exact_time((string)$p['created_at'])) ?>" data-time-ago="1" data-time-source="<?= trux_e((string)$p['created_at']) ?>">
@@ -139,7 +139,7 @@ $bookmarkBaseParams = static function (array $overrides = []) use ($bookmarkFilt
                   </span>
                 <?php endif; ?>
                 <span class="post__dot" aria-hidden="true">&bull;</span>
-                <a class="post__id" href="/post.php?id=<?= (int)$p['id'] ?>">#<?= (int)$p['id'] ?></a>
+                <a class="post__id" href="<?= TRUX_BASE_URL ?>/post.php?id=<?= (int)$p['id'] ?>">#<?= (int)$p['id'] ?></a>
                 <span class="post__dot" aria-hidden="true">&bull;</span>
                 <span class="muted">Saved <?= trux_e(trux_time_ago((string)$p['bookmarked_at'])) ?></span>
               </div>
@@ -195,8 +195,8 @@ $bookmarkBaseParams = static function (array $overrides = []) use ($bookmarkFilt
                 <div class="notificationItem__body">
                   <div class="notificationItem__text">
                     <strong><?= $isReply ? 'Reply' : 'Comment' ?></strong>
-                    by <a href="/profile.php?u=<?= trux_e((string)$comment['username']) ?>">@<?= trux_e((string)$comment['username']) ?></a>
-                    on <a href="/post.php?id=<?= (int)$comment['post_id'] ?>&comment_id=<?= $commentId ?>">post #<?= (int)$comment['post_id'] ?></a>
+                    by <a href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$comment['username']) ?>">@<?= trux_e((string)$comment['username']) ?></a>
+                    on <a href="<?= TRUX_BASE_URL ?>/post.php?id=<?= (int)$comment['post_id'] ?>&comment_id=<?= $commentId ?>">post #<?= (int)$comment['post_id'] ?></a>
                   </div>
                   <div class="post__body"><?= trux_render_comment_body((string)$comment['body']) ?></div>
                   <?php if ($postExcerpt !== ''): ?>
@@ -208,8 +208,8 @@ $bookmarkBaseParams = static function (array $overrides = []) use ($bookmarkFilt
                       &middot; Score <?= (int)$vote['score'] ?>
                     </div>
                     <div class="row">
-                      <a class="btn btn--small btn--ghost" href="/post.php?id=<?= (int)$comment['post_id'] ?>&comment_id=<?= $commentId ?>">Open thread</a>
-                      <form method="post" action="/bookmark_comment.php" data-no-fx="1">
+                      <a class="btn btn--small btn--ghost" href="<?= TRUX_BASE_URL ?>/post.php?id=<?= (int)$comment['post_id'] ?>&comment_id=<?= $commentId ?>">Open thread</a>
+                      <form method="post" action="<?= TRUX_BASE_URL ?>/bookmark_comment.php" data-no-fx="1">
                         <?= trux_csrf_field() ?>
                         <input type="hidden" name="id" value="<?= $commentId ?>">
                         <button class="btn btn--small" type="submit">Remove bookmark</button>

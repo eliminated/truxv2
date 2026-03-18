@@ -9,7 +9,7 @@ if (!$user) {
     if ($isJson) {
         header('Content-Type: application/json; charset=utf-8');
         http_response_code(401);
-        echo json_encode(['ok' => false, 'error' => 'Please log in to continue.', 'login_url' => '/login.php']);
+        echo json_encode(['ok' => false, 'error' => 'Please log in to continue.', 'login_url' => TRUX_BASE_URL . '/login.php']);
         exit;
     }
     trux_flash_set('error', 'Please log in to continue.');
@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'ok' => true,
                         'post' => [
                             'id' => $postId,
-                            'url' => '/post.php?id=' . $postId,
+                            'url' => TRUX_BASE_URL . '/post.php?id=' . $postId,
                             'user_id' => (int)($post['user_id'] ?? $user['id']),
                             'username' => (string)($post['username'] ?? $user['username']),
                             'body' => (string)($post['body'] ?? $body),
@@ -110,7 +110,7 @@ require_once __DIR__ . '/_header.php';
       <div class="flash flash--error"><?= trux_e($error) ?></div>
     <?php endif; ?>
 
-    <form method="post" action="/new_post.php" enctype="multipart/form-data" class="form" data-ajax-new-post="1" data-no-fx="1">
+    <form method="post" action="<?= TRUX_BASE_URL ?>/new_post.php" enctype="multipart/form-data" class="form" data-ajax-new-post="1" data-no-fx="1">
       <?= trux_csrf_field() ?>
 
       <label class="field">
@@ -127,7 +127,7 @@ require_once __DIR__ . '/_header.php';
 
       <div class="row">
         <button class="btn" type="submit">Post</button>
-        <a class="muted" href="/">Cancel</a>
+        <a class="muted" href="<?= TRUX_BASE_URL ?>/">Cancel</a>
       </div>
     </form>
   </div>

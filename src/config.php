@@ -59,3 +59,5 @@ define('TRUX_ALLOWED_IMAGE_MIME', [
     'image/gif'  => 'gif',
     'image/webp' => 'webp',
 ]);
+
+define('BASE_URL', rtrim($_ENV['TRUX_BASE_URL'] ?? 'http://localhost/truxv2/public', '/'));

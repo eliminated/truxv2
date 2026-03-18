@@ -75,7 +75,7 @@ require_once __DIR__ . '/_header.php';
             ?>
             <a
               class="messagesList__item<?= $isActive ? ' is-active' : '' ?>"
-              href="/messages.php?id=<?= $conversationId ?>"
+              href="<?= TRUX_BASE_URL ?>/messages.php?id=<?= $conversationId ?>"
               <?= $isActive ? 'aria-current="page"' : '' ?>>
               <div class="messagesList__row">
                 <span class="messagesList__user">@<?= trux_e((string)$conversation['other_username']) ?></span>
@@ -118,13 +118,13 @@ require_once __DIR__ . '/_header.php';
           </div>
           <div class="row">
             <?php if ($activeConversationId > 0): ?>
-              <form method="post" action="/mark_conversation_read.php" class="inline" data-no-fx="1">
+              <form method="post" action="<?= TRUX_BASE_URL ?>/mark_conversation_read.php" class="inline" data-no-fx="1">
                 <?= trux_csrf_field() ?>
                 <input type="hidden" name="id" value="<?= $activeConversationId ?>">
                 <button class="btn btn--small btn--ghost" type="submit">Mark as read</button>
               </form>
             <?php endif; ?>
-            <a class="btn btn--small btn--ghost" href="/profile.php?u=<?= trux_e((string)$recipientUser['username']) ?>">View profile</a>
+            <a class="btn btn--small btn--ghost" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$recipientUser['username']) ?>">View profile</a>
           </div>
         </div>
 
@@ -154,7 +154,7 @@ require_once __DIR__ . '/_header.php';
           <?php endif; ?>
         </div>
 
-        <form class="messagesComposer" method="post" action="/send_message.php">
+        <form class="messagesComposer" method="post" action="<?= TRUX_BASE_URL ?>/send_message.php">
           <?= trux_csrf_field() ?>
           <?php if ($activeConversationId > 0): ?>
             <input type="hidden" name="conversation_id" value="<?= $activeConversationId ?>">

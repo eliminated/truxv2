@@ -18,17 +18,18 @@ $unreadMessageCount = $user ? trux_count_unread_direct_messages((int)$user['id']
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= trux_e(TRUX_APP_NAME) ?></title>
-  <link rel="stylesheet" href="/assets/style.css">
-  <script defer src="/assets/app.js"></script>
+  <link rel="stylesheet" href="<?= TRUX_BASE_URL ?>/assets/style.css">
+  <script defer src="<?= TRUX_BASE_URL ?>/assets/app.js"></script>
+  <script>window.TRUX_BASE_URL = "<?= TRUX_BASE_URL ?>";</script>
 </head>
 
 <body class="<?= trux_e(implode(' ', $bodyClasses)) ?>">
   <header class="topbar">
     <div class="container topbar__inner">
-      <a class="brand" href="/"><?= trux_e(TRUX_APP_NAME) ?></a>
+      <a class="brand" href="<?= TRUX_BASE_URL ?>/"><?= trux_e(TRUX_APP_NAME) ?></a>
 
       <div class="searchWrap">
-        <form class="search" method="get" action="/search.php" role="search">
+        <form class="search" method="get" action="<?= TRUX_BASE_URL ?>/search.php" role="search">
           <input class="search__input" name="q" value="<?= trux_e($q) ?>" placeholder="Search users or posts..." maxlength="80">
           <button class="search__btn" type="submit">
             Search
@@ -45,7 +46,7 @@ $unreadMessageCount = $user ? trux_count_unread_direct_messages((int)$user['id']
             </button>
 
             <div class="menu__panel" role="menu" aria-label="Create menu">
-              <a class="menu__item" role="menuitem" href="/new_post.php">
+              <a class="menu__item" role="menuitem" href="<?= TRUX_BASE_URL ?>/new_post.php">
                 New Post
                 <span class="muted">Write</span>
               </a>
@@ -65,15 +66,15 @@ $unreadMessageCount = $user ? trux_count_unread_direct_messages((int)$user['id']
             </button>
 
             <div class="menu__panel" role="menu" aria-label="Profile menu">
-              <a class="menu__item" role="menuitem" href="/profile.php?u=<?= trux_e($user['username']) ?>">
+              <a class="menu__item" role="menuitem" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e($user['username']) ?>">
                 Profile
                 <span class="muted">@<?= trux_e($user['username']) ?></span>
               </a>
-              <a class="menu__item" role="menuitem" href="/edit_profile.php">
+              <a class="menu__item" role="menuitem" href="<?= TRUX_BASE_URL ?>/edit_profile.php">
                 Edit Profile
                 <span class="muted">Name, bio, media</span>
               </a>
-              <a class="menu__item" role="menuitem" href="/premium.php">
+              <a class="menu__item" role="menuitem" href="<?= TRUX_BASE_URL ?>/premium.php">
                 <span class="menu__itemLabel">
                   <svg class="menu__itemIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                     <path fill="currentColor" d="M12 2L3 10l9 12 9-12-9-8Zm0 3.1L17.1 10 12 16.8 6.9 10 12 5.1Z" />
@@ -82,7 +83,7 @@ $unreadMessageCount = $user ? trux_count_unread_direct_messages((int)$user['id']
                 </span>
                 <span class="muted">Coming soon</span>
               </a>
-              <a class="menu__item" role="menuitem" href="/messages.php">
+              <a class="menu__item" role="menuitem" href="<?= TRUX_BASE_URL ?>/messages.php">
                 Messages
                 <?php if ($unreadMessageCount > 0): ?>
                   <span class="menuBadge"><?= (int)$unreadMessageCount ?></span>
@@ -90,7 +91,7 @@ $unreadMessageCount = $user ? trux_count_unread_direct_messages((int)$user['id']
                   <span class="muted">Inbox</span>
                 <?php endif; ?>
               </a>
-              <a class="menu__item" role="menuitem" href="/notifications.php">
+              <a class="menu__item" role="menuitem" href="<?= TRUX_BASE_URL ?>/notifications.php">
                 Notifications
                 <?php if ($unreadNotificationCount > 0): ?>
                   <span class="menuBadge"><?= (int)$unreadNotificationCount ?></span>
@@ -98,18 +99,18 @@ $unreadMessageCount = $user ? trux_count_unread_direct_messages((int)$user['id']
                   <span class="muted">All caught up</span>
                 <?php endif; ?>
               </a>
-              <a class="menu__item" role="menuitem" href="/bookmarks.php">
+              <a class="menu__item" role="menuitem" href="<?= TRUX_BASE_URL ?>/bookmarks.php">
                 Bookmarks
                 <span class="muted">Saved items</span>
               </a>
-              <a class="menu__item" role="menuitem" href="/settings.php">
+              <a class="menu__item" role="menuitem" href="<?= TRUX_BASE_URL ?>/settings.php">
                 Settings
                 <span class="muted">Account</span>
               </a>
 
               <div class="menu__divider"></div>
 
-              <form class="menu__form" method="post" action="/logout.php">
+              <form class="menu__form" method="post" action="<?= TRUX_BASE_URL ?>/logout.php">
                 <?= trux_csrf_field() ?>
                 <button class="menu__danger" type="submit">Logout</button>
               </form>
@@ -117,8 +118,8 @@ $unreadMessageCount = $user ? trux_count_unread_direct_messages((int)$user['id']
           </div>
 
         <?php else: ?>
-          <a href="/login.php">Login</a>
-          <a class="btn btn--small" href="/register.php">Create account</a>
+          <a href="<?= TRUX_BASE_URL ?>/login.php">Login</a>
+          <a class="btn btn--small" href="<?= TRUX_BASE_URL ?>/register.php">Create account</a>
         <?php endif; ?>
       </nav>
     </div>

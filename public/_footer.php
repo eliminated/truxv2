@@ -9,7 +9,7 @@ declare(strict_types=1);
     <header class="commentDock__head">
       <h2 id="commentDockTitle">Post Comments</h2>
       <div class="commentDock__headActions">
-        <a class="btn btn--small btn--ghost commentDock__openPost" href="/" target="_self" data-comment-open-post="1">Open post</a>
+        <a class="btn btn--small btn--ghost commentDock__openPost" href="<?= TRUX_BASE_URL ?>/" target="_self" data-comment-open-post="1">Open post</a>
         <button class="iconBtn" type="button" aria-label="Close comments" data-comment-close="1">x</button>
       </div>
     </header>
@@ -27,7 +27,7 @@ declare(strict_types=1);
         </div>
 
         <?php if (trux_is_logged_in()): ?>
-          <form class="commentDock__form" method="post" action="/comment_post.php" data-comment-form="1" data-no-fx="1">
+          <form class="commentDock__form" method="post" action="<?= TRUX_BASE_URL ?>/comment_post.php" data-comment-form="1" data-no-fx="1">
             <input type="hidden" name="_csrf" value="<?= trux_e(trux_csrf_token()) ?>">
             <input type="hidden" name="id" value="" data-comment-post-id="1">
             <input type="hidden" name="parent_id" value="" data-comment-parent-id="1">
@@ -46,7 +46,7 @@ declare(strict_types=1);
           </form>
         <?php else: ?>
           <div class="commentDock__login muted">
-            Log in to comment. <a href="/login.php">Go to login</a>
+            Log in to comment. <a href="<?= TRUX_BASE_URL ?>/login.php">Go to login</a>
           </div>
         <?php endif; ?>
       </div>

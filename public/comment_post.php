@@ -19,7 +19,7 @@ if (!trux_is_logged_in()) {
     if ($isJson) {
         header('Content-Type: application/json; charset=utf-8');
         http_response_code(401);
-        echo json_encode(['ok' => false, 'error' => 'Please log in to comment.', 'login_url' => '/login.php']);
+        echo json_encode(['ok' => false, 'error' => 'Please log in to comment.', 'login_url' => TRUX_BASE_URL . '/login.php']);
         exit;
     }
     trux_flash_set('error', 'Please log in to continue.');

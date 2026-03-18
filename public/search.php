@@ -61,13 +61,13 @@ require_once __DIR__ . '/_header.php';
   <div class="feedSwitch" aria-label="Search filter">
     <a
       class="feedSwitch__item<?= $searchFilter === 'all' ? ' is-active' : '' ?>"
-      href="/search.php?q=<?= urlencode($q) ?>&filter=all"
+      href="<?= TRUX_BASE_URL ?>/search.php?q=<?= urlencode($q) ?>&filter=all"
       <?= $searchFilter === 'all' ? 'aria-current="page"' : '' ?>>
       All
     </a>
     <a
       class="feedSwitch__item<?= $searchFilter === 'hashtags' ? ' is-active' : '' ?>"
-      href="/search.php?q=<?= urlencode($q) ?>&filter=hashtags"
+      href="<?= TRUX_BASE_URL ?>/search.php?q=<?= urlencode($q) ?>&filter=hashtags"
       <?= $searchFilter === 'hashtags' ? 'aria-current="page"' : '' ?>>
       Hashtags
     </a>
@@ -96,7 +96,7 @@ require_once __DIR__ . '/_header.php';
           <ul class="list clean">
             <?php foreach ($users as $u): ?>
               <li>
-                <a href="/profile.php?u=<?= trux_e((string)$u['username']) ?>">@<?= trux_e((string)$u['username']) ?></a>
+                <a href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$u['username']) ?>">@<?= trux_e((string)$u['username']) ?></a>
                 <span class="muted">&bull; joined</span>
                 <span
                   class="muted"
@@ -140,11 +140,11 @@ require_once __DIR__ . '/_header.php';
       <article class="card post" data-post-id="<?= (int)$p['id'] ?>">
         <div class="card__body">
           <div class="post__head">
-            <a class="post__avatar" href="/profile.php?u=<?= trux_e((string)$p['username']) ?>" aria-label="View @<?= trux_e((string)$p['username']) ?> profile"></a>
+            <a class="post__avatar" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$p['username']) ?>" aria-label="View @<?= trux_e((string)$p['username']) ?> profile"></a>
 
             <div class="post__meta">
               <div class="post__nameRow">
-                <a class="post__user" href="/profile.php?u=<?= trux_e((string)$p['username']) ?>">@<?= trux_e((string)$p['username']) ?></a>
+                <a class="post__user" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$p['username']) ?>">@<?= trux_e((string)$p['username']) ?></a>
               </div>
               <div class="post__subRow">
                 <span
@@ -167,7 +167,7 @@ require_once __DIR__ . '/_header.php';
                   </span>
                 <?php endif; ?>
                 <span class="post__dot" aria-hidden="true">&bull;</span>
-                <a class="post__id" href="/post.php?id=<?= (int)$p['id'] ?>">#<?= (int)$p['id'] ?></a>
+                <a class="post__id" href="<?= TRUX_BASE_URL ?>/post.php?id=<?= (int)$p['id'] ?>">#<?= (int)$p['id'] ?></a>
               </div>
             </div>
 
@@ -204,7 +204,7 @@ require_once __DIR__ . '/_header.php';
       <div class="pager">
         <a
           class="btn"
-          href="/search.php?q=<?= urlencode($q) ?>&filter=<?= urlencode($searchFilter) ?>&before=<?= (int)$nextBefore ?>">
+          href="<?= TRUX_BASE_URL ?>/search.php?q=<?= urlencode($q) ?>&filter=<?= urlencode($searchFilter) ?>&before=<?= (int)$nextBefore ?>">
           Load more
         </a>
       </div>

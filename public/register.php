@@ -40,7 +40,7 @@ require_once __DIR__ . '/_header.php';
       </div>
     <?php endif; ?>
 
-    <form method="post" action="/register.php" class="form">
+    <form method="post" action="<?= TRUX_BASE_URL ?>/register.php" class="form">
       <?= trux_csrf_field() ?>
 
       <label class="field">
@@ -62,7 +62,7 @@ require_once __DIR__ . '/_header.php';
 
       <div class="row">
         <button class="btn" type="submit">Create account</button>
-        <a class="muted" href="/login.php">Already have an account?</a>
+        <a class="muted" href="<?= TRUX_BASE_URL ?>/login.php">Already have an account?</a>
       </div>
     </form>
   </div>

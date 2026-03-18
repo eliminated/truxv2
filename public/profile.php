@@ -137,7 +137,7 @@ require_once __DIR__ . '/_header.php';
       </div>
       <div class="profileStats__right">
         <?php if ($isSelf): ?>
-          <a class="btn btn--neonFollow" href="/edit_profile.php">
+          <a class="btn btn--neonFollow" href="<?= TRUX_BASE_URL ?>/edit_profile.php">
             <span class="btn__icon btn__icon--edit" aria-hidden="true">
               <svg viewBox="0 0 24 24" fill="none" focusable="false">
                 <path d="M12 20h9" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" />
@@ -153,7 +153,7 @@ require_once __DIR__ . '/_header.php';
           </button>
         <?php else: ?>
           <div class="profileActions">
-            <form class="profileFollowForm" method="post" action="/follow.php">
+            <form class="profileFollowForm" method="post" action="<?= TRUX_BASE_URL ?>/follow.php">
               <?= trux_csrf_field() ?>
               <input type="hidden" name="action" value="<?= $isFollowing ? 'unfollow' : 'follow' ?>">
               <input type="hidden" name="user_id" value="<?= (int)$profileUser['id'] ?>">
@@ -164,7 +164,7 @@ require_once __DIR__ . '/_header.php';
               </button>
             </form>
 
-            <form class="profileMuteForm" method="post" action="/mute_user.php">
+            <form class="profileMuteForm" method="post" action="<?= TRUX_BASE_URL ?>/mute_user.php">
               <?= trux_csrf_field() ?>
               <input type="hidden" name="action" value="<?= $isMuted ? 'unmute' : 'mute' ?>">
               <input type="hidden" name="user_id" value="<?= (int)$profileUser['id'] ?>">
@@ -174,7 +174,7 @@ require_once __DIR__ . '/_header.php';
               </button>
             </form>
 
-            <a class="btn btn--small btn--ghost" href="/messages.php?with=<?= trux_e(rawurlencode((string)$profileUser['username'])) ?>">
+            <a class="btn btn--small btn--ghost" href="<?= TRUX_BASE_URL ?>/messages.php?with=<?= trux_e(rawurlencode((string)$profileUser['username'])) ?>">
               Message
             </a>
           </div>
@@ -200,11 +200,11 @@ require_once __DIR__ . '/_header.php';
         <article class="card post" data-post-id="<?= (int)$p['id'] ?>">
           <div class="card__body">
             <div class="post__head">
-              <a class="post__avatar" href="/profile.php?u=<?= trux_e((string)$p['username']) ?>" aria-label="View @<?= trux_e((string)$p['username']) ?> profile"></a>
+              <a class="post__avatar" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$p['username']) ?>" aria-label="View @<?= trux_e((string)$p['username']) ?> profile"></a>
 
               <div class="post__meta">
                 <div class="post__nameRow">
-                  <a class="post__user" href="/profile.php?u=<?= trux_e((string)$p['username']) ?>">@<?= trux_e((string)$p['username']) ?></a>
+                  <a class="post__user" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$p['username']) ?>">@<?= trux_e((string)$p['username']) ?></a>
                 </div>
                 <div class="post__subRow">
                   <span
@@ -227,7 +227,7 @@ require_once __DIR__ . '/_header.php';
                     </span>
                   <?php endif; ?>
                   <span class="post__dot" aria-hidden="true">&bull;</span>
-                  <a class="post__id" href="/post.php?id=<?= (int)$p['id'] ?>">#<?= (int)$p['id'] ?></a>
+                  <a class="post__id" href="<?= TRUX_BASE_URL ?>/post.php?id=<?= (int)$p['id'] ?>">#<?= (int)$p['id'] ?></a>
                 </div>
               </div>
 
@@ -263,7 +263,7 @@ require_once __DIR__ . '/_header.php';
 
     <?php if ($nextBefore): ?>
       <div class="pager">
-        <a class="btn" href="/profile.php?u=<?= urlencode($username) ?>&before=<?= (int)$nextBefore ?>">Load more</a>
+        <a class="btn" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= urlencode($username) ?>&before=<?= (int)$nextBefore ?>">Load more</a>
       </div>
     <?php endif; ?>
   </section>

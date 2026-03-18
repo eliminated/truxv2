@@ -13,7 +13,7 @@ $isLoggedIn = (bool)$isLoggedIn;
 ?>
 <div class="post__actionsBar" aria-label="Post actions">
   <?php if ($isLoggedIn): ?>
-    <form class="postActForm" method="post" action="/like_post.php" data-ajax-action="1" data-action-kind="like" data-post-id="<?= $postId ?>" data-no-fx="1">
+    <form class="postActForm" method="post" action="<?= TRUX_BASE_URL ?>/like_post.php" data-ajax-action="1" data-action-kind="like" data-post-id="<?= $postId ?>" data-no-fx="1">
       <?= trux_csrf_field() ?>
       <input type="hidden" name="id" value="<?= $postId ?>">
       <button class="postAct<?= $liked ? ' is-active' : '' ?>" type="submit" aria-label="<?= $liked ? 'Unlike post' : 'Like post' ?>">
@@ -25,7 +25,7 @@ $isLoggedIn = (bool)$isLoggedIn;
       </button>
     </form>
   <?php else: ?>
-    <a class="postAct" href="/login.php" aria-label="Log in to like this post">
+    <a class="postAct" href="<?= TRUX_BASE_URL ?>/login.php" aria-label="Log in to like this post">
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M12 20.2s-6.8-4.4-8.9-8.2c-1.7-3 .2-7 3.8-7 2 0 3.1 1.1 4.1 2.5 1-1.4 2.1-2.5 4.1-2.5 3.6 0 5.5 4 3.8 7-2.1 3.8-8.9 8.2-8.9 8.2Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
@@ -49,7 +49,7 @@ $isLoggedIn = (bool)$isLoggedIn;
   </button>
 
   <?php if ($isLoggedIn): ?>
-    <form class="postActForm" method="post" action="/share_post.php" data-ajax-action="1" data-action-kind="share" data-post-id="<?= $postId ?>" data-no-fx="1">
+    <form class="postActForm" method="post" action="<?= TRUX_BASE_URL ?>/share_post.php" data-ajax-action="1" data-action-kind="share" data-post-id="<?= $postId ?>" data-no-fx="1">
       <?= trux_csrf_field() ?>
       <input type="hidden" name="id" value="<?= $postId ?>">
       <button class="postAct<?= $shared ? ' is-active' : '' ?>" type="submit" aria-label="<?= $shared ? 'Unshare post' : 'Share post' ?>">
@@ -61,7 +61,7 @@ $isLoggedIn = (bool)$isLoggedIn;
       </button>
     </form>
   <?php else: ?>
-    <a class="postAct" href="/login.php" aria-label="Log in to share this post">
+    <a class="postAct" href="<?= TRUX_BASE_URL ?>/login.php" aria-label="Log in to share this post">
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M14 5h5v5M10 14 19 5M19 13v4a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
@@ -71,7 +71,7 @@ $isLoggedIn = (bool)$isLoggedIn;
   <?php endif; ?>
 
   <?php if ($isLoggedIn): ?>
-    <form class="postActForm" method="post" action="/bookmark_post.php" data-ajax-action="1" data-action-kind="bookmark" data-post-id="<?= $postId ?>" data-no-fx="1">
+    <form class="postActForm" method="post" action="<?= TRUX_BASE_URL ?>/bookmark_post.php" data-ajax-action="1" data-action-kind="bookmark" data-post-id="<?= $postId ?>" data-no-fx="1">
       <?= trux_csrf_field() ?>
       <input type="hidden" name="id" value="<?= $postId ?>">
       <button class="postAct<?= $bookmarked ? ' is-active' : '' ?>" type="submit" aria-label="<?= $bookmarked ? 'Remove bookmark' : 'Bookmark post' ?>">
@@ -82,7 +82,7 @@ $isLoggedIn = (bool)$isLoggedIn;
       </button>
     </form>
   <?php else: ?>
-    <a class="postAct" href="/login.php" aria-label="Log in to bookmark this post">
+    <a class="postAct" href="<?= TRUX_BASE_URL ?>/login.php" aria-label="Log in to bookmark this post">
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M7 4.8h10a1 1 0 0 1 1 1V20l-6-3.8L6 20V5.8a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
       </svg>

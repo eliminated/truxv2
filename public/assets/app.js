@@ -202,7 +202,7 @@
 
       try {
         const res = await fetch(
-          `/mention_suggestions.php?q=${encodeURIComponent(context.query)}`,
+          `${(window.TRUX_BASE_URL || "")}/mention_suggestions.php?q=${encodeURIComponent(context.query)}`,
           {
             headers: { Accept: "application/json" },
             signal: controller.signal,
@@ -640,7 +640,7 @@
     if (parent && singlePost instanceof HTMLElement) {
       const flash = document.createElement("div");
       flash.className = "flash flash--success";
-      flash.innerHTML = `Post deleted. <a href="/" data-no-fx="1">Back to feed</a>`;
+      flash.innerHTML = `Post deleted. <a href="${window.TRUX_BASE_URL || ""}/" data-no-fx="1">Back to feed</a>`;
       parent.insertBefore(flash, singlePost);
     }
 
@@ -809,12 +809,12 @@
     item.innerHTML = `
       <div class="commentDock__meta">
         <div class="commentDock__author">
-          <a class="commentDock__avatar" href="/profile.php?u=${encodeURIComponent(c.username)}" aria-label="View @${esc(c.username)} profile">
+          <a class="commentDock__avatar" href="${(window.TRUX_BASE_URL || "")}/profile.php?u=${encodeURIComponent(c.username)}" aria-label="View @${esc(c.username)} profile">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M12 12a4.2 4.2 0 1 0-4.2-4.2A4.2 4.2 0 0 0 12 12Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z" fill="currentColor" />
             </svg>
           </a>
-          <a class="commentDock__user" href="/profile.php?u=${encodeURIComponent(c.username)}">@${esc(c.username)}</a>
+          <a class="commentDock__user" href="${(window.TRUX_BASE_URL || "")}/profile.php?u=${encodeURIComponent(c.username)}">@${esc(c.username)}</a>
         </div>
         <div class="commentDock__metaEnd">
           <span
@@ -934,7 +934,7 @@
     }
 
     try {
-      const res = await fetch(`/post_comments.php?${params.toString()}`, {
+      const res = await fetch(`${window.TRUX_BASE_URL || ""}/post_comments.php?${params.toString()}`, {
         headers: { Accept: "application/json" },
       });
       const data = await res.json();
@@ -1011,7 +1011,7 @@
 
     if (postIdField) postIdField.value = String(postId);
     if (openPostLink) {
-      const href = trigger.getAttribute("data-post-url") || `/post.php?id=${postId}`;
+      const href = trigger.getAttribute("data-post-url") || `${window.TRUX_BASE_URL || ""}/post.php?id=${postId}`;
       openPostLink.setAttribute("href", href);
     }
 
@@ -1092,7 +1092,7 @@
         return;
       }
 
-      const endpoint = isPost ? "/edit_post.php?format=json" : "/edit_comment.php?format=json";
+      const endpoint = isPost ? `${(window.TRUX_BASE_URL || "")}/edit_post.php?format=json` : `${(window.TRUX_BASE_URL || "")}/edit_comment.php?format=json`;
       try {
         const res = await fetch(endpoint, {
           method: "POST",
@@ -1143,7 +1143,7 @@
       }
 
       const endpoint =
-        entityType === "post" ? "/bookmark_post.php?format=json" : "/bookmark_comment.php?format=json";
+        entityType === "post" ? `${(window.TRUX_BASE_URL || "")}/bookmark_post.php?format=json` : `${(window.TRUX_BASE_URL || "")}/bookmark_comment.php?format=json`;
 
       ownerBookmarkBtn.disabled = true;
       try {
@@ -1162,7 +1162,7 @@
 
         if (entityType === "post") {
           setActionActive("bookmark", entityId, !!data.bookmarked);
-          if (!data.bookmarked && window.location.pathname.endsWith("/bookmarks.php")) {
+          if (!data.bookmarked && window.location.href.includes("/bookmarks.php")) {
             removePostCards(entityId);
           }
         } else {
@@ -1198,7 +1198,7 @@
       );
       if (!confirmed) return;
 
-      const endpoint = isPost ? "/delete_post.php?format=json" : "/delete_comment.php?format=json";
+      const endpoint = isPost ? `${(window.TRUX_BASE_URL || "")}/delete_post.php?format=json` : `${(window.TRUX_BASE_URL || "")}/delete_comment.php?format=json`;
       try {
         const res = await fetch(endpoint, {
           method: "POST",
@@ -1290,7 +1290,7 @@
 
       const csrf = getCsrfToken();
       if (!csrf) {
-        window.location.href = "/login.php";
+        window.location.href = (window.TRUX_BASE_URL || "") + "/login.php";
         return;
       }
 
@@ -1300,7 +1300,7 @@
       });
 
       try {
-        const res = await fetch("/bookmark_comment.php?format=json", {
+        const res = await fetch(`${window.TRUX_BASE_URL || ""}/bookmark_comment.php?format=json`, {
           method: "POST",
           headers: { Accept: "application/json" },
           body: new URLSearchParams({
@@ -1340,7 +1340,7 @@
 
       const csrf = getCsrfToken();
       if (!csrf) {
-        window.location.href = "/login.php";
+        window.location.href = (window.TRUX_BASE_URL || "") + "/login.php";
         return;
       }
 
@@ -1350,7 +1350,7 @@
       });
 
       try {
-        const res = await fetch("/vote_comment.php?format=json", {
+        const res = await fetch(`${window.TRUX_BASE_URL || ""}/vote_comment.php?format=json`, {
           method: "POST",
           headers: { Accept: "application/json" },
           body: new URLSearchParams({
@@ -1411,7 +1411,7 @@
         const fd = new FormData(form);
         fd.set("id", String(currentPostId));
 
-        const res = await fetch("/comment_post.php?format=json", {
+        const res = await fetch(`${window.TRUX_BASE_URL || ""}/comment_post.php?format=json`, {
           method: "POST",
           body: fd,
           headers: { Accept: "application/json" },
@@ -1563,7 +1563,7 @@
         setActionActive("share", postId, !!data.shared);
       } else if (kind === "bookmark") {
         setActionActive("bookmark", postId, !!data.bookmarked);
-        if (!data.bookmarked && window.location.pathname.endsWith("/bookmarks.php")) {
+        if (!data.bookmarked && window.location.href.includes("/bookmarks.php")) {
           removePostCards(postId);
         }
         if (typeof window.truxToast === "function") {
@@ -1649,7 +1649,7 @@
 })();
 
 (() => {
-  if (!window.location.pathname.endsWith("/messages.php")) return;
+  if (!window.location.href.includes("/messages.php")) return;
 
   const layout = document.querySelector("[data-messages-active-conversation-id]");
   if (!(layout instanceof HTMLElement)) return;
@@ -1667,7 +1667,7 @@
     id: String(conversationId),
   });
 
-  fetch("/mark_conversation_read.php?format=json", {
+  fetch(`${window.TRUX_BASE_URL || ""}/mark_conversation_read.php?format=json`, {
     method: "POST",
     headers: { Accept: "application/json" },
     body: payload,
@@ -1677,7 +1677,7 @@
 })();
 
 (() => {
-  if (!window.location.pathname.endsWith("/bookmarks.php")) return;
+  if (!window.location.href.includes("/bookmarks.php")) return;
 
   const STORAGE_KEY = "trux.bookmarks.scroll";
   const currentUrl = `${window.location.pathname}${window.location.search}`;

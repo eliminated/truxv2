@@ -48,7 +48,7 @@ require_once __DIR__ . '/_header.php';
 
 <section class="card settingsCard">
   <div class="card__body">
-    <form class="form settingsForm" method="post" action="/settings.php">
+    <form class="form settingsForm" method="post" action="<?= TRUX_BASE_URL ?>/settings.php">
       <?= trux_csrf_field() ?>
       <input type="hidden" name="action" value="save_notifications">
 
@@ -108,7 +108,7 @@ require_once __DIR__ . '/_header.php';
           <div class="settingRow">
             <span class="settingRow__label">
               <strong>
-                <a href="/profile.php?u=<?= urlencode((string)$mutedUser['username']) ?>">@<?= trux_e((string)$mutedUser['username']) ?></a>
+                <a href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= urlencode((string)$mutedUser['username']) ?>">@<?= trux_e((string)$mutedUser['username']) ?></a>
               </strong>
               <small class="muted">
                 Muted
@@ -120,7 +120,7 @@ require_once __DIR__ . '/_header.php';
                 </span>
               </small>
             </span>
-            <form method="post" action="/settings.php" class="inline">
+            <form method="post" action="<?= TRUX_BASE_URL ?>/settings.php" class="inline">
               <?= trux_csrf_field() ?>
               <input type="hidden" name="action" value="unmute_user">
               <input type="hidden" name="muted_user_id" value="<?= (int)$mutedUser['id'] ?>">

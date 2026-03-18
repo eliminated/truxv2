@@ -157,7 +157,7 @@ require_once __DIR__ . '/_header.php';
       </div>
     <?php endif; ?>
 
-    <form class="form settingsForm" method="post" action="/edit_profile.php" enctype="multipart/form-data">
+    <form class="form settingsForm" method="post" action="<?= TRUX_BASE_URL ?>/edit_profile.php" enctype="multipart/form-data">
       <?= trux_csrf_field() ?>
 
       <label class="field">
@@ -199,7 +199,7 @@ require_once __DIR__ . '/_header.php';
           </label>
           <small class="muted">
             Animated GIF profile photos are reserved for Premium and are currently unavailable.
-            <a href="/premium.php">Learn more</a>.
+            <a href="<?= TRUX_BASE_URL ?>/premium.php">Learn more</a>.
           </small>
         </div>
 
@@ -223,7 +223,7 @@ require_once __DIR__ . '/_header.php';
 
       <div class="row">
         <button class="btn" type="submit">Save profile</button>
-        <a class="muted" href="/profile.php?u=<?= urlencode($username) ?>">Cancel</a>
+        <a class="muted" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= urlencode($username) ?>">Cancel</a>
       </div>
     </form>
   </div>

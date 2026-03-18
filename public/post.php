@@ -30,11 +30,11 @@ require_once __DIR__ . '/_header.php';
 <article class="card post post--single" data-post-id="<?= (int)$post['id'] ?>">
   <div class="card__body">
     <div class="post__head">
-      <a class="post__avatar" href="/profile.php?u=<?= trux_e((string)$post['username']) ?>" aria-label="View @<?= trux_e((string)$post['username']) ?> profile"></a>
+      <a class="post__avatar" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$post['username']) ?>" aria-label="View @<?= trux_e((string)$post['username']) ?> profile"></a>
 
       <div class="post__meta">
         <div class="post__nameRow">
-          <a class="post__user" href="/profile.php?u=<?= trux_e((string)$post['username']) ?>">@<?= trux_e((string)$post['username']) ?></a>
+          <a class="post__user" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$post['username']) ?>">@<?= trux_e((string)$post['username']) ?></a>
         </div>
         <div class="post__subRow">
           <span
@@ -88,8 +88,8 @@ require_once __DIR__ . '/_header.php';
     ?>
 
     <div class="row row--spaced">
-      <a class="btn btn--small" href="/">Back to feed</a>
-      <a class="btn btn--small btn--ghost" href="/profile.php?u=<?= trux_e((string)$post['username']) ?>">View profile</a>
+      <a class="btn btn--small" href="<?= TRUX_BASE_URL ?>/">Back to feed</a>
+      <a class="btn btn--small btn--ghost" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$post['username']) ?>">View profile</a>
     </div>
   </div>
 </article>

@@ -2,7 +2,7 @@
 declare(strict_types=1);
 require_once __DIR__ . '/_bootstrap.php';
 
-if (trux_is_logged_in()) trux_redirect('/');
+if (trux_is_logged_in()) trux_redirect(TRUX_BASE_URL . '/');
 
 $login = '';
 $error = null;
@@ -14,7 +14,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $res = trux_attempt_login($login, $password);
     if ($res['ok'] ?? false) {
         trux_flash_set('success', 'Welcome back!');
-        trux_redirect('/');
+        trux_redirect(TRUX_BASE_URL . '/');
     } else {
         $error = (string)($res['error'] ?? 'Login failed.');
     }
@@ -31,7 +31,7 @@ require_once __DIR__ . '/_header.php';
       <div class="flash flash--error"><?= trux_e($error) ?></div>
     <?php endif; ?>
 
-    <form method="post" action="/login.php" class="form">
+    <form method="post" action="<?= TRUX_BASE_URL ?>/login.php" class="form">
       <?= trux_csrf_field() ?>
 
       <label class="field">
@@ -46,7 +46,7 @@ require_once __DIR__ . '/_header.php';
 
       <div class="row">
         <button class="btn" type="submit">Login</button>
-        <a class="muted" href="/register.php">Create account</a>
+        <a class="muted" href="<?= TRUX_BASE_URL ?>/register.php">Create account</a>
       </div>
     </form>
   </div>

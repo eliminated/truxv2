@@ -34,7 +34,7 @@ require_once __DIR__ . '/_header.php';
     <div class="row row--spaced">
       <h2 class="h2">Latest</h2>
       <?php if ($notifications): ?>
-        <form method="post" action="/notifications.php" class="inline">
+        <form method="post" action="<?= TRUX_BASE_URL ?>/notifications.php" class="inline">
           <?= trux_csrf_field() ?>
           <input type="hidden" name="action" value="mark_all_read">
           <button class="btn btn--small btn--ghost" type="submit">Mark all as read</button>
