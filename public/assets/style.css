@@ -1249,6 +1249,10 @@ textarea {
   gap: 12px;
 }
 
+.profile__feed > .profilePanelCard {
+  margin: 0;
+}
+
 .profile__feedHead {
   padding: 10px 14px;
 }

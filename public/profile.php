@@ -492,7 +492,11 @@ require_once __DIR__ . '/_header.php';
           <?php endif; ?>
         </div>
       </div>
-      <?php if ($likedPosts): ?><?php $renderPosts($likedPosts, $likedInteractionMap, $me, 'liked_at', 'Liked '); ?><?php endif; ?>
+      <?php if ($likedPosts): ?>
+        <div class="profile__posts feed">
+          <?php $renderPosts($likedPosts, $likedInteractionMap, $me, 'liked_at', 'Liked '); ?>
+        </div>
+      <?php endif; ?>
       <?php if ($hasMoreLikedPosts): ?>
         <div class="pager"><a class="btn" href="<?= trux_e($profileUrl(['tab' => 'liked', 'liked_posts_page' => $likedPostsPage + 1])) ?>">Load more liked posts</a></div>
       <?php endif; ?>
@@ -527,7 +531,11 @@ require_once __DIR__ . '/_header.php';
           <?php endif; ?>
         </div>
       </div>
-      <?php if ($bookmarkedPosts): ?><?php $renderPosts($bookmarkedPosts, $bookmarkInteractionMap, $me, 'bookmarked_at', 'Saved '); ?><?php endif; ?>
+      <?php if ($bookmarkedPosts): ?>
+        <div class="profile__posts feed">
+          <?php $renderPosts($bookmarkedPosts, $bookmarkInteractionMap, $me, 'bookmarked_at', 'Saved '); ?>
+        </div>
+      <?php endif; ?>
       <?php if ($hasMoreBookmarkedPosts): ?>
         <div class="pager"><a class="btn" href="<?= trux_e($profileUrl(['tab' => 'bookmarks', 'bookmark_posts_page' => $bookmarkPostsPage + 1])) ?>">Load more bookmarked posts</a></div>
       <?php endif; ?>
