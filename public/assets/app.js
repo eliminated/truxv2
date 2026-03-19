@@ -464,14 +464,20 @@
   const replyingBox = dock.querySelector("[data-comment-replying]");
   const replyingUser = dock.querySelector("[data-comment-replying-user]");
   const openPostLink = dock.querySelector("[data-comment-open-post]");
-  const loadMoreBtn = dock.querySelector("[data-comment-load-more]");
+  const editModal = document.getElementById("entityEditModal");
+  const editForm = editModal?.querySelector("[data-entity-edit-form='1']");
+  const editTitle = editModal?.querySelector("[data-edit-title='1']");
+  const editLabel = editModal?.querySelector("[data-edit-label='1']");
+  const editTypeField = editModal?.querySelector("[data-edit-type='1']");
+  const editIdField = editModal?.querySelector("[data-edit-id='1']");
+  const editFlash = editModal?.querySelector("[data-edit-flash='1']");
+  const editTextarea = editForm?.querySelector("textarea[name='body']");
+  const editSubmitBtn = editForm?.querySelector("[data-edit-submit='1']");
 
   let currentPostId = 0;
   let lastTrigger = null;
-  let commentCursorBefore = null;
-  let commentHasMore = false;
-  let isLoadingMore = false;
   let renderedComments = [];
+  let editReturnFocus = null;
 
   const esc = (value) =>
     String(value)
@@ -517,6 +523,103 @@
   const getCsrfToken = () => {
     const input = document.querySelector("input[name='_csrf']");
     return input instanceof HTMLInputElement ? input.value : "";
+  };
+
+  const hasEditUi =
+    editModal instanceof HTMLElement &&
+    editForm instanceof HTMLFormElement &&
+    editTitle instanceof HTMLElement &&
+    editLabel instanceof HTMLElement &&
+    editTypeField instanceof HTMLInputElement &&
+    editIdField instanceof HTMLInputElement &&
+    editFlash instanceof HTMLElement &&
+    editTextarea instanceof HTMLTextAreaElement &&
+    editSubmitBtn instanceof HTMLButtonElement;
+
+  const setEditFlash = (message = "") => {
+    if (!(editFlash instanceof HTMLElement)) return;
+    const text = String(message || "").trim();
+    if (!text) {
+      editFlash.hidden = true;
+      editFlash.textContent = "";
+      return;
+    }
+    editFlash.hidden = false;
+    editFlash.textContent = text;
+  };
+
+  const isEditOpen = () =>
+    editModal instanceof HTMLElement && !editModal.hasAttribute("hidden");
+
+  const setEditBusy = (busy) => {
+    if (editSubmitBtn instanceof HTMLButtonElement) {
+      editSubmitBtn.disabled = !!busy;
+    }
+    if (editTextarea instanceof HTMLTextAreaElement) {
+      editTextarea.readOnly = !!busy;
+    }
+  };
+
+  const openEditModal = (options = {}) => {
+    if (!hasEditUi || !(editModal instanceof HTMLElement) || !(editTextarea instanceof HTMLTextAreaElement)) {
+      return false;
+    }
+
+    const entityType = String(options.entityType || "");
+    const entityId = Number(options.entityId || 0);
+    const currentBody = String(options.currentBody || "");
+    const trigger = options.trigger;
+    if (!entityType || entityId <= 0) {
+      return false;
+    }
+
+    const isPost = entityType === "post";
+    const titleText = isPost ? "Edit post" : "Edit comment / reply";
+    const labelText = isPost ? "Update your post" : "Update your comment / reply";
+    const placeholderText = isPost ? "Edit your post..." : "Edit your comment...";
+    const maxLength = isPost ? 2000 : 1000;
+
+    editReturnFocus =
+      trigger instanceof HTMLElement || trigger instanceof HTMLButtonElement ? trigger : null;
+    editTypeField.value = entityType;
+    editIdField.value = String(entityId);
+    if (editTitle instanceof HTMLElement) editTitle.textContent = titleText;
+    if (editLabel instanceof HTMLElement) editLabel.textContent = labelText;
+    editTextarea.maxLength = maxLength;
+    editTextarea.placeholder = placeholderText;
+    editTextarea.value = currentBody;
+    editTextarea.style.height = "auto";
+    editTextarea.style.height = Math.min(editTextarea.scrollHeight, 420) + "px";
+    setEditFlash("");
+    setEditBusy(false);
+
+    editModal.removeAttribute("hidden");
+    document.body.classList.add("entityEdit-open");
+    window.setTimeout(() => {
+      editTextarea.focus();
+      const len = editTextarea.value.length;
+      editTextarea.setSelectionRange(len, len);
+    }, 20);
+
+    return true;
+  };
+
+  const closeEditModal = (options = {}) => {
+    if (!(editModal instanceof HTMLElement)) return;
+    if (!isEditOpen()) return;
+
+    const shouldRestoreFocus = options.restoreFocus !== false;
+    editModal.setAttribute("hidden", "hidden");
+    document.body.classList.remove("entityEdit-open");
+    setEditFlash("");
+    setEditBusy(false);
+    if (editTypeField instanceof HTMLInputElement) editTypeField.value = "";
+    if (editIdField instanceof HTMLInputElement) editIdField.value = "";
+
+    if (shouldRestoreFocus && editReturnFocus && typeof editReturnFocus.focus === "function") {
+      editReturnFocus.focus();
+    }
+    editReturnFocus = null;
   };
 
   const ownerMenuMarkup = (entityType, entityId, bookmarked = false) => `
@@ -657,16 +760,7 @@
   };
 
   const resetCommentPaging = () => {
-    commentCursorBefore = null;
-    commentHasMore = false;
-    isLoadingMore = false;
     renderedComments = [];
-  };
-
-  const updateLoadMoreButton = () => {
-    if (!(loadMoreBtn instanceof HTMLButtonElement)) return;
-    loadMoreBtn.hidden = !commentHasMore;
-    loadMoreBtn.disabled = isLoadingMore;
   };
 
   const mergeUniqueComments = (existing, incoming) => {
@@ -802,6 +896,15 @@
     const item = document.createElement("article");
     item.className = "commentDock__item";
     item.dataset.commentId = String(c.id);
+    const avatarPath = typeof c.avatar_path === "string" ? c.avatar_path.trim() : "";
+    const avatarMarkup =
+      avatarPath !== ""
+        ? `<img class="commentDock__avatarImage" src="${esc(avatarPath)}" alt="" loading="lazy" decoding="async">`
+        : `
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M12 12a4.2 4.2 0 1 0-4.2-4.2A4.2 4.2 0 0 0 12 12Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z" fill="currentColor" />
+            </svg>
+          `;
     const commentBodyHtml =
       typeof c.body_html === "string" && c.body_html !== ""
         ? c.body_html
@@ -809,10 +912,8 @@
     item.innerHTML = `
       <div class="commentDock__meta">
         <div class="commentDock__author">
-          <a class="commentDock__avatar" href="${(window.TRUX_BASE_URL || "")}/profile.php?u=${encodeURIComponent(c.username)}" aria-label="View @${esc(c.username)} profile">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M12 12a4.2 4.2 0 1 0-4.2-4.2A4.2 4.2 0 0 0 12 12Zm0 2c-4.4 0-8 2.2-8 5v1h16v-1c0-2.8-3.6-5-8-5Z" fill="currentColor" />
-            </svg>
+          <a class="commentDock__avatar${avatarPath !== "" ? " commentDock__avatar--image" : ""}" href="${(window.TRUX_BASE_URL || "")}/profile.php?u=${encodeURIComponent(c.username)}" aria-label="View @${esc(c.username)} profile">
+            ${avatarMarkup}
           </a>
           <a class="commentDock__user" href="${(window.TRUX_BASE_URL || "")}/profile.php?u=${encodeURIComponent(c.username)}">@${esc(c.username)}</a>
         </div>
@@ -904,77 +1005,58 @@
     if (!list) return [];
 
     const focusCommentId = Number(options.focusCommentId || 0);
-    const append = !!options.append;
-    const existingComments = Array.isArray(options.existingComments)
-      ? options.existingComments
-      : [];
-
-    if (append && (!commentHasMore || commentCursorBefore === null)) {
-      return existingComments;
-    }
-
-    if (!append) {
-      list.innerHTML = `<div class="muted">Loading comments...</div>`;
-      if (empty) empty.hidden = true;
-      resetCommentPaging();
-      updateLoadMoreButton();
-    }
-
-    const previousScrollHeight =
-      append && listWrap instanceof HTMLElement ? listWrap.scrollHeight : 0;
-    const previousScrollTop =
-      append && listWrap instanceof HTMLElement ? listWrap.scrollTop : 0;
-
-    const params = new URLSearchParams({
-      id: String(postId),
-      limit: "120",
-    });
-    if (append && commentCursorBefore !== null && commentCursorBefore > 0) {
-      params.set("before", String(commentCursorBefore));
-    }
+    const scrollToEnd = !!options.scrollToEnd;
+    list.innerHTML = `<div class="muted">Loading comments...</div>`;
+    if (empty) empty.hidden = true;
+    resetCommentPaging();
 
     try {
-      const res = await fetch(`${window.TRUX_BASE_URL || ""}/post_comments.php?${params.toString()}`, {
-        headers: { Accept: "application/json" },
-      });
-      const data = await res.json();
-      if (!res.ok || !data.ok) throw new Error(data.error || "Could not load comments.");
+      let nextComments = [];
+      let beforeCursor = null;
+      let hasMore = true;
+      let totalCount = 0;
+      let guard = 0;
 
-      const incoming = Array.isArray(data.comments) ? data.comments : [];
-      const nextComments = append
-        ? mergeUniqueComments(existingComments, incoming)
-        : incoming;
+      while (hasMore && guard < 40) {
+        const params = new URLSearchParams({
+          id: String(postId),
+          limit: "200",
+        });
+        if (beforeCursor !== null && beforeCursor > 0) {
+          params.set("before", String(beforeCursor));
+        }
 
-      const nextBefore = Number(data.next_before || 0);
-      commentCursorBefore = nextBefore > 0 ? nextBefore : null;
-      commentHasMore = !!data.has_more && commentCursorBefore !== null;
-      updateLoadMoreButton();
+        const res = await fetch(`${window.TRUX_BASE_URL || ""}/post_comments.php?${params.toString()}`, {
+          headers: { Accept: "application/json" },
+        });
+        const data = await res.json();
+        if (!res.ok || !data.ok) throw new Error(data.error || "Could not load comments.");
+
+        const incoming = Array.isArray(data.comments) ? data.comments : [];
+        nextComments = mergeUniqueComments(nextComments, incoming);
+        totalCount = Number(data.total_count || data.count || nextComments.length || 0);
+
+        const nextBefore = Number(data.next_before || 0);
+        hasMore = !!data.has_more && nextBefore > 0;
+        beforeCursor = hasMore ? nextBefore : null;
+        guard += 1;
+      }
 
       renderComments(nextComments);
-
-      const totalCount = Number(data.total_count || data.count || nextComments.length || 0);
       setCommentCount(postId, totalCount);
 
-      if (append && listWrap instanceof HTMLElement) {
-        const nextHeight = listWrap.scrollHeight;
-        const delta = Math.max(0, nextHeight - previousScrollHeight);
-        listWrap.scrollTop = previousScrollTop + delta;
-      } else if (focusCommentId > 0) {
+      if (focusCommentId > 0) {
         window.requestAnimationFrame(() => highlightComment(focusCommentId));
       } else if (listWrap instanceof HTMLElement) {
-        listWrap.scrollTop = listWrap.scrollHeight;
+        listWrap.scrollTop = scrollToEnd ? listWrap.scrollHeight : 0;
       }
 
       return nextComments;
     } catch (err) {
-      if (!append) {
-        list.innerHTML = `<div class="flash flash--error">Could not load comments.</div>`;
-        if (empty) empty.hidden = true;
-      }
-      commentHasMore = false;
-      updateLoadMoreButton();
+      list.innerHTML = `<div class="flash flash--error">Could not load comments.</div>`;
+      if (empty) empty.hidden = true;
       console.error(err);
-      return existingComments;
+      return renderedComments;
     }
   };
 
@@ -993,6 +1075,7 @@
     clone.classList.add("commentDock__postPreview");
 
     clone.querySelectorAll(".post__actionsBar, .post__actions").forEach((el) => el.remove());
+    clone.querySelectorAll(".row.row--spaced").forEach((el) => el.remove());
     clone.querySelectorAll("[data-comment-open]").forEach((el) => {
       el.setAttribute("disabled", "disabled");
       el.setAttribute("aria-disabled", "true");
@@ -1019,6 +1102,9 @@
     dock.removeAttribute("hidden");
     document.body.classList.add("commentDock-open");
     clearReplyState();
+    if (listWrap instanceof HTMLElement) {
+      listWrap.scrollTop = 0;
+    }
     void loadComments(postId, { focusCommentId }).then((comments) => {
       renderedComments = comments;
     });
@@ -1032,13 +1118,13 @@
 
   const closeDock = () => {
     if (!isOpen()) return;
+    closeEditModal({ restoreFocus: false });
     dock.setAttribute("hidden", "hidden");
     document.body.classList.remove("commentDock-open");
     currentPostId = 0;
     if (postIdField) postIdField.value = "";
     clearReplyState();
     resetCommentPaging();
-    updateLoadMoreButton();
     if (lastTrigger && typeof lastTrigger.focus === "function") {
       lastTrigger.focus();
     }
@@ -1046,6 +1132,13 @@
 
   document.addEventListener("click", async (e) => {
     if (!(e.target instanceof Element)) return;
+
+    const editCloseTrigger = e.target.closest("[data-edit-close='1'], [data-edit-cancel='1']");
+    if (editCloseTrigger instanceof HTMLElement) {
+      e.preventDefault();
+      closeEditModal();
+      return;
+    }
 
     const menuTrigger = e.target.closest("[data-content-menu-trigger='1']");
     if (menuTrigger instanceof HTMLButtonElement) {
@@ -1069,8 +1162,7 @@
 
       const entityType = ownerEditBtn.getAttribute("data-owner-type") || "";
       const entityId = Number(ownerEditBtn.getAttribute("data-owner-id") || "0");
-      const csrf = getCsrfToken();
-      if (!entityType || !entityId || !csrf) {
+      if (!entityType || !entityId) {
         window.alert("Action unavailable right now.");
         return;
       }
@@ -1080,51 +1172,9 @@
         ? document.querySelector(`.post[data-post-id="${entityId}"] .post__body`)
         : document.querySelector(`[data-comment-id="${entityId}"] .commentDock__body`);
       const currentBody = sourceNode instanceof HTMLElement ? sourceNode.innerText.trim() : "";
-      const nextBody = window.prompt(
-        isPost ? "Edit your post" : "Edit your comment",
-        currentBody
-      );
-      if (nextBody === null) return;
 
-      const trimmedBody = nextBody.trim();
-      if (!trimmedBody) {
-        window.alert(isPost ? "Post cannot be empty." : "Comment cannot be empty.");
-        return;
-      }
-
-      const endpoint = isPost ? `${(window.TRUX_BASE_URL || "")}/edit_post.php?format=json` : `${(window.TRUX_BASE_URL || "")}/edit_comment.php?format=json`;
-      try {
-        const res = await fetch(endpoint, {
-          method: "POST",
-          headers: { Accept: "application/json" },
-          body: new URLSearchParams({
-            _csrf: csrf,
-            id: String(entityId),
-            body: trimmedBody,
-          }),
-        });
-        const data = await readJson(res);
-        if (!res.ok || !data.ok) {
-          throw new Error(data.error || "Could not save changes.");
-        }
-
-        if (isPost) {
-          updatePostBodies(
-            entityId,
-            String(data.body_html || ""),
-            String(data.body || trimmedBody)
-          );
-          setPostEditedState(
-            entityId,
-            String(data.edited_at || ""),
-            String(data.edited_time_ago || ""),
-            String(data.edited_exact_time || "")
-          );
-        } else {
-          renderedComments = await loadComments(Number(data.post_id || currentPostId || 0));
-        }
-      } catch (err) {
-        window.alert(err instanceof Error ? err.message : "Could not save changes.");
+      if (!openEditModal({ entityType, entityId, currentBody, trigger: ownerEditBtn })) {
+        window.alert("Editor unavailable right now.");
       }
       return;
     }
@@ -1249,27 +1299,6 @@
       return;
     }
 
-    const loadMoreTrigger = e.target.closest("[data-comment-load-more='1']");
-    if (loadMoreTrigger instanceof HTMLButtonElement) {
-      e.preventDefault();
-      if (!currentPostId || isLoadingMore || !commentHasMore) {
-        return;
-      }
-
-      isLoadingMore = true;
-      updateLoadMoreButton();
-      try {
-        renderedComments = await loadComments(currentPostId, {
-          append: true,
-          existingComments: renderedComments,
-        });
-      } finally {
-        isLoadingMore = false;
-        updateLoadMoreButton();
-      }
-      return;
-    }
-
     const replyBtn = e.target.closest("[data-comment-reply]");
     if (replyBtn instanceof HTMLElement) {
       e.preventDefault();
@@ -1388,10 +1417,96 @@
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      if (isEditOpen()) {
+        e.preventDefault();
+        closeEditModal();
+        return;
+      }
       closeAllContentMenus();
       closeDock();
     }
   });
+
+  if (
+    editForm instanceof HTMLFormElement &&
+    editTypeField instanceof HTMLInputElement &&
+    editIdField instanceof HTMLInputElement &&
+    editTextarea instanceof HTMLTextAreaElement
+  ) {
+    editForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const entityType = editTypeField.value || "";
+      const entityId = Number(editIdField.value || "0");
+      const isPost = entityType === "post";
+      if (!entityType || entityId <= 0) {
+        setEditFlash("Action unavailable right now.");
+        return;
+      }
+
+      const csrf = getCsrfToken();
+      if (!csrf) {
+        setEditFlash("Session expired. Please refresh the page and try again.");
+        return;
+      }
+
+      const trimmedBody = editTextarea.value.trim();
+      if (!trimmedBody) {
+        setEditFlash(isPost ? "Post cannot be empty." : "Comment cannot be empty.");
+        return;
+      }
+
+      const endpoint = isPost
+        ? `${window.TRUX_BASE_URL || ""}/edit_post.php?format=json`
+        : `${window.TRUX_BASE_URL || ""}/edit_comment.php?format=json`;
+
+      setEditFlash("");
+      setEditBusy(true);
+      try {
+        const res = await fetch(endpoint, {
+          method: "POST",
+          headers: { Accept: "application/json" },
+          body: new URLSearchParams({
+            _csrf: csrf,
+            id: String(entityId),
+            body: trimmedBody,
+          }),
+        });
+        const data = await readJson(res);
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || "Could not save changes.");
+        }
+
+        if (isPost) {
+          updatePostBodies(
+            entityId,
+            String(data.body_html || ""),
+            String(data.body || trimmedBody)
+          );
+          setPostEditedState(
+            entityId,
+            String(data.edited_at || ""),
+            String(data.edited_time_ago || ""),
+            String(data.edited_exact_time || "")
+          );
+        } else {
+          const targetPostId = Number(data.post_id || currentPostId || 0);
+          if (targetPostId > 0) {
+            renderedComments = await loadComments(targetPostId);
+          }
+        }
+
+        closeEditModal();
+        if (typeof window.truxToast === "function") {
+          window.truxToast("Changes saved");
+        }
+      } catch (err) {
+        setEditFlash(err instanceof Error ? err.message : "Could not save changes.");
+      } finally {
+        setEditBusy(false);
+      }
+    });
+  }
 
   if (form instanceof HTMLFormElement) {
     form.addEventListener("submit", async (e) => {
@@ -1428,7 +1543,7 @@
         if (typeof data.comments_count === "number") {
           setCommentCount(currentPostId, data.comments_count);
         }
-        renderedComments = await loadComments(currentPostId);
+        renderedComments = await loadComments(currentPostId, { scrollToEnd: true });
       } catch (err) {
         window.alert(err instanceof Error ? err.message : "Could not add comment.");
       } finally {

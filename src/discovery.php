@@ -109,7 +109,7 @@ function trux_fetch_discovery_feed(?int $viewerId, int $limit = 20, int $page = 
 
     $sql = "
         SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at,
-               u.username,
+               u.username, u.avatar_path,
                {$scoreSql} AS discovery_score
         FROM   posts p
         JOIN   users u ON u.id = p.user_id
@@ -180,7 +180,7 @@ function trux_fetch_discovery_fallback(int $limit, int $offset): array
     try {
         $db   = trux_db();
         $stmt = $db->prepare(
-            'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username
+            'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
              FROM   posts p
              JOIN   users u ON u.id = p.user_id
              ORDER  BY p.id DESC

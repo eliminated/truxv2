@@ -44,7 +44,7 @@ function trux_fetch_feed(int $limit = 20, ?int $beforeId = null): array {
 
     if ($beforeId !== null && $beforeId > 0) {
         $stmt = $db->prepare(
-            'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username
+            'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
              FROM posts p
              JOIN users u ON u.id = p.user_id
              WHERE p.id < ?
@@ -58,7 +58,7 @@ function trux_fetch_feed(int $limit = 20, ?int $beforeId = null): array {
     }
 
     $stmt = $db->prepare(
-        'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username
+        'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
          FROM posts p
          JOIN users u ON u.id = p.user_id
          ORDER BY p.id DESC
@@ -78,7 +78,7 @@ function trux_fetch_following_feed(int $viewerId, int $limit = 20, ?int $beforeI
     $db = trux_db();
 
     $sql = '
-        SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username
+        SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
         FROM posts p
         JOIN users u ON u.id = p.user_id
         WHERE (
@@ -112,7 +112,7 @@ function trux_fetch_following_feed(int $viewerId, int $limit = 20, ?int $beforeI
 function trux_fetch_post_by_id(int $postId): ?array {
     $db = trux_db();
     $stmt = $db->prepare(
-        'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username
+        'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
          FROM posts p
          JOIN users u ON u.id = p.user_id
          WHERE p.id = ?
@@ -184,7 +184,7 @@ function trux_fetch_posts_by_user(int $userId, int $limit = 30, ?int $beforeId =
 
     if ($beforeId !== null && $beforeId > 0) {
         $stmt = $db->prepare(
-            'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username
+            'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
              FROM posts p
              JOIN users u ON u.id = p.user_id
              WHERE p.user_id = ? AND p.id < ?
@@ -199,7 +199,7 @@ function trux_fetch_posts_by_user(int $userId, int $limit = 30, ?int $beforeId =
     }
 
     $stmt = $db->prepare(
-        'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username
+        'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
          FROM posts p
          JOIN users u ON u.id = p.user_id
          WHERE p.user_id = ?
@@ -337,7 +337,7 @@ function trux_fetch_comment_by_id(int $commentId): ?array {
 
     $db = trux_db();
     $stmt = $db->prepare(
-        'SELECT c.id, c.post_id, c.parent_comment_id, c.user_id, c.reply_to_user_id, c.body, c.created_at, c.edited_at, u.username
+        'SELECT c.id, c.post_id, c.parent_comment_id, c.user_id, c.reply_to_user_id, c.body, c.created_at, c.edited_at, u.username, u.avatar_path
          FROM post_comments c
          JOIN users u ON u.id = c.user_id
          WHERE c.id = ?
@@ -610,7 +610,7 @@ function trux_fetch_comment_rows_by_ids(array $commentIds): array {
     try {
         $stmt = $db->prepare(
             "SELECT c.id, c.post_id, c.parent_comment_id, c.user_id, c.reply_to_user_id, c.body, c.created_at, c.edited_at,
-                    u.username, ru.username AS reply_to_username
+                    u.username, u.avatar_path, ru.username AS reply_to_username
              FROM post_comments c
              JOIN users u ON u.id = c.user_id
              LEFT JOIN users ru ON ru.id = c.reply_to_user_id

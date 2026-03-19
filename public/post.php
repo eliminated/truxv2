@@ -30,7 +30,15 @@ require_once __DIR__ . '/_header.php';
 <article class="card post post--single" data-post-id="<?= (int)$post['id'] ?>">
   <div class="card__body">
     <div class="post__head">
-      <a class="post__avatar" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$post['username']) ?>" aria-label="View @<?= trux_e((string)$post['username']) ?> profile"></a>
+      <?php
+      $postAvatarPath = trim((string)($post['avatar_path'] ?? ''));
+      $postAvatarUrl = $postAvatarPath !== '' ? trux_public_url($postAvatarPath) : '';
+      ?>
+      <a class="post__avatar<?= $postAvatarUrl !== '' ? ' post__avatar--image' : '' ?>" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$post['username']) ?>" aria-label="View @<?= trux_e((string)$post['username']) ?> profile">
+        <?php if ($postAvatarUrl !== ''): ?>
+          <img class="post__avatarImage" src="<?= trux_e($postAvatarUrl) ?>" alt="" loading="lazy" decoding="async">
+        <?php endif; ?>
+      </a>
 
       <div class="post__meta">
         <div class="post__nameRow">
@@ -74,9 +82,13 @@ require_once __DIR__ . '/_header.php';
 
     <div class="post__body"><?= trux_render_post_body((string)$post['body']) ?></div>
 
-    <?php if (!empty($post['image_path'])): ?>
+    <?php
+    $postImagePath = trim((string)($post['image_path'] ?? ''));
+    $postImageUrl = $postImagePath !== '' ? trux_public_url($postImagePath) : '';
+    ?>
+    <?php if ($postImageUrl !== ''): ?>
       <div class="post__image">
-        <img src="<?= trux_e((string)$post['image_path']) ?>" alt="Post image">
+        <img src="<?= trux_e($postImageUrl) ?>" alt="Post image">
       </div>
     <?php endif; ?>
 

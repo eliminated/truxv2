@@ -12,6 +12,8 @@ $viewerId = (int)$me['id'];
 $username = (string)$me['username'];
 $currentAvatarPath = is_string($me['avatar_path'] ?? null) ? (string)$me['avatar_path'] : '';
 $currentBannerPath = is_string($me['banner_path'] ?? null) ? (string)$me['banner_path'] : '';
+$currentAvatarUrl = $currentAvatarPath !== '' ? trux_public_url($currentAvatarPath) : '';
+$currentBannerUrl = $currentBannerPath !== '' ? trux_public_url($currentBannerPath) : '';
 
 $form = [
     'display_name' => (string)($me['display_name'] ?? ''),
@@ -184,8 +186,8 @@ require_once __DIR__ . '/_header.php';
       <div class="profileMediaGrid">
         <div class="profileMediaCard">
           <h2 class="h2">Profile Photo</h2>
-          <?php if ($currentAvatarPath !== ''): ?>
-            <img class="profileMediaPreview profileMediaPreview--avatar" src="<?= trux_e($currentAvatarPath) ?>" alt="Current profile photo" loading="lazy" decoding="async">
+          <?php if ($currentAvatarUrl !== ''): ?>
+            <img class="profileMediaPreview profileMediaPreview--avatar" src="<?= trux_e($currentAvatarUrl) ?>" alt="Current profile photo" loading="lazy" decoding="async">
           <?php else: ?>
             <div class="profileMediaEmpty muted">No profile photo uploaded.</div>
           <?php endif; ?>
@@ -205,8 +207,8 @@ require_once __DIR__ . '/_header.php';
 
         <div class="profileMediaCard">
           <h2 class="h2">Profile Banner</h2>
-          <?php if ($currentBannerPath !== ''): ?>
-            <img class="profileMediaPreview profileMediaPreview--banner" src="<?= trux_e($currentBannerPath) ?>" alt="Current profile banner" loading="lazy" decoding="async">
+          <?php if ($currentBannerUrl !== ''): ?>
+            <img class="profileMediaPreview profileMediaPreview--banner" src="<?= trux_e($currentBannerUrl) ?>" alt="Current profile banner" loading="lazy" decoding="async">
           <?php else: ?>
             <div class="profileMediaEmpty muted">No banner uploaded.</div>
           <?php endif; ?>

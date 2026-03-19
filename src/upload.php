@@ -1,13 +1,6 @@
 <?php
 declare(strict_types=1);
 
-function trux_gd_required_or_error(): ?string {
-    if (!function_exists('imagecreatetruecolor') || !function_exists('getimagesize')) {
-        return 'Server image processing is not available (GD missing).';
-    }
-    return null;
-}
-
 function trux_delete_uploaded_file(?string $publicPath): void {
     if (!is_string($publicPath) || $publicPath === '') {
         return;
@@ -21,6 +14,30 @@ function trux_delete_uploaded_file(?string $publicPath): void {
     if (is_file($abs)) {
         @unlink($abs);
     }
+}
+
+function trux_store_uploaded_image_raw(array $file, string $mime, string $publicUploadsDirAbs, string $publicUploadsUrlPrefix): array {
+    $ext = TRUX_ALLOWED_IMAGE_MIME[$mime] ?? null;
+    if ($ext === null) {
+        return ['ok' => false, 'path' => null, 'error' => 'Unsupported image type.'];
+    }
+
+    $name = bin2hex(random_bytes(16)) . '.' . $ext;
+
+    if (!is_dir($publicUploadsDirAbs)) {
+        if (!mkdir($publicUploadsDirAbs, 0755, true)) {
+            return ['ok' => false, 'path' => null, 'error' => 'Could not create upload directory.'];
+        }
+    }
+
+    $destAbs = rtrim($publicUploadsDirAbs, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $name;
+    if (!move_uploaded_file((string)$file['tmp_name'], $destAbs)) {
+        return ['ok' => false, 'path' => null, 'error' => 'Could not save uploaded image.'];
+    }
+
+    @chmod($destAbs, 0644);
+    $publicPath = rtrim($publicUploadsUrlPrefix, '/') . '/' . $name;
+    return ['ok' => true, 'path' => $publicPath, 'error' => null];
 }
 
 function trux_handle_image_upload(array $file, string $publicUploadsDirAbs, string $publicUploadsUrlPrefix): array {
@@ -50,10 +67,6 @@ function trux_handle_image_upload(array $file, string $publicUploadsDirAbs, stri
         return ['ok' => false, 'path' => null, 'error' => 'File too large (max 4MB).'];
     }
 
-    if ($gdErr = trux_gd_required_or_error()) {
-        return ['ok' => false, 'path' => null, 'error' => $gdErr];
-    }
-
     $finfo = new finfo(FILEINFO_MIME_TYPE);
     $mime = $finfo->file($file['tmp_name']);
     if (!is_string($mime) || $mime === '') {
@@ -64,19 +77,26 @@ function trux_handle_image_upload(array $file, string $publicUploadsDirAbs, stri
         return ['ok' => false, 'path' => null, 'error' => 'Unsupported image type.'];
     }
 
-    $info = @getimagesize($file['tmp_name']);
-    if ($info === false || !isset($info[0], $info[1])) {
-        return ['ok' => false, 'path' => null, 'error' => 'Invalid image file.'];
+    if (function_exists('getimagesize')) {
+        $info = @getimagesize($file['tmp_name']);
+        if ($info === false || !isset($info[0], $info[1])) {
+            return ['ok' => false, 'path' => null, 'error' => 'Invalid image file.'];
+        }
+
+        $w = (int)$info[0];
+        $h = (int)$info[1];
+        if ($w <= 0 || $h <= 0) {
+            return ['ok' => false, 'path' => null, 'error' => 'Invalid image dimensions.'];
+        }
+
+        if ($w > TRUX_MAX_IMAGE_WIDTH || $h > TRUX_MAX_IMAGE_HEIGHT || ($w * $h) > TRUX_MAX_IMAGE_PIXELS) {
+            return ['ok' => false, 'path' => null, 'error' => 'Image dimensions too large (max 4096x4096).'];
+        }
     }
 
-    $w = (int)$info[0];
-    $h = (int)$info[1];
-    if ($w <= 0 || $h <= 0) {
-        return ['ok' => false, 'path' => null, 'error' => 'Invalid image dimensions.'];
-    }
-
-    if ($w > TRUX_MAX_IMAGE_WIDTH || $h > TRUX_MAX_IMAGE_HEIGHT || ($w * $h) > TRUX_MAX_IMAGE_PIXELS) {
-        return ['ok' => false, 'path' => null, 'error' => 'Image dimensions too large (max 4096x4096).'];
+    // If GD is unavailable, keep uploads working by storing the validated file as-is.
+    if (!function_exists('imagecreatetruecolor')) {
+        return trux_store_uploaded_image_raw($file, $mime, $publicUploadsDirAbs, $publicUploadsUrlPrefix);
     }
 
     // Decode using GD, then re-encode to strip metadata.

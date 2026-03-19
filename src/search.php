@@ -60,7 +60,7 @@ function trux_search_posts_by_hashtag(string $term, int $limit = 20, ?int $befor
     try {
         if ($beforeId !== null && $beforeId > 0) {
             $stmt = $db->prepare(
-                "SELECT DISTINCT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username
+                "SELECT DISTINCT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
                  FROM posts p
                  JOIN users u ON u.id = p.user_id
                  LEFT JOIN post_hashtags ph ON ph.post_id = p.id
@@ -78,7 +78,7 @@ function trux_search_posts_by_hashtag(string $term, int $limit = 20, ?int $befor
         }
 
         $stmt = $db->prepare(
-            "SELECT DISTINCT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username
+            "SELECT DISTINCT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
              FROM posts p
              JOIN users u ON u.id = p.user_id
              LEFT JOIN post_hashtags ph ON ph.post_id = p.id
@@ -95,7 +95,7 @@ function trux_search_posts_by_hashtag(string $term, int $limit = 20, ?int $befor
     } catch (PDOException) {
         if ($beforeId !== null && $beforeId > 0) {
             $stmt = $db->prepare(
-                "SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username
+                "SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
                  FROM posts p
                  JOIN users u ON u.id = p.user_id
                  WHERE p.id < ? AND LOWER(p.body) REGEXP ?
@@ -110,7 +110,7 @@ function trux_search_posts_by_hashtag(string $term, int $limit = 20, ?int $befor
         }
 
         $stmt = $db->prepare(
-            "SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username
+            "SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
              FROM posts p
              JOIN users u ON u.id = p.user_id
              WHERE LOWER(p.body) REGEXP ?
@@ -137,7 +137,7 @@ function trux_search_posts(string $term, int $limit = 20, ?int $beforeId = null)
 
     if ($beforeId !== null && $beforeId > 0) {
         $stmt = $db->prepare(
-            "SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username
+            "SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
              FROM posts p
              JOIN users u ON u.id = p.user_id
              WHERE p.id < ? AND (p.body LIKE ? ESCAPE '\\\\' OR u.username LIKE ? ESCAPE '\\\\')
@@ -153,7 +153,7 @@ function trux_search_posts(string $term, int $limit = 20, ?int $beforeId = null)
     }
 
     $stmt = $db->prepare(
-        "SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username
+        "SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
          FROM posts p
          JOIN users u ON u.id = p.user_id
          WHERE p.body LIKE ? ESCAPE '\\\\' OR u.username LIKE ? ESCAPE '\\\\'

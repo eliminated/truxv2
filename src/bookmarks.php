@@ -160,7 +160,7 @@ function trux_fetch_user_bookmarked_posts(int $userId, int $limit = 100, int $of
 
     try {
         $stmt = $db->prepare(
-            'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username,
+            'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path,
                     b.created_at AS bookmarked_at
              FROM post_bookmarks b
              JOIN posts p ON p.id = b.post_id

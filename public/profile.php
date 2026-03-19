@@ -59,6 +59,8 @@ $bio = trim((string)($profileUser['bio'] ?? ''));
 $location = trim((string)($profileUser['location'] ?? ''));
 $avatarPath = trim((string)($profileUser['avatar_path'] ?? ''));
 $bannerPath = trim((string)($profileUser['banner_path'] ?? ''));
+$avatarUrl = $avatarPath !== '' ? trux_public_url($avatarPath) : '';
+$bannerUrl = $bannerPath !== '' ? trux_public_url($bannerPath) : '';
 $websiteUrl = trim((string)($profileUser['website_url'] ?? ''));
 $websiteLabel = '';
 if ($websiteUrl !== '') {
@@ -77,14 +79,14 @@ require_once __DIR__ . '/_header.php';
 <div class="profile">
   <section class="profile__hero">
     <div class="profile__banner" aria-hidden="true">
-      <?php if ($bannerPath !== ''): ?>
-        <img class="profile__bannerImage" src="<?= trux_e($bannerPath) ?>" alt="" loading="lazy" decoding="async">
+      <?php if ($bannerUrl !== ''): ?>
+        <img class="profile__bannerImage" src="<?= trux_e($bannerUrl) ?>" alt="" loading="lazy" decoding="async">
       <?php endif; ?>
     </div>
     <div class="profile__identity">
-      <div class="profile__avatar<?= $avatarPath !== '' ? ' profile__avatar--image' : '' ?>" aria-hidden="true">
-        <?php if ($avatarPath !== ''): ?>
-          <img class="profile__avatarImage" src="<?= trux_e($avatarPath) ?>" alt="">
+      <div class="profile__avatar<?= $avatarUrl !== '' ? ' profile__avatar--image' : '' ?>" aria-hidden="true">
+        <?php if ($avatarUrl !== ''): ?>
+          <img class="profile__avatarImage" src="<?= trux_e($avatarUrl) ?>" alt="">
         <?php endif; ?>
       </div>
       <div class="profile__titleBlock">
@@ -200,7 +202,15 @@ require_once __DIR__ . '/_header.php';
         <article class="card post" data-post-id="<?= (int)$p['id'] ?>">
           <div class="card__body">
             <div class="post__head">
-              <a class="post__avatar" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$p['username']) ?>" aria-label="View @<?= trux_e((string)$p['username']) ?> profile"></a>
+              <?php
+              $postAvatarPath = trim((string)($p['avatar_path'] ?? ''));
+              $postAvatarUrl = $postAvatarPath !== '' ? trux_public_url($postAvatarPath) : '';
+              ?>
+              <a class="post__avatar<?= $postAvatarUrl !== '' ? ' post__avatar--image' : '' ?>" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$p['username']) ?>" aria-label="View @<?= trux_e((string)$p['username']) ?> profile">
+                <?php if ($postAvatarUrl !== ''): ?>
+                  <img class="post__avatarImage" src="<?= trux_e($postAvatarUrl) ?>" alt="" loading="lazy" decoding="async">
+                <?php endif; ?>
+              </a>
 
               <div class="post__meta">
                 <div class="post__nameRow">
@@ -244,9 +254,13 @@ require_once __DIR__ . '/_header.php';
 
             <div class="post__body"><?= trux_render_post_body((string)$p['body']) ?></div>
 
-            <?php if (!empty($p['image_path'])): ?>
+            <?php
+            $postImagePath = trim((string)($p['image_path'] ?? ''));
+            $postImageUrl = $postImagePath !== '' ? trux_public_url($postImagePath) : '';
+            ?>
+            <?php if ($postImageUrl !== ''): ?>
               <div class="post__image">
-                <img src="<?= trux_e((string)$p['image_path']) ?>" alt="Post image" loading="lazy" decoding="async">
+                <img src="<?= trux_e($postImageUrl) ?>" alt="Post image" loading="lazy" decoding="async">
               </div>
             <?php endif; ?>
 

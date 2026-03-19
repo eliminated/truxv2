@@ -5,6 +5,23 @@ function trux_e(string $s): string {
     return htmlspecialchars($s, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 }
 
+function trux_public_url(?string $path): string {
+    $value = trim((string)$path);
+    if ($value === '') {
+        return '';
+    }
+
+    if (preg_match('#^https?://#i', $value)) {
+        return $value;
+    }
+
+    if (str_starts_with($value, '/')) {
+        return TRUX_BASE_URL . $value;
+    }
+
+    return TRUX_BASE_URL . '/' . ltrim($value, '/');
+}
+
 function trux_redirect(string $path): void {
     $url = (str_starts_with($path, 'http://') || str_starts_with($path, 'https://'))
         ? $path

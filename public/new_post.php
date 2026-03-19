@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             'username' => (string)($post['username'] ?? $user['username']),
                             'body' => (string)($post['body'] ?? $body),
                             'body_html' => trux_render_post_body((string)($post['body'] ?? $body)),
-                            'image_path' => isset($post['image_path']) ? (string)$post['image_path'] : null,
+                            'image_path' => isset($post['image_path']) ? trux_public_url((string)$post['image_path']) : null,
                             'created_at' => (string)($post['created_at'] ?? ''),
                             'time_ago' => isset($post['created_at']) ? trux_time_ago((string)$post['created_at']) : 'just now',
                         ],

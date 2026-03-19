@@ -121,7 +121,15 @@ $bookmarkBaseParams = static function (array $overrides = []) use ($bookmarkFilt
       <article class="card post" data-post-id="<?= (int)$p['id'] ?>">
         <div class="card__body">
           <div class="post__head">
-            <a class="post__avatar" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$p['username']) ?>" aria-label="View @<?= trux_e((string)$p['username']) ?> profile"></a>
+            <?php
+            $postAvatarPath = trim((string)($p['avatar_path'] ?? ''));
+            $postAvatarUrl = $postAvatarPath !== '' ? trux_public_url($postAvatarPath) : '';
+            ?>
+            <a class="post__avatar<?= $postAvatarUrl !== '' ? ' post__avatar--image' : '' ?>" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$p['username']) ?>" aria-label="View @<?= trux_e((string)$p['username']) ?> profile">
+              <?php if ($postAvatarUrl !== ''): ?>
+                <img class="post__avatarImage" src="<?= trux_e($postAvatarUrl) ?>" alt="" loading="lazy" decoding="async">
+              <?php endif; ?>
+            </a>
             <div class="post__meta">
               <div class="post__nameRow">
                 <a class="post__user" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$p['username']) ?>">@<?= trux_e((string)$p['username']) ?></a>
@@ -148,9 +156,13 @@ $bookmarkBaseParams = static function (array $overrides = []) use ($bookmarkFilt
 
           <div class="post__body"><?= trux_render_post_body((string)$p['body']) ?></div>
 
-          <?php if (!empty($p['image_path'])): ?>
+          <?php
+          $postImagePath = trim((string)($p['image_path'] ?? ''));
+          $postImageUrl = $postImagePath !== '' ? trux_public_url($postImagePath) : '';
+          ?>
+          <?php if ($postImageUrl !== ''): ?>
             <div class="post__image">
-              <img src="<?= trux_e((string)$p['image_path']) ?>" alt="Post image" loading="lazy" decoding="async">
+              <img src="<?= trux_e($postImageUrl) ?>" alt="Post image" loading="lazy" decoding="async">
             </div>
           <?php endif; ?>
 
