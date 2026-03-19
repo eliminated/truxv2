@@ -1,7 +1,8 @@
 <?php
 declare(strict_types=1);
 
-function trux_delete_uploaded_file(?string $publicPath): void {
+function trux_delete_uploaded_file(?string $publicPath): void
+{
     if (!is_string($publicPath) || $publicPath === '') {
         return;
     }
@@ -16,7 +17,8 @@ function trux_delete_uploaded_file(?string $publicPath): void {
     }
 }
 
-function trux_store_uploaded_image_raw(array $file, string $mime, string $publicUploadsDirAbs, string $publicUploadsUrlPrefix): array {
+function trux_store_uploaded_image_raw(array $file, string $mime, string $publicUploadsDirAbs, string $publicUploadsUrlPrefix): array
+{
     $ext = TRUX_ALLOWED_IMAGE_MIME[$mime] ?? null;
     if ($ext === null) {
         return ['ok' => false, 'path' => null, 'error' => 'Unsupported image type.'];
@@ -31,16 +33,19 @@ function trux_store_uploaded_image_raw(array $file, string $mime, string $public
     }
 
     $destAbs = rtrim($publicUploadsDirAbs, DIRECTORY_SEPARATOR) . DIRECTORY_SEPARATOR . $name;
-    if (!move_uploaded_file((string)$file['tmp_name'], $destAbs)) {
+    if (!move_uploaded_file((string) $file['tmp_name'], $destAbs)) {
         return ['ok' => false, 'path' => null, 'error' => 'Could not save uploaded image.'];
     }
 
-    @chmod($destAbs, 0644);
+    if (!@chmod($destAbs, 0644)) {
+        @chmod($destAbs, 0664);
+    }
     $publicPath = rtrim($publicUploadsUrlPrefix, '/') . '/' . $name;
     return ['ok' => true, 'path' => $publicPath, 'error' => null];
 }
 
-function trux_handle_image_upload(array $file, string $publicUploadsDirAbs, string $publicUploadsUrlPrefix): array {
+function trux_handle_image_upload(array $file, string $publicUploadsDirAbs, string $publicUploadsUrlPrefix): array
+{
     // Returns: ['ok' => bool, 'path' => ?string, 'error' => ?string]
     if (!isset($file['error']) || !is_int($file['error'])) {
         return ['ok' => false, 'path' => null, 'error' => 'Invalid upload payload.'];
@@ -83,8 +88,8 @@ function trux_handle_image_upload(array $file, string $publicUploadsDirAbs, stri
             return ['ok' => false, 'path' => null, 'error' => 'Invalid image file.'];
         }
 
-        $w = (int)$info[0];
-        $h = (int)$info[1];
+        $w = (int) $info[0];
+        $h = (int) $info[1];
         if ($w <= 0 || $h <= 0) {
             return ['ok' => false, 'path' => null, 'error' => 'Invalid image dimensions.'];
         }
@@ -168,7 +173,9 @@ function trux_handle_image_upload(array $file, string $publicUploadsDirAbs, stri
         return ['ok' => false, 'path' => null, 'error' => 'Could not save processed image.'];
     }
 
-    @chmod($destAbs, 0644);
+    if (!@chmod($destAbs, 0644)) {
+        @chmod($destAbs, 0664);
+    }
 
     $publicPath = rtrim($publicUploadsUrlPrefix, '/') . '/' . $name;
     return ['ok' => true, 'path' => $publicPath, 'error' => null];

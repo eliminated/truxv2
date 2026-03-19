@@ -228,11 +228,10 @@ require_once __DIR__ . '/_header.php';
       <div class="card__body">
         <div class="post__head">
           <?php
-          $postAvatarPath = trim((string)($p['avatar_path'] ?? ''));
+          $postAvatarPath = trim((string) ($p['avatar_path'] ?? ''));
           $postAvatarUrl = $postAvatarPath !== '' ? trux_public_url($postAvatarPath) : '';
           ?>
-          <a
-            class="post__avatar<?= $postAvatarUrl !== '' ? ' post__avatar--image' : '' ?>"
+          <a class="post__avatar<?= $postAvatarUrl !== '' ? ' post__avatar--image' : '' ?>"
             href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string) $p['username']) ?>"
             aria-label="View @<?= trux_e((string) $p['username']) ?> profile">
             <?php if ($postAvatarUrl !== ''): ?>
@@ -278,7 +277,7 @@ require_once __DIR__ . '/_header.php';
         <div class="post__body"><?= trux_render_post_body((string) $p['body']) ?></div>
 
         <?php
-        $postImagePath = trim((string)($p['image_path'] ?? ''));
+        $postImagePath = trim((string) ($p['image_path'] ?? ''));
         $postImageUrl = $postImagePath !== '' ? trux_public_url($postImagePath) : '';
         ?>
         <?php if ($postImageUrl !== ''): ?>
@@ -303,9 +302,9 @@ require_once __DIR__ . '/_header.php';
       class="btn"
       href="<?php
       if ($feedMode === 'following') {
-        echo '/?feed=following&before=' . (int) $nextBefore;
+        echo TRUX_BASE_URL . '/?feed=following&before=' . (int) $nextBefore;
       } else {
-        echo '/?page=' . (int) $nextDiscoveryPage;
+        echo TRUX_BASE_URL . '/?page=' . (int) $nextDiscoveryPage;
       }
       ?>">
       Load more
