@@ -13,6 +13,8 @@ $unreadMessageCount = $user ? trux_count_unread_direct_messages((int)$user['id']
 $notificationMenuItems = $user ? trux_fetch_notifications((int)$user['id'], 60) : [];
 $notificationBadgeLabel = $unreadNotificationCount > 99 ? '99+' : (string)$unreadNotificationCount;
 $notificationRedirectPath = '/notifications.php';
+$showProfileMenuEditProfile = false;
+$showProfileMenuPremium = false; // Placeholder stays available in code until Premium is ready.
 $basePath = (string)(parse_url(TRUX_BASE_URL, PHP_URL_PATH) ?? '');
 $rawRequestUri = $_SERVER['REQUEST_URI'] ?? '';
 if (is_string($rawRequestUri) && $rawRequestUri !== '') {
@@ -150,19 +152,23 @@ if (is_string($rawRequestUri) && $rawRequestUri !== '') {
                 Profile
                 <span class="muted">@<?= trux_e($user['username']) ?></span>
               </a>
-              <a class="menu__item" role="menuitem" href="<?= TRUX_BASE_URL ?>/edit_profile.php">
-                Edit Profile
-                <span class="muted">Name, bio, media</span>
-              </a>
-              <a class="menu__item" role="menuitem" href="<?= TRUX_BASE_URL ?>/premium.php">
-                <span class="menu__itemLabel">
-                  <svg class="menu__itemIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                    <path fill="currentColor" d="M12 2L3 10l9 12 9-12-9-8Zm0 3.1L17.1 10 12 16.8 6.9 10 12 5.1Z" />
-                  </svg>
-                  Premium
-                </span>
-                <span class="muted">Coming soon</span>
-              </a>
+              <?php if ($showProfileMenuEditProfile): ?>
+                <a class="menu__item" role="menuitem" href="<?= TRUX_BASE_URL ?>/edit_profile.php">
+                  Edit Profile
+                  <span class="muted">Name, bio, media</span>
+                </a>
+              <?php endif; ?>
+              <?php if ($showProfileMenuPremium): ?>
+                <a class="menu__item" role="menuitem" href="<?= TRUX_BASE_URL ?>/premium.php">
+                  <span class="menu__itemLabel">
+                    <svg class="menu__itemIcon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path fill="currentColor" d="M12 2L3 10l9 12 9-12-9-8Zm0 3.1L17.1 10 12 16.8 6.9 10 12 5.1Z" />
+                    </svg>
+                    Premium
+                  </span>
+                  <span class="muted">Coming soon</span>
+                </a>
+              <?php endif; ?>
               <a class="menu__item" role="menuitem" href="<?= TRUX_BASE_URL ?>/messages.php">
                 Messages
                 <?php if ($unreadMessageCount > 0): ?>

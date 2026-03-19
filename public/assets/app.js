@@ -1936,6 +1936,876 @@
 })();
 
 (() => {
+  const cards = Array.from(document.querySelectorAll("[data-profile-media-card]"));
+  const modal = document.getElementById("profileCropperModal");
+  if (!cards.length || !(modal instanceof HTMLElement)) return;
+
+  const viewport = modal.querySelector("[data-profile-crop-viewport='1']");
+  const stageImage = modal.querySelector("[data-profile-crop-image='1']");
+  const avatarGuide = modal.querySelector("[data-profile-crop-avatar-guide='1']");
+  const title = modal.querySelector("[data-profile-crop-title='1']");
+  const subtitle = modal.querySelector("[data-profile-crop-subtitle='1']");
+  const previewFrame = modal.querySelector("[data-profile-crop-preview-frame='1']");
+  const previewImage = modal.querySelector("[data-profile-crop-preview-image='1']");
+  const zoomInput = modal.querySelector("[data-profile-crop-zoom='1']");
+  const resetButton = modal.querySelector("[data-profile-crop-reset='1']");
+  const applyButton = modal.querySelector("[data-profile-crop-apply='1']");
+  const closeButtons = modal.querySelectorAll(
+    "[data-profile-crop-close='1'], [data-profile-crop-cancel='1']"
+  );
+
+  if (
+    !(viewport instanceof HTMLElement) ||
+    !(stageImage instanceof HTMLImageElement) ||
+    !(avatarGuide instanceof HTMLElement) ||
+    !(title instanceof HTMLElement) ||
+    !(subtitle instanceof HTMLElement) ||
+    !(previewFrame instanceof HTMLElement) ||
+    !(previewImage instanceof HTMLImageElement) ||
+    !(zoomInput instanceof HTMLInputElement) ||
+    !(resetButton instanceof HTMLButtonElement) ||
+    !(applyButton instanceof HTMLButtonElement)
+  ) {
+    return;
+  }
+
+  const mediaConfig = {
+    avatar: {
+      label: "Profile photo",
+      cropTitle: "Crop profile photo",
+      cropSubtitle:
+        "Square crop. Drag the image to frame it, then zoom in if you want a tighter shot.",
+      aspectRatio: 1,
+      maxZoomPercent: 300,
+      readyMessage: "Profile photo cropped. Save profile to publish it.",
+      removedMessage: "Profile photo will be removed when you save.",
+    },
+    banner: {
+      label: "Profile banner",
+      cropTitle: "Crop profile banner",
+      cropSubtitle:
+        "Wide crop. Drag to choose the section you want across the top of your profile.",
+      aspectRatio: 16 / 6,
+      maxZoomPercent: 300,
+      readyMessage: "Profile banner cropped. Save profile to publish it.",
+      removedMessage: "Profile banner will be removed when you save.",
+    },
+  };
+
+  const acceptedMimeTypes = new Set([
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+  ]);
+  const mimeExtensions = {
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/gif": "gif",
+    "image/webp": "webp",
+  };
+  const mediaStates = new Map();
+  let activeSession = null;
+
+  const showToast = (message, type = "error") => {
+    if (!message) return;
+    if (typeof window.truxToast === "function") {
+      window.truxToast(message, type);
+    }
+  };
+
+  const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+
+  const clearInlinePreviewStyles = (image) => {
+    if (!(image instanceof HTMLImageElement)) return;
+    image.style.width = "";
+    image.style.height = "";
+    image.style.maxWidth = "";
+    image.style.maxHeight = "";
+    image.style.transform = "";
+    image.style.transformOrigin = "";
+  };
+
+  const getElementSize = (element) => {
+    if (!(element instanceof HTMLElement)) {
+      return { width: 0, height: 0 };
+    }
+
+    return {
+      width: element.clientWidth || element.offsetWidth || 0,
+      height: element.clientHeight || element.offsetHeight || 0,
+    };
+  };
+
+  const setStatus = (state, message = "") => {
+    if (!state?.statusEl) return;
+    const text = String(message || "").trim();
+    state.statusEl.textContent = text;
+    state.statusEl.hidden = text === "";
+  };
+
+  const renderCropIntoFrame = (
+    frame,
+    image,
+    sourceUrl,
+    naturalWidth,
+    naturalHeight,
+    crop
+  ) => {
+    if (
+      !(frame instanceof HTMLElement) ||
+      !(image instanceof HTMLImageElement) ||
+      !sourceUrl ||
+      !naturalWidth ||
+      !naturalHeight ||
+      !crop
+    ) {
+      return;
+    }
+
+    const size = getElementSize(frame);
+    if (!size.width || !size.height) {
+      return;
+    }
+
+    const cropWidth = Number(crop.width || 0);
+    const cropHeight = Number(crop.height || 0);
+    const cropX = Number(crop.x || 0);
+    const cropY = Number(crop.y || 0);
+    if (cropWidth <= 0 || cropHeight <= 0) {
+      return;
+    }
+
+    const scale = Math.max(size.width / cropWidth, size.height / cropHeight);
+    image.hidden = false;
+    image.src = sourceUrl;
+    image.style.width = `${naturalWidth * scale}px`;
+    image.style.height = `${naturalHeight * scale}px`;
+    image.style.maxWidth = "none";
+    image.style.maxHeight = "none";
+    image.style.transform = `translate(${-cropX * scale}px, ${-cropY * scale}px)`;
+    image.style.transformOrigin = "top left";
+  };
+
+  const revokeObjectUrl = (url) => {
+    if (typeof url === "string" && url.startsWith("blob:")) {
+      URL.revokeObjectURL(url);
+    }
+  };
+
+  const clearCommittedSelection = (state, options = {}) => {
+    if (!state) return;
+
+    const preserveStatus = options.preserveStatus === true;
+    revokeObjectUrl(state.selectedUrl);
+    state.selectedUrl = "";
+    state.selectedNaturalWidth = 0;
+    state.selectedNaturalHeight = 0;
+    state.cropData = null;
+
+    if (state.cropField instanceof HTMLInputElement) {
+      state.cropField.value = "";
+    }
+    if (state.input instanceof HTMLInputElement) {
+      state.input.value = "";
+    }
+    if (!preserveStatus) {
+      setStatus(state, "");
+    }
+  };
+
+  const renderMediaPreview = (state) => {
+    if (!state) return;
+
+    const hasCommittedSelection =
+      state.selectedUrl !== "" &&
+      state.selectedNaturalWidth > 0 &&
+      state.selectedNaturalHeight > 0 &&
+      state.cropData !== null &&
+      !(state.removeCheckbox instanceof HTMLInputElement && state.removeCheckbox.checked);
+    const showOriginal =
+      !hasCommittedSelection &&
+      state.originalSrc !== "" &&
+      !(state.removeCheckbox instanceof HTMLInputElement && state.removeCheckbox.checked);
+
+    if (state.previewFrame instanceof HTMLElement) {
+      state.previewFrame.hidden = !(hasCommittedSelection || showOriginal);
+    }
+
+    if (state.emptyEl instanceof HTMLElement) {
+      state.emptyEl.hidden = hasCommittedSelection || showOriginal;
+    }
+
+    if (state.recropButton instanceof HTMLButtonElement) {
+      state.recropButton.hidden = false;
+    }
+
+    if (!(state.previewImage instanceof HTMLImageElement)) {
+      return;
+    }
+
+    if (hasCommittedSelection) {
+      renderCropIntoFrame(
+        state.previewFrame,
+        state.previewImage,
+        state.selectedUrl,
+        state.selectedNaturalWidth,
+        state.selectedNaturalHeight,
+        state.cropData
+      );
+      state.previewImage.alt = `${state.config.label} crop preview`;
+      return;
+    }
+
+    clearInlinePreviewStyles(state.previewImage);
+
+    if (showOriginal) {
+      state.previewImage.hidden = false;
+      state.previewImage.src = state.originalSrc;
+      state.previewImage.alt = `Current ${state.config.label.toLowerCase()}`;
+      return;
+    }
+
+    state.previewImage.hidden = true;
+    state.previewImage.removeAttribute("src");
+    state.previewImage.alt = "";
+  };
+
+  const readImageInfo = (url) =>
+    new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => {
+        if (image.naturalWidth > 0 && image.naturalHeight > 0) {
+          resolve({
+            width: image.naturalWidth,
+            height: image.naturalHeight,
+          });
+          return;
+        }
+        reject(new Error("Could not read image dimensions."));
+      };
+      image.onerror = () => reject(new Error("Could not load selected image."));
+      image.src = url;
+    });
+
+  const extensionFromSource = (sourceUrl, mimeType) => {
+    const normalizedMime = String(mimeType || "").toLowerCase();
+    if (mimeExtensions[normalizedMime]) {
+      return mimeExtensions[normalizedMime];
+    }
+
+    try {
+      const url = new URL(sourceUrl, window.location.href);
+      const match = url.pathname.match(/\.([a-z0-9]+)$/i);
+      if (match && typeof match[1] === "string") {
+        const ext = match[1].toLowerCase();
+        if (["jpg", "jpeg", "png", "gif", "webp"].includes(ext)) {
+          return ext === "jpeg" ? "jpg" : ext;
+        }
+      }
+    } catch {
+      // Ignore URL parsing failures and fall back below.
+    }
+
+    return "png";
+  };
+
+  const buildExistingMediaFile = (state, blob) => {
+    const extension = extensionFromSource(state.originalSrc, blob.type);
+    const mimeType =
+      blob.type && acceptedMimeTypes.has(blob.type)
+        ? blob.type
+        : `image/${extension === "jpg" ? "jpeg" : extension}`;
+
+    return new File([blob], `${state.type}-crop-source.${extension}`, {
+      type: mimeType,
+      lastModified: Date.now(),
+    });
+  };
+
+  const assignFileToInput = (input, file) => {
+    if (!(input instanceof HTMLInputElement) || !(file instanceof File)) {
+      return false;
+    }
+    if (typeof DataTransfer === "undefined") {
+      return false;
+    }
+
+    const transfer = new DataTransfer();
+    transfer.items.add(file);
+    input.files = transfer.files;
+    return input.files instanceof FileList && input.files.length === 1;
+  };
+
+  const clearReplaceAttempt = (state) => {
+    clearCommittedSelection(state);
+    renderMediaPreview(state);
+  };
+
+  const openFileCropper = async (state, file, options = {}) => {
+    if (!(file instanceof File)) {
+      return false;
+    }
+
+    const replacedCommittedSelection =
+      options.replacedCommittedSelection === true || state.selectedUrl !== "";
+
+    if (state.maxBytes > 0 && file.size > state.maxBytes) {
+      if (state.input instanceof HTMLInputElement) {
+        state.input.value = "";
+      }
+      if (replacedCommittedSelection) {
+        clearReplaceAttempt(state);
+      }
+      showToast(`${state.config.label} must be 4MB or smaller.`, "error");
+      return false;
+    }
+
+    if (file.type && !acceptedMimeTypes.has(file.type)) {
+      if (state.input instanceof HTMLInputElement) {
+        state.input.value = "";
+      }
+      if (replacedCommittedSelection) {
+        clearReplaceAttempt(state);
+      }
+      showToast(`Unsupported file type for ${state.config.label.toLowerCase()}.`, "error");
+      return false;
+    }
+
+    if (state.removeCheckbox.checked) {
+      state.removeCheckbox.checked = false;
+      setStatus(state, "");
+    }
+
+    const objectUrl = URL.createObjectURL(file);
+    try {
+      const info = await readImageInfo(objectUrl);
+      openCropper(state, {
+        mode: "new",
+        sourceUrl: objectUrl,
+        naturalWidth: info.width,
+        naturalHeight: info.height,
+        pendingUrl: objectUrl,
+        replacedCommittedSelection,
+        initialCrop: options.initialCrop ?? null,
+      });
+      return true;
+    } catch (error) {
+      revokeObjectUrl(objectUrl);
+      if (state.input instanceof HTMLInputElement) {
+        state.input.value = "";
+      }
+      if (replacedCommittedSelection) {
+        clearReplaceAttempt(state);
+      }
+      showToast(
+        error instanceof Error ? error.message : "Could not load selected image.",
+        "error"
+      );
+      return false;
+    }
+  };
+
+  const fetchExistingMediaIntoInput = async (state) => {
+    if (!state.originalSrc) {
+      return false;
+    }
+
+    let response;
+    try {
+      response = await fetch(state.originalSrc, {
+        credentials: "same-origin",
+      });
+    } catch {
+      showToast(`Could not load the current ${state.config.label.toLowerCase()}.`, "error");
+      return false;
+    }
+
+    if (!response.ok) {
+      showToast(`Could not load the current ${state.config.label.toLowerCase()}.`, "error");
+      return false;
+    }
+
+    const blob = await response.blob();
+    const file = buildExistingMediaFile(state, blob);
+    const assigned = assignFileToInput(state.input, file);
+    if (!assigned) {
+      showToast(
+        `Your browser could not prepare the current ${state.config.label.toLowerCase()} for recropping.`,
+        "error"
+      );
+      return false;
+    }
+
+    return openFileCropper(state, file, {
+      replacedCommittedSelection: false,
+    });
+  };
+
+  const getViewportRect = (session, roundValues = false) => {
+    const viewportSize = getElementSize(viewport);
+    const scale = session?.scale || 0;
+    if (!session || !viewportSize.width || !viewportSize.height || scale <= 0) {
+      return null;
+    }
+
+    const x = Math.max(0, -session.x / scale);
+    const y = Math.max(0, -session.y / scale);
+    const width = Math.min(
+      session.naturalWidth - x,
+      viewportSize.width / scale
+    );
+    const height = Math.min(
+      session.naturalHeight - y,
+      viewportSize.height / scale
+    );
+
+    if (width <= 0 || height <= 0) {
+      return null;
+    }
+
+    if (!roundValues) {
+      return { x, y, width, height };
+    }
+
+    const roundedX = clamp(Math.round(x), 0, Math.max(0, session.naturalWidth - 1));
+    const roundedY = clamp(Math.round(y), 0, Math.max(0, session.naturalHeight - 1));
+
+    return {
+      x: roundedX,
+      y: roundedY,
+      width: clamp(Math.round(width), 1, session.naturalWidth - roundedX),
+      height: clamp(Math.round(height), 1, session.naturalHeight - roundedY),
+    };
+  };
+
+  const clampSessionPosition = (session) => {
+    const viewportSize = getElementSize(viewport);
+    const renderedWidth = session.naturalWidth * session.scale;
+    const renderedHeight = session.naturalHeight * session.scale;
+    const minX = Math.min(0, viewportSize.width - renderedWidth);
+    const minY = Math.min(0, viewportSize.height - renderedHeight);
+
+    session.x = clamp(session.x, minX, 0);
+    session.y = clamp(session.y, minY, 0);
+  };
+
+  const syncZoomInput = (session) => {
+    const percent = Math.round((session.scale / session.minScale) * 100);
+    zoomInput.value = String(clamp(percent, 100, session.config.maxZoomPercent));
+  };
+
+  const renderSession = (session) => {
+    if (!session || activeSession !== session) return;
+
+    const renderedWidth = session.naturalWidth * session.scale;
+    const renderedHeight = session.naturalHeight * session.scale;
+
+    stageImage.hidden = false;
+    stageImage.src = session.sourceUrl;
+    stageImage.style.width = `${renderedWidth}px`;
+    stageImage.style.height = `${renderedHeight}px`;
+    stageImage.style.maxWidth = "none";
+    stageImage.style.maxHeight = "none";
+    stageImage.style.transform = `translate(${session.x}px, ${session.y}px)`;
+    stageImage.style.transformOrigin = "top left";
+
+    const crop = getViewportRect(session, false);
+    if (crop) {
+      renderCropIntoFrame(
+        previewFrame,
+        previewImage,
+        session.sourceUrl,
+        session.naturalWidth,
+        session.naturalHeight,
+        crop
+      );
+    }
+
+    syncZoomInput(session);
+  };
+
+  const setSessionScale = (session, nextScale, anchorX, anchorY) => {
+    if (!session) return;
+
+    const viewportSize = getElementSize(viewport);
+    const focusX = Number.isFinite(anchorX) ? anchorX : viewportSize.width / 2;
+    const focusY = Number.isFinite(anchorY) ? anchorY : viewportSize.height / 2;
+    const boundedScale = clamp(nextScale, session.minScale, session.maxScale);
+
+    const sourceFocusX = (focusX - session.x) / session.scale;
+    const sourceFocusY = (focusY - session.y) / session.scale;
+
+    session.scale = boundedScale;
+    session.x = focusX - sourceFocusX * session.scale;
+    session.y = focusY - sourceFocusY * session.scale;
+    clampSessionPosition(session);
+    renderSession(session);
+  };
+
+  const resetSession = (session, crop = null) => {
+    if (!session) return;
+
+    const viewportSize = getElementSize(viewport);
+    if (!viewportSize.width || !viewportSize.height) {
+      window.requestAnimationFrame(() => {
+        if (activeSession === session) {
+          resetSession(session, crop);
+        }
+      });
+      return;
+    }
+
+    session.minScale = Math.max(
+      viewportSize.width / session.naturalWidth,
+      viewportSize.height / session.naturalHeight
+    );
+    session.maxScale = session.minScale * (session.config.maxZoomPercent / 100);
+
+    if (
+      crop &&
+      Number(crop.width) > 0 &&
+      Number(crop.height) > 0
+    ) {
+      const nextScale = Math.max(
+        viewportSize.width / Number(crop.width),
+        viewportSize.height / Number(crop.height)
+      );
+      session.scale = clamp(nextScale, session.minScale, session.maxScale);
+      session.x = -Number(crop.x || 0) * session.scale;
+      session.y = -Number(crop.y || 0) * session.scale;
+    } else {
+      session.scale = session.minScale;
+      session.x = (viewportSize.width - session.naturalWidth * session.scale) / 2;
+      session.y = (viewportSize.height - session.naturalHeight * session.scale) / 2;
+    }
+
+    clampSessionPosition(session);
+    renderSession(session);
+  };
+
+  const openCropper = (state, sessionOptions) => {
+    if (!state || !sessionOptions?.sourceUrl) return;
+
+    const initialCrop =
+      sessionOptions.mode === "existing" ? state.cropData : sessionOptions.initialCrop;
+
+    activeSession = {
+      state,
+      config: state.config,
+      mode: sessionOptions.mode,
+      sourceUrl: sessionOptions.sourceUrl,
+      naturalWidth: sessionOptions.naturalWidth,
+      naturalHeight: sessionOptions.naturalHeight,
+      pendingUrl: sessionOptions.pendingUrl || null,
+      replacedCommittedSelection: sessionOptions.replacedCommittedSelection === true,
+      scale: 1,
+      minScale: 1,
+      maxScale: 1,
+      x: 0,
+      y: 0,
+      dragPointerId: null,
+      dragStartX: 0,
+      dragStartY: 0,
+      startX: 0,
+      startY: 0,
+    };
+
+    title.textContent = state.config.cropTitle;
+    subtitle.textContent = state.config.cropSubtitle;
+    avatarGuide.hidden = state.type !== "avatar";
+    viewport.style.setProperty("--profile-crop-aspect", String(state.config.aspectRatio));
+    previewFrame.classList.toggle("profileCropper__previewFrame--avatar", state.type === "avatar");
+    previewFrame.classList.toggle("profileCropper__previewFrame--banner", state.type === "banner");
+    modal.hidden = false;
+    document.body.classList.add("profileCropper-open");
+    previewFrame.hidden = false;
+    previewImage.hidden = false;
+    stageImage.alt = `${state.config.label} crop source`;
+    previewImage.alt = `${state.config.label} crop preview`;
+
+    window.requestAnimationFrame(() => {
+      if (activeSession) {
+        resetSession(activeSession, initialCrop);
+      }
+    });
+  };
+
+  const closeCropper = (options = {}) => {
+    const session = activeSession;
+    activeSession = null;
+
+    viewport.classList.remove("is-dragging");
+    modal.hidden = true;
+    document.body.classList.remove("profileCropper-open");
+    clearInlinePreviewStyles(stageImage);
+    clearInlinePreviewStyles(previewImage);
+    stageImage.hidden = true;
+    previewImage.hidden = true;
+    stageImage.removeAttribute("src");
+    previewImage.removeAttribute("src");
+
+    if (!session) return;
+
+    if (session.pendingUrl) {
+      revokeObjectUrl(session.pendingUrl);
+    }
+
+    if (!options.keepInput && session.mode === "new" && session.state.input instanceof HTMLInputElement) {
+      session.state.input.value = "";
+      if (session.replacedCommittedSelection) {
+        clearCommittedSelection(session.state);
+        renderMediaPreview(session.state);
+      }
+    }
+  };
+
+  const commitSessionCrop = () => {
+    const session = activeSession;
+    if (!session) return;
+
+    const crop = getViewportRect(session, true);
+    if (!crop) {
+      showToast("Could not read the selected crop.", "error");
+      return;
+    }
+
+    const state = session.state;
+    const replacingCommittedUrl = state.selectedUrl;
+
+    if (session.mode === "new" && replacingCommittedUrl && replacingCommittedUrl !== session.sourceUrl) {
+      revokeObjectUrl(replacingCommittedUrl);
+    }
+
+    state.selectedUrl = session.sourceUrl;
+    state.selectedNaturalWidth = session.naturalWidth;
+    state.selectedNaturalHeight = session.naturalHeight;
+    state.cropData = crop;
+
+    if (state.cropField instanceof HTMLInputElement) {
+      state.cropField.value = JSON.stringify(crop);
+    }
+    if (state.removeCheckbox instanceof HTMLInputElement) {
+      state.removeCheckbox.checked = false;
+    }
+
+    setStatus(state, state.config.readyMessage);
+    renderMediaPreview(state);
+
+    session.pendingUrl = null;
+    closeCropper({ keepInput: true });
+  };
+
+  closeButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      closeCropper();
+    });
+  });
+
+  applyButton.addEventListener("click", () => {
+    commitSessionCrop();
+  });
+
+  resetButton.addEventListener("click", () => {
+    if (!activeSession) return;
+    resetSession(activeSession);
+  });
+
+  zoomInput.addEventListener("input", () => {
+    if (!activeSession) return;
+    const percent = Number(zoomInput.value || "100");
+    const nextScale = activeSession.minScale * (percent / 100);
+    const viewportSize = getElementSize(viewport);
+    setSessionScale(activeSession, nextScale, viewportSize.width / 2, viewportSize.height / 2);
+  });
+
+  viewport.addEventListener(
+    "wheel",
+    (event) => {
+      if (!activeSession) return;
+      event.preventDefault();
+
+      const rect = viewport.getBoundingClientRect();
+      const nextPercent = Number(zoomInput.value || "100") + (event.deltaY < 0 ? 8 : -8);
+      zoomInput.value = String(
+        clamp(nextPercent, 100, activeSession.config.maxZoomPercent)
+      );
+      const nextScale = activeSession.minScale * (Number(zoomInput.value) / 100);
+      setSessionScale(
+        activeSession,
+        nextScale,
+        event.clientX - rect.left,
+        event.clientY - rect.top
+      );
+    },
+    { passive: false }
+  );
+
+  viewport.addEventListener("pointerdown", (event) => {
+    if (!activeSession || event.button !== 0) return;
+    event.preventDefault();
+
+    activeSession.dragPointerId = event.pointerId;
+    activeSession.dragStartX = event.clientX;
+    activeSession.dragStartY = event.clientY;
+    activeSession.startX = activeSession.x;
+    activeSession.startY = activeSession.y;
+    viewport.classList.add("is-dragging");
+    if (typeof viewport.setPointerCapture === "function") {
+      viewport.setPointerCapture(event.pointerId);
+    }
+  });
+
+  viewport.addEventListener("pointermove", (event) => {
+    if (!activeSession || activeSession.dragPointerId !== event.pointerId) return;
+
+    const deltaX = event.clientX - activeSession.dragStartX;
+    const deltaY = event.clientY - activeSession.dragStartY;
+    activeSession.x = activeSession.startX + deltaX;
+    activeSession.y = activeSession.startY + deltaY;
+    clampSessionPosition(activeSession);
+    renderSession(activeSession);
+  });
+
+  const finishDrag = (event) => {
+    if (!activeSession || activeSession.dragPointerId !== event.pointerId) return;
+    activeSession.dragPointerId = null;
+    viewport.classList.remove("is-dragging");
+    if (typeof viewport.releasePointerCapture === "function") {
+      viewport.releasePointerCapture(event.pointerId);
+    }
+  };
+
+  viewport.addEventListener("pointerup", finishDrag);
+  viewport.addEventListener("pointercancel", finishDrag);
+  viewport.addEventListener("lostpointercapture", () => {
+    viewport.classList.remove("is-dragging");
+    if (activeSession) {
+      activeSession.dragPointerId = null;
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape" || modal.hidden) return;
+    closeCropper();
+  });
+
+  cards.forEach((card) => {
+    if (!(card instanceof HTMLElement)) return;
+
+    const type = card.getAttribute("data-profile-media-type") || "";
+    const config = mediaConfig[type];
+    const input = card.querySelector("[data-profile-media-input='1']");
+    const cropField = card.querySelector("[data-profile-media-crop='1']");
+    const previewFrameEl = card.querySelector("[data-profile-media-preview-frame='1']");
+    const previewImageEl = card.querySelector("[data-profile-media-preview-image='1']");
+    const emptyEl = card.querySelector("[data-profile-media-empty='1']");
+    const recropButton = card.querySelector("[data-profile-media-recrop='1']");
+    const statusEl = card.querySelector("[data-profile-media-status='1']");
+    const removeCheckbox = card.querySelector("[data-profile-media-remove='1']");
+
+    if (
+      !config ||
+      !(input instanceof HTMLInputElement) ||
+      !(cropField instanceof HTMLInputElement) ||
+      !(previewFrameEl instanceof HTMLElement) ||
+      !(previewImageEl instanceof HTMLImageElement) ||
+      !(emptyEl instanceof HTMLElement) ||
+      !(recropButton instanceof HTMLButtonElement) ||
+      !(statusEl instanceof HTMLElement) ||
+      !(removeCheckbox instanceof HTMLInputElement)
+    ) {
+      return;
+    }
+
+    const state = {
+      card,
+      type,
+      config,
+      input,
+      cropField,
+      previewFrame: previewFrameEl,
+      previewImage: previewImageEl,
+      emptyEl,
+      recropButton,
+      statusEl,
+      removeCheckbox,
+      originalSrc: String(card.getAttribute("data-profile-original-src") || "").trim(),
+      selectedUrl: "",
+      selectedNaturalWidth: 0,
+      selectedNaturalHeight: 0,
+      cropData: null,
+      maxBytes: Number(input.getAttribute("data-profile-max-bytes") || "0"),
+    };
+
+    mediaStates.set(type, state);
+    renderMediaPreview(state);
+
+    input.addEventListener("change", async () => {
+      const file = input.files && input.files[0] ? input.files[0] : null;
+      if (!file) {
+        return;
+      }
+      void openFileCropper(state, file, {
+        replacedCommittedSelection: state.selectedUrl !== "",
+      });
+    });
+
+    recropButton.addEventListener("click", async () => {
+      if (removeCheckbox.checked) {
+        removeCheckbox.checked = false;
+        setStatus(state, "");
+        renderMediaPreview(state);
+      }
+
+      if (
+        state.selectedUrl &&
+        state.selectedNaturalWidth > 0 &&
+        state.selectedNaturalHeight > 0 &&
+        state.cropData
+      ) {
+        openCropper(state, {
+          mode: "existing",
+          sourceUrl: state.selectedUrl,
+          naturalWidth: state.selectedNaturalWidth,
+          naturalHeight: state.selectedNaturalHeight,
+        });
+        return;
+      }
+
+      if (state.originalSrc) {
+        await fetchExistingMediaIntoInput(state);
+        return;
+      }
+
+      input.click();
+    });
+
+    removeCheckbox.addEventListener("change", () => {
+      if (removeCheckbox.checked) {
+        clearCommittedSelection(state, { preserveStatus: true });
+        setStatus(state, state.config.removedMessage);
+        renderMediaPreview(state);
+        return;
+      }
+
+      setStatus(state, "");
+      renderMediaPreview(state);
+    });
+  });
+
+  window.addEventListener("resize", () => {
+    mediaStates.forEach((state) => {
+      renderMediaPreview(state);
+    });
+
+    if (!activeSession) return;
+    const crop = getViewportRect(activeSession, false);
+    resetSession(activeSession, crop);
+  });
+})();
+
+(() => {
   const navItems = Array.from(document.querySelectorAll("[data-settings-nav]"));
   const sections = Array.from(document.querySelectorAll("[data-settings-section]"));
   if (!navItems.length || !sections.length) return;

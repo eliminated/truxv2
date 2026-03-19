@@ -44,7 +44,80 @@ function trux_store_uploaded_image_raw(array $file, string $mime, string $public
     return ['ok' => true, 'path' => $publicPath, 'error' => null];
 }
 
-function trux_handle_image_upload(array $file, string $publicUploadsDirAbs, string $publicUploadsUrlPrefix): array
+function trux_parse_image_crop_payload(mixed $raw): array
+{
+    if (!is_string($raw)) {
+        return ['ok' => true, 'crop' => null, 'error' => null];
+    }
+
+    $raw = trim($raw);
+    if ($raw === '') {
+        return ['ok' => true, 'crop' => null, 'error' => null];
+    }
+
+    $decoded = json_decode($raw, true);
+    if (!is_array($decoded)) {
+        return ['ok' => false, 'crop' => null, 'error' => 'Invalid crop selection.'];
+    }
+
+    $crop = [];
+    foreach (['x', 'y', 'width', 'height'] as $field) {
+        $value = $decoded[$field] ?? null;
+        if (!is_int($value) && !is_float($value) && !(is_string($value) && is_numeric($value))) {
+            return ['ok' => false, 'crop' => null, 'error' => 'Invalid crop selection.'];
+        }
+
+        $number = (int) round((float) $value);
+        if (($field === 'width' || $field === 'height') && $number <= 0) {
+            return ['ok' => false, 'crop' => null, 'error' => 'Invalid crop selection.'];
+        }
+        if (($field === 'x' || $field === 'y') && $number < 0) {
+            return ['ok' => false, 'crop' => null, 'error' => 'Invalid crop selection.'];
+        }
+
+        $crop[$field] = $number;
+    }
+
+    return ['ok' => true, 'crop' => $crop, 'error' => null];
+}
+
+function trux_crop_decoded_image($src, array $crop): array
+{
+    $srcWidth = imagesx($src);
+    $srcHeight = imagesy($src);
+    if ($srcWidth <= 0 || $srcHeight <= 0) {
+        return ['ok' => false, 'image' => null, 'error' => 'Invalid crop source image.'];
+    }
+
+    $x = min(max(0, (int) ($crop['x'] ?? 0)), max(0, $srcWidth - 1));
+    $y = min(max(0, (int) ($crop['y'] ?? 0)), max(0, $srcHeight - 1));
+    $width = min(max(1, (int) ($crop['width'] ?? 1)), $srcWidth - $x);
+    $height = min(max(1, (int) ($crop['height'] ?? 1)), $srcHeight - $y);
+
+    if ($width <= 0 || $height <= 0) {
+        return ['ok' => false, 'image' => null, 'error' => 'Invalid crop dimensions.'];
+    }
+
+    $dest = imagecreatetruecolor($width, $height);
+    if (!$dest) {
+        return ['ok' => false, 'image' => null, 'error' => 'Could not prepare cropped image.'];
+    }
+
+    imagealphablending($dest, false);
+    imagesavealpha($dest, true);
+    $transparent = imagecolorallocatealpha($dest, 0, 0, 0, 127);
+    imagefill($dest, 0, 0, $transparent);
+
+    $copied = imagecopyresampled($dest, $src, 0, 0, $x, $y, $width, $height, $width, $height);
+    if (!$copied) {
+        imagedestroy($dest);
+        return ['ok' => false, 'image' => null, 'error' => 'Could not crop selected image.'];
+    }
+
+    return ['ok' => true, 'image' => $dest, 'error' => null];
+}
+
+function trux_handle_image_upload(array $file, string $publicUploadsDirAbs, string $publicUploadsUrlPrefix, ?array $crop = null): array
 {
     // Returns: ['ok' => bool, 'path' => ?string, 'error' => ?string]
     if (!isset($file['error']) || !is_int($file['error'])) {
@@ -99,8 +172,13 @@ function trux_handle_image_upload(array $file, string $publicUploadsDirAbs, stri
         }
     }
 
+    $hasCrop = is_array($crop) && $crop !== [];
+
     // If GD is unavailable, keep uploads working by storing the validated file as-is.
     if (!function_exists('imagecreatetruecolor')) {
+        if ($hasCrop) {
+            return ['ok' => false, 'path' => null, 'error' => 'Image cropping is unavailable right now.'];
+        }
         return trux_store_uploaded_image_raw($file, $mime, $publicUploadsDirAbs, $publicUploadsUrlPrefix);
     }
 
@@ -132,6 +210,27 @@ function trux_handle_image_upload(array $file, string $publicUploadsDirAbs, stri
 
     if (!$src) {
         return ['ok' => false, 'path' => null, 'error' => 'Could not decode image.'];
+    }
+
+    if ($hasCrop) {
+        $cropped = trux_crop_decoded_image($src, $crop);
+        if (!($cropped['ok'] ?? false)) {
+            imagedestroy($src);
+            return [
+                'ok' => false,
+                'path' => null,
+                'error' => (string) ($cropped['error'] ?? 'Could not crop selected image.'),
+            ];
+        }
+
+        $croppedImage = $cropped['image'] ?? null;
+        if (!$croppedImage) {
+            imagedestroy($src);
+            return ['ok' => false, 'path' => null, 'error' => 'Could not crop selected image.'];
+        }
+
+        imagedestroy($src);
+        $src = $croppedImage;
     }
 
     // Decide output extension based on output mime

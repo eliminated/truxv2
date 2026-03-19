@@ -14,6 +14,8 @@ $currentAvatarPath = is_string($me['avatar_path'] ?? null) ? (string)$me['avatar
 $currentBannerPath = is_string($me['banner_path'] ?? null) ? (string)$me['banner_path'] : '';
 $currentAvatarUrl = $currentAvatarPath !== '' ? trux_public_url($currentAvatarPath) : '';
 $currentBannerUrl = $currentBannerPath !== '' ? trux_public_url($currentBannerPath) : '';
+$currentAvatarImgAttr = $currentAvatarUrl !== '' ? ' src="' . trux_e($currentAvatarUrl) . '"' : '';
+$currentBannerImgAttr = $currentBannerUrl !== '' ? ' src="' . trux_e($currentBannerUrl) . '"' : '';
 
 $form = [
     'display_name' => (string)($me['display_name'] ?? ''),
@@ -83,10 +85,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (is_array($avatarFile)) {
             $avatarError = $avatarFile['error'] ?? UPLOAD_ERR_NO_FILE;
             if (is_int($avatarError) && $avatarError !== UPLOAD_ERR_NO_FILE) {
-                if (trux_profile_upload_is_animated_gif($avatarFile) && !trux_profile_user_has_premium($viewerId)) {
+                $avatarCropPayload = trux_parse_image_crop_payload($_POST['avatar_crop'] ?? null);
+                if (!($avatarCropPayload['ok'] ?? false)) {
+                    $errors[] = 'Profile photo crop selection is invalid.';
+                } elseif (trux_profile_upload_is_animated_gif($avatarFile) && !trux_profile_user_has_premium($viewerId)) {
                     $errors[] = 'Animated profile photos are a Premium feature (coming soon).';
                 } else {
-                    $avatarUpload = trux_handle_image_upload($avatarFile, __DIR__ . '/uploads', '/uploads');
+                    $avatarCrop = is_array($avatarCropPayload['crop'] ?? null) ? $avatarCropPayload['crop'] : null;
+                    $avatarUpload = trux_handle_image_upload($avatarFile, __DIR__ . '/uploads', '/uploads', $avatarCrop);
                     if (!($avatarUpload['ok'] ?? false)) {
                         $errors[] = (string)($avatarUpload['error'] ?? 'Avatar upload failed.');
                     } else {
@@ -107,16 +113,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if (is_array($bannerFile)) {
             $bannerError = $bannerFile['error'] ?? UPLOAD_ERR_NO_FILE;
             if (is_int($bannerError) && $bannerError !== UPLOAD_ERR_NO_FILE) {
-                $bannerUpload = trux_handle_image_upload($bannerFile, __DIR__ . '/uploads', '/uploads');
-                if (!($bannerUpload['ok'] ?? false)) {
-                    $errors[] = (string)($bannerUpload['error'] ?? 'Banner upload failed.');
+                $bannerCropPayload = trux_parse_image_crop_payload($_POST['banner_crop'] ?? null);
+                if (!($bannerCropPayload['ok'] ?? false)) {
+                    $errors[] = 'Profile banner crop selection is invalid.';
                 } else {
-                    $uploadedBannerPath = is_string($bannerUpload['path'] ?? null) ? (string)$bannerUpload['path'] : '';
-                    if ($uploadedBannerPath !== '') {
-                        $nextBannerPath = $uploadedBannerPath;
-                        $newUploadedBannerPath = $uploadedBannerPath;
-                        if ($currentBannerPath !== '' && $currentBannerPath !== $uploadedBannerPath) {
-                            $deleteOldBannerPath = $currentBannerPath;
+                    $bannerCrop = is_array($bannerCropPayload['crop'] ?? null) ? $bannerCropPayload['crop'] : null;
+                    $bannerUpload = trux_handle_image_upload($bannerFile, __DIR__ . '/uploads', '/uploads', $bannerCrop);
+                    if (!($bannerUpload['ok'] ?? false)) {
+                        $errors[] = (string)($bannerUpload['error'] ?? 'Banner upload failed.');
+                    } else {
+                        $uploadedBannerPath = is_string($bannerUpload['path'] ?? null) ? (string)$bannerUpload['path'] : '';
+                        if ($uploadedBannerPath !== '') {
+                            $nextBannerPath = $uploadedBannerPath;
+                            $newUploadedBannerPath = $uploadedBannerPath;
+                            if ($currentBannerPath !== '' && $currentBannerPath !== $uploadedBannerPath) {
+                                $deleteOldBannerPath = $currentBannerPath;
+                            }
                         }
                     }
                 }
@@ -282,19 +294,30 @@ require_once __DIR__ . '/_header.php';
         </div>
 
         <div class="profileMediaGrid">
-          <div class="profileMediaCard">
+          <div
+            class="profileMediaCard"
+            data-profile-media-card="avatar"
+            data-profile-media-type="avatar"
+            data-profile-media-label="Profile photo"
+            data-profile-media-aspect="1"
+            data-profile-original-src="<?= trux_e($currentAvatarUrl) ?>">
             <h3 class="h2">Profile Photo</h3>
-            <?php if ($currentAvatarUrl !== ''): ?>
-              <img class="profileMediaPreview profileMediaPreview--avatar" src="<?= trux_e($currentAvatarUrl) ?>" alt="Current profile photo" loading="lazy" decoding="async">
-            <?php else: ?>
-              <div class="profileMediaEmpty muted">No profile photo uploaded.</div>
-            <?php endif; ?>
+            <div class="profileMediaPreviewWrap">
+              <div class="profileMediaPreviewFrame profileMediaPreviewFrame--avatar" data-profile-media-preview-frame="1"<?= $currentAvatarUrl === '' ? ' hidden' : '' ?>>
+                <img class="profileMediaPreview profileMediaPreview--avatar"<?= $currentAvatarImgAttr ?> alt="Current profile photo" loading="lazy" decoding="async" data-profile-media-preview-image="1"<?= $currentAvatarUrl === '' ? ' hidden' : '' ?>>
+              </div>
+              <div class="profileMediaEmpty muted" data-profile-media-empty="1"<?= $currentAvatarUrl !== '' ? ' hidden' : '' ?>>No profile photo uploaded.</div>
+            </div>
             <label class="field">
               <span>Upload photo</span>
-              <input type="file" name="avatar" accept="image/jpeg,image/png,image/gif,image/webp">
+              <input type="hidden" name="avatar_crop" value="" data-profile-media-crop="1">
+              <input type="file" name="avatar" accept="image/jpeg,image/png,image/gif,image/webp" data-profile-media-input="1" data-profile-max-bytes="<?= TRUX_MAX_UPLOAD_BYTES ?>">
             </label>
+            <p class="muted profileMediaHint">Choosing a new photo opens the crop tool right away.</p>
+            <button class="btn btn--small btn--ghost profileMediaCropButton" type="button" data-profile-media-recrop="1" hidden>Edit crop</button>
+            <div class="muted profileMediaStatus" data-profile-media-status="1" hidden></div>
             <label class="row profileMediaToggle">
-              <input type="checkbox" name="remove_avatar" value="1">
+              <input type="checkbox" name="remove_avatar" value="1" data-profile-media-remove="1">
               <span>Remove current photo</span>
             </label>
             <small class="muted">
@@ -303,19 +326,30 @@ require_once __DIR__ . '/_header.php';
             </small>
           </div>
 
-          <div class="profileMediaCard">
+          <div
+            class="profileMediaCard"
+            data-profile-media-card="banner"
+            data-profile-media-type="banner"
+            data-profile-media-label="Profile banner"
+            data-profile-media-aspect="<?= trux_e((string)(16 / 6)) ?>"
+            data-profile-original-src="<?= trux_e($currentBannerUrl) ?>">
             <h3 class="h2">Profile Banner</h3>
-            <?php if ($currentBannerUrl !== ''): ?>
-              <img class="profileMediaPreview profileMediaPreview--banner" src="<?= trux_e($currentBannerUrl) ?>" alt="Current profile banner" loading="lazy" decoding="async">
-            <?php else: ?>
-              <div class="profileMediaEmpty muted">No banner uploaded.</div>
-            <?php endif; ?>
+            <div class="profileMediaPreviewWrap">
+              <div class="profileMediaPreviewFrame profileMediaPreviewFrame--banner" data-profile-media-preview-frame="1"<?= $currentBannerUrl === '' ? ' hidden' : '' ?>>
+                <img class="profileMediaPreview profileMediaPreview--banner"<?= $currentBannerImgAttr ?> alt="Current profile banner" loading="lazy" decoding="async" data-profile-media-preview-image="1"<?= $currentBannerUrl === '' ? ' hidden' : '' ?>>
+              </div>
+              <div class="profileMediaEmpty muted" data-profile-media-empty="1"<?= $currentBannerUrl !== '' ? ' hidden' : '' ?>>No banner uploaded.</div>
+            </div>
             <label class="field">
               <span>Upload banner</span>
-              <input type="file" name="banner" accept="image/jpeg,image/png,image/gif,image/webp">
+              <input type="hidden" name="banner_crop" value="" data-profile-media-crop="1">
+              <input type="file" name="banner" accept="image/jpeg,image/png,image/gif,image/webp" data-profile-media-input="1" data-profile-max-bytes="<?= TRUX_MAX_UPLOAD_BYTES ?>">
             </label>
+            <p class="muted profileMediaHint">Choose a banner to crop it before saving.</p>
+            <button class="btn btn--small btn--ghost profileMediaCropButton" type="button" data-profile-media-recrop="1" hidden>Edit crop</button>
+            <div class="muted profileMediaStatus" data-profile-media-status="1" hidden></div>
             <label class="row profileMediaToggle">
-              <input type="checkbox" name="remove_banner" value="1">
+              <input type="checkbox" name="remove_banner" value="1" data-profile-media-remove="1">
               <span>Remove current banner</span>
             </label>
           </div>
@@ -329,5 +363,55 @@ require_once __DIR__ . '/_header.php';
     </form>
   </div>
 </section>
+
+<div id="profileCropperModal" class="profileCropperModal" hidden>
+  <div class="profileCropperModal__backdrop" data-profile-crop-close="1"></div>
+  <section class="profileCropperModal__panel" role="dialog" aria-modal="true" aria-labelledby="profileCropperTitle">
+    <header class="profileCropperModal__head">
+      <div class="profileCropperModal__titleWrap">
+        <h2 id="profileCropperTitle" data-profile-crop-title="1">Crop image</h2>
+        <p class="muted" data-profile-crop-subtitle="1">Drag to reposition and use zoom to tighten the crop.</p>
+      </div>
+      <button class="iconBtn profileCropperModal__close" type="button" aria-label="Close cropper" data-profile-crop-close="1">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+        </svg>
+      </button>
+    </header>
+
+    <div class="profileCropper">
+      <div class="profileCropper__workspace">
+        <div class="profileCropper__stage">
+          <div class="profileCropper__viewport" data-profile-crop-viewport="1">
+            <img class="profileCropper__image" alt="" data-profile-crop-image="1">
+            <div class="profileCropper__grid" aria-hidden="true"></div>
+            <div class="profileCropper__avatarGuide" aria-hidden="true" data-profile-crop-avatar-guide="1"></div>
+          </div>
+        </div>
+
+        <aside class="profileCropper__sidebar">
+          <div class="profileCropper__previewCard">
+            <span class="profileCropper__eyebrow">Preview</span>
+            <div class="profileCropper__previewFrame" data-profile-crop-preview-frame="1">
+              <img class="profileCropper__previewImage" alt="" data-profile-crop-preview-image="1">
+            </div>
+          </div>
+
+          <label class="field profileCropper__field">
+            <span>Zoom</span>
+            <input type="range" min="100" max="300" step="1" value="100" data-profile-crop-zoom="1">
+          </label>
+
+          <button class="btn btn--small btn--ghost profileCropper__reset" type="button" data-profile-crop-reset="1">Reset position</button>
+        </aside>
+      </div>
+
+      <div class="row profileCropper__actions">
+        <button class="btn btn--small btn--ghost" type="button" data-profile-crop-cancel="1">Cancel</button>
+        <button class="btn btn--small" type="button" data-profile-crop-apply="1">Apply crop</button>
+      </div>
+    </div>
+  </section>
+</div>
 
 <?php require_once __DIR__ . '/_footer.php'; ?>

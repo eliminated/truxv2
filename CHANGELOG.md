@@ -1,4 +1,41 @@
 # Omincus Updates
+## Omnicus v0.4.9 - Profile Media Cropper
+
+**Branch**: Production
+**Date**: 2026-03-19
+
+***
+
+### Added
+
+- Fixed-aspect crop workflow for profile photo and profile banner uploads on `public/edit_profile.php`
+- Reusable profile media crop modal with drag-to-position, zoom control, and live preview
+- Automatic crop flow that opens immediately after a user selects a new profile image from their library
+
+***
+
+### Changed
+
+- Profile media cards now show local cropped previews before save and let users reopen the crop tool for the current pending selection
+- Profile media uploads now carry crop metadata so the server applies the same crop chosen in the browser
+- Profile media cropping now depends on PHP GD being enabled in the deployment environment so the server can process the selected crop safely
+- `Edit crop` now works for already-saved profile photos and banners by reopening the cropper on the current image, and falls back to the file picker when no image exists yet
+- The profile hover menu is now slimmer by hiding the duplicate `Edit Profile` shortcut and temporarily hiding the placeholder `Premium` entry until it is ready to ship
+
+***
+
+### Technical
+
+- Added crop payload parsing and GD-based crop support to `src/upload.php`
+- Added profile media crop UI hooks in `public/edit_profile.php`
+- Added cropper behavior in `public/assets/app.js` and matching modal/preview styles in `public/assets/style.css`
+- Added simple header menu visibility toggles in `public/_header.php` so placeholder entries can stay in code without appearing in the live menu
+- Verified syntax with `C:\\xampp\\php\\php.exe -l public\\edit_profile.php`, `C:\\xampp\\php\\php.exe -l src\\upload.php`, and `node --check public\\assets\\app.js`
+- Confirmed local XAMPP PHP GD support during validation so crop uploads can complete end to end
+- Added client-side recrop support that can load an existing saved avatar/banner back into the upload input before applying a new crop
+
+***
+
 ## Omnicus v0.4.8 - Header Notifications & Infinite Feed Loading
 
 **Branch**: Production

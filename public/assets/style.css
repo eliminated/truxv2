@@ -4151,29 +4151,61 @@ body.entityEdit-open {
   background: rgba(255, 255, 255, .02);
 }
 
-.profileMediaPreview {
-  width: 100%;
-  display: block;
-  object-fit: cover;
-  border-radius: 12px;
-  border: 1px solid rgba(122, 167, 255, .20);
-  background: rgba(11, 18, 32, .86);
+.profileMediaPreviewWrap {
+  display: grid;
+  gap: 10px;
 }
 
-.profileMediaPreview--avatar {
+.profileMediaPreviewFrame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(122, 167, 255, .20);
+  background:
+    radial-gradient(circle at top, rgba(122, 167, 255, .12), transparent 58%),
+    rgba(11, 18, 32, .86);
+}
+
+.profileMediaPreviewFrame--avatar {
   width: 96px;
   height: 96px;
   border-radius: 50%;
 }
 
-.profileMediaPreview--banner {
+.profileMediaPreviewFrame--banner {
+  width: 100%;
   aspect-ratio: 16 / 6;
+}
+
+.profileMediaPreview {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  background: transparent;
+  transform-origin: top left;
+  user-select: none;
+  pointer-events: none;
+}
+
+.profileMediaPreview--avatar {
+  border-radius: 0;
+}
+
+.profileMediaPreview--banner {
+  border-radius: 0;
 }
 
 .profileMediaEmpty {
   min-height: 96px;
   display: flex;
   align-items: center;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px dashed rgba(255, 255, 255, .14);
+  background: rgba(255, 255, 255, .02);
 }
 
 .profileMediaToggle {
@@ -4184,6 +4216,226 @@ body.entityEdit-open {
   width: 18px;
   height: 18px;
   accent-color: var(--accent);
+}
+
+.profileMediaHint {
+  margin: 0;
+}
+
+.profileMediaCropButton {
+  width: fit-content;
+}
+
+.profileMediaStatus {
+  min-height: 18px;
+}
+
+body.profileCropper-open {
+  overflow: hidden;
+}
+
+.profileCropperModal {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+}
+
+.profileCropperModal__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(2, 7, 14, .78);
+  backdrop-filter: blur(12px);
+}
+
+.profileCropperModal__panel {
+  position: relative;
+  z-index: 1;
+  width: min(1040px, calc(100vw - 32px));
+  max-height: min(92vh, 920px);
+  margin: min(5vh, 32px) auto;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  border-radius: 20px;
+  border: 1px solid rgba(122, 167, 255, .24);
+  background:
+    radial-gradient(circle at top right, rgba(69, 212, 131, .10), transparent 38%),
+    linear-gradient(180deg, rgba(13, 21, 36, .98), rgba(9, 15, 27, .98));
+  box-shadow:
+    0 26px 60px rgba(0, 0, 0, .5),
+    0 0 0 1px rgba(255, 255, 255, .04),
+    0 0 36px rgba(122, 167, 255, .12);
+  overflow: hidden;
+}
+
+.profileCropperModal__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 18px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  background: rgba(255, 255, 255, .03);
+}
+
+.profileCropperModal__titleWrap {
+  display: grid;
+  gap: 4px;
+}
+
+.profileCropper {
+  display: grid;
+  gap: 18px;
+  padding: 20px;
+  min-height: 0;
+  overflow: auto;
+}
+
+.profileCropper__workspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 18px;
+  align-items: start;
+}
+
+.profileCropper__stage {
+  min-height: 340px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px;
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  background:
+    radial-gradient(circle at top, rgba(122, 167, 255, .08), transparent 60%),
+    linear-gradient(180deg, rgba(255, 255, 255, .03), rgba(255, 255, 255, .015));
+}
+
+.profileCropper__viewport {
+  --profile-crop-aspect: 1;
+  position: relative;
+  width: min(100%, 620px);
+  aspect-ratio: var(--profile-crop-aspect);
+  overflow: hidden;
+  border-radius: 22px;
+  border: 1px solid rgba(122, 167, 255, .34);
+  background:
+    radial-gradient(circle at 50% 20%, rgba(122, 167, 255, .16), transparent 52%),
+    rgba(5, 11, 20, .92);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, .04),
+    inset 0 24px 46px rgba(122, 167, 255, .06);
+  cursor: grab;
+  touch-action: none;
+}
+
+.profileCropper__viewport.is-dragging {
+  cursor: grabbing;
+}
+
+.profileCropper__image,
+.profileCropper__previewImage {
+  position: absolute;
+  inset: 0 auto auto 0;
+  display: block;
+  object-fit: cover;
+  transform-origin: top left;
+  user-select: none;
+  pointer-events: none;
+}
+
+.profileCropper__grid {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border: 1px solid rgba(255, 255, 255, .12);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .04);
+  background:
+    linear-gradient(90deg,
+      transparent calc(33.333% - .5px),
+      rgba(255, 255, 255, .14) calc(33.333% - .5px),
+      rgba(255, 255, 255, .14) calc(33.333% + .5px),
+      transparent calc(33.333% + .5px),
+      transparent calc(66.666% - .5px),
+      rgba(255, 255, 255, .14) calc(66.666% - .5px),
+      rgba(255, 255, 255, .14) calc(66.666% + .5px),
+      transparent calc(66.666% + .5px)),
+    linear-gradient(180deg,
+      transparent calc(33.333% - .5px),
+      rgba(255, 255, 255, .14) calc(33.333% - .5px),
+      rgba(255, 255, 255, .14) calc(33.333% + .5px),
+      transparent calc(33.333% + .5px),
+      transparent calc(66.666% - .5px),
+      rgba(255, 255, 255, .14) calc(66.666% - .5px),
+      rgba(255, 255, 255, .14) calc(66.666% + .5px),
+      transparent calc(66.666% + .5px));
+}
+
+.profileCropper__avatarGuide {
+  position: absolute;
+  inset: 7%;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, .56);
+  box-shadow: 0 0 0 999px rgba(2, 7, 14, .34);
+  pointer-events: none;
+}
+
+.profileCropper__sidebar {
+  display: grid;
+  gap: 14px;
+  align-content: start;
+}
+
+.profileCropper__previewCard {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, .08);
+  background: rgba(255, 255, 255, .03);
+}
+
+.profileCropper__eyebrow {
+  font-size: 11px;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.profileCropper__previewFrame {
+  position: relative;
+  overflow: hidden;
+  width: 100%;
+  border-radius: 18px;
+  border: 1px solid rgba(122, 167, 255, .20);
+  background:
+    radial-gradient(circle at top, rgba(122, 167, 255, .12), transparent 58%),
+    rgba(11, 18, 32, .86);
+}
+
+.profileCropper__previewFrame--avatar {
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+
+.profileCropper__previewFrame--banner {
+  aspect-ratio: 16 / 6;
+}
+
+.profileCropper__field {
+  margin: 0;
+}
+
+.profileCropper__field input[type="range"] {
+  padding: 0;
+}
+
+.profileCropper__reset {
+  width: fit-content;
+}
+
+.profileCropper__actions {
+  justify-content: flex-end;
+  gap: 10px;
 }
 
 .settingsForm--split {
@@ -4672,6 +4924,45 @@ body.entityEdit-open {
   .premiumTier:focus-within::before,
   .premiumTier:focus-within::after {
     animation: none;
+  }
+}
+
+@media (max-width: 860px) {
+  .profileCropper__workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .profileCropper__stage {
+    min-height: 0;
+  }
+
+  .profileCropper__previewCard,
+  .profileCropper__field {
+    max-width: 320px;
+  }
+}
+
+@media (max-width: 560px) {
+  .profileCropperModal__panel {
+    width: min(100vw - 18px, 1040px);
+    margin: 10px auto;
+  }
+
+  .profileCropperModal__head,
+  .profileCropper {
+    padding: 16px;
+  }
+
+  .profileCropper__stage {
+    padding: 12px;
+  }
+
+  .profileCropper__actions {
+    justify-content: stretch;
+  }
+
+  .profileCropper__actions .btn {
+    flex: 1 1 0;
   }
 }
 
