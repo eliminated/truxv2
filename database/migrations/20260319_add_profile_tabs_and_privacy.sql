@@ -1,0 +1,11 @@
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS about_me TEXT NULL DEFAULT NULL AFTER bio;
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS profile_links_json TEXT NULL DEFAULT NULL AFTER website_url;
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS show_likes_public TINYINT(1) NOT NULL DEFAULT 1 AFTER notify_replies;
+
+ALTER TABLE users
+  ADD COLUMN IF NOT EXISTS show_bookmarks_public TINYINT(1) NOT NULL DEFAULT 1 AFTER show_likes_public;

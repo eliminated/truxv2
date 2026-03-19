@@ -10,7 +10,8 @@ function trux_current_user(): ?array {
 
     $db = trux_db();
     $stmt = $db->prepare(
-        'SELECT id, username, email, display_name, bio, location, website_url, avatar_path, banner_path, created_at
+        'SELECT id, username, email, display_name, bio, about_me, location, website_url, profile_links_json,
+                avatar_path, banner_path, show_likes_public, show_bookmarks_public, created_at
          FROM users
          WHERE id = ?'
     );

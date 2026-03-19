@@ -168,7 +168,8 @@ function trux_update_post_if_owner(int $postId, int $ownerUserId, string $body):
 function trux_fetch_user_by_username(string $username): ?array {
     $db = trux_db();
     $stmt = $db->prepare(
-        'SELECT id, username, email, display_name, bio, location, website_url, avatar_path, banner_path, created_at
+        'SELECT id, username, email, display_name, bio, about_me, location, website_url, profile_links_json,
+                avatar_path, banner_path, show_likes_public, show_bookmarks_public, created_at
          FROM users
          WHERE username = ?
          LIMIT 1'
@@ -795,4 +796,102 @@ function trux_fetch_post_interactions(array $postIds, ?int $viewerId): array {
     }
 
     return $out;
+}
+
+function trux_fetch_comments_by_user(int $userId, int $limit = 100, int $offset = 0): array {
+    if ($userId <= 0) {
+        return [];
+    }
+
+    $limit = max(1, min(200, $limit));
+    $offset = max(0, $offset);
+    $db = trux_db();
+
+    try {
+        $stmt = $db->prepare(
+            'SELECT c.id, c.post_id, c.parent_comment_id, c.user_id, c.reply_to_user_id, c.body, c.created_at, c.edited_at,
+                    u.username, u.avatar_path, ru.username AS reply_to_username,
+                    p.body AS post_body, pu.username AS post_username
+             FROM post_comments c
+             JOIN users u ON u.id = c.user_id
+             LEFT JOIN users ru ON ru.id = c.reply_to_user_id
+             JOIN posts p ON p.id = c.post_id
+             JOIN users pu ON pu.id = p.user_id
+             WHERE c.user_id = ?
+             ORDER BY c.id DESC
+             LIMIT ? OFFSET ?'
+        );
+        $stmt->bindValue(1, $userId, PDO::PARAM_INT);
+        $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+        $stmt->bindValue(3, $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    } catch (PDOException) {
+        return [];
+    }
+}
+
+function trux_fetch_user_liked_posts(int $userId, int $limit = 100, int $offset = 0): array {
+    if ($userId <= 0) {
+        return [];
+    }
+
+    $limit = max(1, min(200, $limit));
+    $offset = max(0, $offset);
+    $db = trux_db();
+
+    try {
+        $stmt = $db->prepare(
+            'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path,
+                    l.created_at AS liked_at
+             FROM post_likes l
+             JOIN posts p ON p.id = l.post_id
+             JOIN users u ON u.id = p.user_id
+             WHERE l.user_id = ?
+             ORDER BY l.created_at DESC, p.id DESC
+             LIMIT ? OFFSET ?'
+        );
+        $stmt->bindValue(1, $userId, PDO::PARAM_INT);
+        $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+        $stmt->bindValue(3, $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    } catch (PDOException) {
+        return [];
+    }
+}
+
+function trux_fetch_user_liked_comments(int $userId, int $limit = 100, int $offset = 0): array {
+    if ($userId <= 0) {
+        return [];
+    }
+
+    $limit = max(1, min(200, $limit));
+    $offset = max(0, $offset);
+    $db = trux_db();
+
+    try {
+        $stmt = $db->prepare(
+            'SELECT c.id, c.post_id, c.parent_comment_id, c.user_id, c.reply_to_user_id, c.body, c.created_at, c.edited_at,
+                    u.username, u.avatar_path, ru.username AS reply_to_username,
+                    p.body AS post_body, pu.username AS post_username,
+                    v.created_at AS liked_at
+             FROM post_comment_votes v
+             JOIN post_comments c ON c.id = v.comment_id
+             JOIN users u ON u.id = c.user_id
+             LEFT JOIN users ru ON ru.id = c.reply_to_user_id
+             JOIN posts p ON p.id = c.post_id
+             JOIN users pu ON pu.id = p.user_id
+             WHERE v.user_id = ? AND v.vote = 1
+             ORDER BY v.created_at DESC, c.id DESC
+             LIMIT ? OFFSET ?'
+        );
+        $stmt->bindValue(1, $userId, PDO::PARAM_INT);
+        $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+        $stmt->bindValue(3, $offset, PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    } catch (PDOException) {
+        return [];
+    }
 }

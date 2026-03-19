@@ -409,8 +409,8 @@ function trux_notification_url(array $notification): string {
     $postId = isset($notification['post_id']) && $notification['post_id'] !== null ? (int)$notification['post_id'] : 0;
 
     return match ($type) {
-        'follow' => $actorUsername !== '' ? '/profile.php?u=' . urlencode($actorUsername) : '/notifications.php',
-        default => $postId > 0 ? '/post.php?id=' . $postId : '/notifications.php',
+        'follow' => $actorUsername !== '' ? TRUX_BASE_URL . '/profile.php?u=' . urlencode($actorUsername) : TRUX_BASE_URL . '/notifications.php',
+        default => $postId > 0 ? TRUX_BASE_URL . '/post.php?id=' . $postId : TRUX_BASE_URL . '/notifications.php',
     };
 }
 

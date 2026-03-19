@@ -1792,6 +1792,190 @@
 })();
 
 (() => {
+  const rows = document.querySelectorAll("[data-link-preview-row='1']");
+  if (!rows.length) return;
+
+  const providerNames = {
+    website: "Website",
+    x: "X / Twitter",
+    reddit: "Reddit",
+    instagram: "Instagram",
+    facebook: "Facebook",
+    linkedin: "LinkedIn",
+    github: "GitHub",
+    youtube: "YouTube",
+    tiktok: "TikTok",
+    twitch: "Twitch",
+    discord: "Discord",
+  };
+
+  const icons = {
+    website:
+      '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm6.8 8h-3.1a14.8 14.8 0 0 0-1.3-5.1A7.1 7.1 0 0 1 18.8 11ZM12 4.9c1 1.2 1.8 3.4 2 6.1H10c.2-2.7 1-4.9 2-6.1ZM9.6 5.9A14.8 14.8 0 0 0 8.3 11H5.2a7.1 7.1 0 0 1 4.4-5.1ZM5.2 13h3.1a14.8 14.8 0 0 0 1.3 5.1A7.1 7.1 0 0 1 5.2 13Zm6.8 6.1c-1-1.2-1.8-3.4-2-6.1h4c-.2 2.7-1 4.9-2 6.1Zm2.4-1a14.8 14.8 0 0 0 1.3-5.1h3.1a7.1 7.1 0 0 1-4.4 5.1Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+    x: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M6.4 4h3.7l3 4.3L16.8 4H19l-4.9 5.9L19.6 20h-3.7l-3.3-4.8L8.4 20H6.2l5.3-6.4L6.4 4Z"/></svg>',
+    reddit:
+      '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M18.4 9.1a1.8 1.8 0 1 0-1.8-3 5.8 5.8 0 0 0-3.5-1l.5-2.2 1.6.4a1.7 1.7 0 1 0 .4-1.4l-2-.5a.8.8 0 0 0-1 .6l-.6 2.8a6.8 6.8 0 0 0-4 1.2 1.8 1.8 0 1 0-1.6 3c-.1.4-.2.9-.2 1.4 0 3.1 2.6 5.7 5.8 5.7 3.2 0 5.8-2.6 5.8-5.7 0-.5-.1-.9-.2-1.3Zm-9.8 3a1.1 1.1 0 1 1 0-2.2 1.1 1.1 0 0 1 0 2.2Zm6.8 1.4c-.8.8-2 1.2-3.4 1.2s-2.6-.4-3.4-1.2a.8.8 0 0 1 1.2-1 3.6 3.6 0 0 0 2.2.7c.9 0 1.7-.2 2.2-.7a.8.8 0 0 1 1.2 1Zm-.1-1.4a1.1 1.1 0 1 1 0-2.2 1.1 1.1 0 0 1 0 2.2Z"/></svg>',
+    instagram:
+      '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M7 2h10a5 5 0 0 1 5 5v10a5 5 0 0 1-5 5H7a5 5 0 0 1-5-5V7a5 5 0 0 1 5-5Zm0 2.1A2.9 2.9 0 0 0 4.1 7v10A2.9 2.9 0 0 0 7 19.9h10a2.9 2.9 0 0 0 2.9-2.9V7A2.9 2.9 0 0 0 17 4.1H7Zm10.4 1.5a1.1 1.1 0 1 1 0 2.2 1.1 1.1 0 0 1 0-2.2ZM12 6.3A5.7 5.7 0 1 1 6.3 12 5.7 5.7 0 0 1 12 6.3Zm0 2.1A3.6 3.6 0 1 0 15.6 12 3.6 3.6 0 0 0 12 8.4Z"/></svg>',
+    facebook:
+      '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M13.5 21v-7h2.8l.5-3.5h-3.3V8.3c0-1 .3-1.8 1.8-1.8H17V3.4c-.3 0-1.3-.2-2.5-.2-2.8 0-4.5 1.7-4.5 4.9v2.4H7v3.5h3V21h3.5Z"/></svg>',
+    linkedin:
+      '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M5.2 8.8A1.9 1.9 0 1 1 5.2 5a1.9 1.9 0 0 1 0 3.8ZM3.6 10h3.2v10H3.6V10Zm5.3 0H12v1.4h.1c.4-.8 1.5-1.8 3.1-1.8 3.3 0 3.9 2.2 3.9 5V20h-3.2v-4.6c0-1.1 0-2.5-1.6-2.5s-1.8 1.2-1.8 2.4V20H8.9V10Z"/></svg>',
+    github:
+      '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 2.2A10 10 0 0 0 8.8 21c.5.1.7-.2.7-.5v-1.7c-3 .7-3.7-1.3-3.7-1.3-.5-1.2-1.1-1.5-1.1-1.5-.9-.6 0-.6 0-.6 1 .1 1.5 1 1.5 1 .9 1.6 2.4 1.1 3 .8.1-.7.4-1.1.7-1.4-2.4-.3-5-1.2-5-5.3 0-1.1.4-2 1-2.8 0-.2-.4-1.3.1-2.7 0 0 .8-.3 2.8 1a9.7 9.7 0 0 1 5 0c2-1.3 2.8-1 2.8-1 .5 1.4.1 2.5 0 2.7.6.8 1 1.7 1 2.8 0 4.1-2.5 5-5 5.3.4.3.8 1 .8 2v3c0 .3.2.6.7.5A10 10 0 0 0 12 2.2Z"/></svg>',
+    youtube:
+      '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M21.5 7.2a2.9 2.9 0 0 0-2-2c-1.8-.5-7.5-.5-7.5-.5s-5.7 0-7.5.5a2.9 2.9 0 0 0-2 2A30.5 30.5 0 0 0 2 12a30.5 30.5 0 0 0 .5 4.8 2.9 2.9 0 0 0 2 2c1.8.5 7.5.5 7.5.5s5.7 0 7.5-.5a2.9 2.9 0 0 0 2-2A30.5 30.5 0 0 0 22 12a30.5 30.5 0 0 0-.5-4.8ZM10 15.5v-7l6 3.5-6 3.5Z"/></svg>',
+    tiktok:
+      '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M14 3h2.2c.2 1.3 1.1 2.5 2.3 3.1.6.3 1.2.5 1.9.5V9a7.3 7.3 0 0 1-4.2-1.4v6.5a5.1 5.1 0 1 1-5.1-5v2.4a2.7 2.7 0 1 0 2.7 2.7V3Z"/></svg>',
+    twitch:
+      '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M4 3h17v11.3l-3.4 3.4h-3l-2.5 2.5H9.7v-2.5H4V3Zm1.9 1.9v10.9h4.4v2.1l2.1-2.1h3.5l2.2-2.2V4.9H5.9Zm5.4 2.7h1.9v5h-1.9v-5Zm4.4 0h1.9v5h-1.9v-5Z"/></svg>',
+    discord:
+      '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M19.7 5.7a14 14 0 0 0-3.5-1.1l-.2.4a10 10 0 0 1 2.9 1.1A13 13 0 0 0 12 4.6 13 13 0 0 0 5.1 6a10 10 0 0 1 2.9-1.1l-.2-.4c-1.2.2-2.4.6-3.5 1.1C2 9 1.4 12.2 1.6 15.3c1.5 1.1 3 1.8 4.5 2.3l1.1-1.8a9 9 0 0 1-1.8-.9l.4-.3c3.4 1.6 7.1 1.6 10.4 0l.4.3c-.6.4-1.2.7-1.8.9l1.1 1.8c1.5-.5 3-1.2 4.5-2.3.3-3.6-.6-6.8-2.7-9.6ZM9.5 13.3c-.8 0-1.4-.8-1.4-1.7 0-1 .6-1.7 1.4-1.7.8 0 1.4.8 1.4 1.7 0 1-.6 1.7-1.4 1.7Zm5 0c-.8 0-1.4-.8-1.4-1.7 0-1 .6-1.7 1.4-1.7.8 0 1.4.8 1.4 1.7 0 1-.6 1.7-1.4 1.7Z"/></svg>',
+  };
+
+  const normalizeCandidateUrl = (value) => {
+    const raw = String(value || "").trim();
+    if (!raw) return "";
+    return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+  };
+
+  const providerFromUrl = (value) => {
+    const normalized = normalizeCandidateUrl(value);
+    if (!normalized) return "website";
+
+    try {
+      const url = new URL(normalized);
+      let host = String(url.hostname || "").toLowerCase();
+      if (host.startsWith("www.")) {
+        host = host.slice(4);
+      }
+
+      if (host === "x.com" || host === "twitter.com" || host.endsWith(".x.com") || host.endsWith(".twitter.com")) return "x";
+      if (host === "reddit.com" || host.endsWith(".reddit.com")) return "reddit";
+      if (host === "instagram.com" || host.endsWith(".instagram.com")) return "instagram";
+      if (host === "facebook.com" || host === "fb.com" || host.endsWith(".facebook.com")) return "facebook";
+      if (host === "linkedin.com" || host.endsWith(".linkedin.com")) return "linkedin";
+      if (host === "github.com" || host.endsWith(".github.com")) return "github";
+      if (host === "youtube.com" || host === "youtu.be" || host.endsWith(".youtube.com")) return "youtube";
+      if (host === "tiktok.com" || host.endsWith(".tiktok.com")) return "tiktok";
+      if (host === "twitch.tv" || host.endsWith(".twitch.tv")) return "twitch";
+      if (host === "discord.com" || host === "discord.gg" || host.endsWith(".discord.com")) return "discord";
+    } catch {
+      return "website";
+    }
+
+    return "website";
+  };
+
+  const labelFromInputs = (labelValue, urlValue) => {
+    const label = String(labelValue || "").trim();
+    if (label) return label;
+
+    const rawUrl = String(urlValue || "").trim();
+    if (!rawUrl) return "Auto preview";
+
+    const normalized = normalizeCandidateUrl(rawUrl);
+    try {
+      const url = new URL(normalized);
+      let path = String(url.pathname || "");
+      if (path === "/") path = "";
+      if (path.endsWith("/")) path = path.slice(0, -1);
+      let text = `${url.hostname.toLowerCase()}${path}`;
+      if (text.length > 52) {
+        text = `${text.slice(0, 49)}...`;
+      }
+      return text;
+    } catch {
+      return rawUrl;
+    }
+  };
+
+  const updateRow = (row) => {
+    if (!(row instanceof HTMLElement)) return;
+    const labelInput = row.querySelector("[data-link-preview-label-input='1']");
+    const urlInput = row.querySelector("[data-link-preview-url-input='1']");
+    const icon = row.querySelector("[data-link-preview-icon='1']");
+    const label = row.querySelector("[data-link-preview-label='1']");
+    const providerText = row.querySelector("[data-link-preview-provider='1']");
+
+    const labelValue = labelInput instanceof HTMLInputElement ? labelInput.value : "";
+    const urlValue = urlInput instanceof HTMLInputElement ? urlInput.value : "";
+    const provider = providerFromUrl(urlValue);
+    const previewLabel = labelFromInputs(labelValue, urlValue);
+
+    if (icon instanceof HTMLElement) {
+      icon.className = `profileLinkPreview__icon profileLink__icon profileLink__icon--${provider}`;
+      icon.innerHTML = icons[provider] || icons.website;
+    }
+    if (label instanceof HTMLElement) {
+      label.textContent = previewLabel;
+    }
+    if (providerText instanceof HTMLElement) {
+      providerText.textContent = providerNames[provider] || providerNames.website;
+    }
+  };
+
+  rows.forEach((row) => {
+    if (!(row instanceof HTMLElement)) return;
+    const inputs = row.querySelectorAll("[data-link-preview-label-input='1'], [data-link-preview-url-input='1']");
+    inputs.forEach((input) => {
+      input.addEventListener("input", () => updateRow(row));
+      input.addEventListener("change", () => updateRow(row));
+    });
+    updateRow(row);
+  });
+})();
+
+(() => {
+  const navItems = Array.from(document.querySelectorAll("[data-settings-nav]"));
+  const sections = Array.from(document.querySelectorAll("[data-settings-section]"));
+  if (!navItems.length || !sections.length) return;
+
+  const setActive = (id) => {
+    navItems.forEach((item) => {
+      item.classList.toggle("is-active", item.getAttribute("data-settings-nav") === id);
+    });
+  };
+
+  navItems.forEach((item) => {
+    item.addEventListener("click", () => {
+      const id = item.getAttribute("data-settings-nav") || "";
+      if (id) setActive(id);
+    });
+  });
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      let best = null;
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        if (!best || entry.intersectionRatio > best.intersectionRatio) {
+          best = entry;
+        }
+      });
+
+      if (best && best.target instanceof HTMLElement) {
+        const id = best.target.getAttribute("data-settings-section") || "";
+        if (id) setActive(id);
+      }
+    },
+    {
+      rootMargin: "-22% 0px -60% 0px",
+      threshold: [0.2, 0.45, 0.7],
+    }
+  );
+
+  sections.forEach((section) => {
+    if (section instanceof HTMLElement) observer.observe(section);
+  });
+
+  const hash = window.location.hash.replace(/^#/, "");
+  if (hash) {
+    setActive(hash);
+  }
+})();
+
+(() => {
   if (!window.location.href.includes("/bookmarks.php")) return;
 
   const STORAGE_KEY = "trux.bookmarks.scroll";

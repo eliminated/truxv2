@@ -214,11 +214,11 @@ function trux_render_rich_text_line(string $line): string {
             $term = substr($token, 1);
 
             if ($sigil === '@') {
-                $href = '/profile.php?u=' . rawurlencode($term);
+                $href = TRUX_BASE_URL . '/profile.php?u=' . rawurlencode($term);
                 $out .= '<a class="mentionLink" href="' . trux_e($href) . '">@' . trux_e($term) . '</a>';
             } elseif ($sigil === '#') {
                 $normalized = strtolower($term);
-                $href = '/search.php?q=' . rawurlencode('#' . $normalized) . '&filter=hashtags';
+                $href = TRUX_BASE_URL . '/search.php?q=' . rawurlencode('#' . $normalized) . '&filter=hashtags';
                 $out .= '<a class="hashtagLink" href="' . trux_e($href) . '">#' . trux_e($term) . '</a>';
             } else {
                 $out .= trux_e($token);

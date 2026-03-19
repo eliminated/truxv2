@@ -1,4 +1,43 @@
 # Omincus Updates
+## Omnicus v0.4.7 - Profile Tabs & Settings Navigation
+
+**Branch**: Production
+**Date**: 2026-03-19
+
+***
+
+### Added
+
+- New profile section tabs on `public/profile.php`: `Posts`, `Replies`, `Liked`, `Bookmarks`, and `About Me`
+- Long-form `About Me` profile field with support for up to 5 affiliated links
+- Automatic social/platform icon rendering for supported profile links such as Reddit, Instagram, GitHub, YouTube, Discord, and more
+- Live icon/label preview inside the affiliated link editor on `public/edit_profile.php`
+- New profile privacy controls in `public/settings.php` for public likes and bookmarks visibility
+- New migration: `database/migrations/20260319_add_profile_tabs_and_privacy.sql`
+
+***
+
+### Changed
+
+- Profile pages now render user-authored replies/comments in a dedicated `Replies` section
+- Profile pages now render liked posts and liked comments/replies in a dedicated `Liked` section
+- Profile pages now render bookmarked posts and bookmarked comments/replies in a dedicated `Bookmarks` section
+- Settings now use left-side section navigation with one active section shown at a time instead of a single long scrolling page
+- Settings actions now preserve the active section after save/unmute flows
+- Internal rich-text mention, hashtag, and notification URLs now consistently respect `TRUX_BASE_URL`
+
+***
+
+### Technical
+
+- Extended `users` reads/updates to include `about_me`, `profile_links_json`, `show_likes_public`, and `show_bookmarks_public`
+- Added profile helper logic in `src/profiles.php` for link normalization, provider detection, icon mapping, and privacy preference storage
+- Added user activity fetch helpers in `src/posts.php` for authored replies, liked posts/comments, and bookmarked profile content
+- Added new Settings layout/navigation behavior in `public/assets/style.css` and `public/assets/app.js`
+- Verified syntax with `php -l` on the touched PHP files and `node --check public/assets/app.js`
+
+***
+
 ## Omnicus v0.4.5 - Discovery UI Overhaul
 
 **Branch**: Production
