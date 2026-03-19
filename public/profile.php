@@ -342,84 +342,84 @@ require_once __DIR__ . '/_header.php';
 ?>
 
 <div class="profile">
-  <section class="profile__hero">
-    <div class="profile__banner" aria-hidden="true">
-      <?php if ($bannerUrl !== ''): ?>
-        <img class="profile__bannerImage" src="<?= trux_e($bannerUrl) ?>" alt="" loading="lazy" decoding="async">
-      <?php endif; ?>
-    </div>
-    <div class="profile__identity">
-      <div class="profile__avatar<?= $avatarUrl !== '' ? ' profile__avatar--image' : '' ?>" aria-hidden="true">
-        <?php if ($avatarUrl !== ''): ?>
-          <img class="profile__avatarImage" src="<?= trux_e($avatarUrl) ?>" alt="">
+  <section class="profile__masthead">
+    <div class="profile__hero">
+      <div class="profile__banner" aria-hidden="true">
+        <?php if ($bannerUrl !== ''): ?>
+          <img class="profile__bannerImage" src="<?= trux_e($bannerUrl) ?>" alt="" loading="lazy" decoding="async">
         <?php endif; ?>
       </div>
-      <div class="profile__titleBlock">
-        <h1 class="profile__username"><?= $displayName !== '' ? trux_e($displayName) : '@' . trux_e((string)$profileUser['username']) ?></h1>
-        <div class="profile__subtitle">@<?= trux_e((string)$profileUser['username']) ?></div>
-        <?php if ($bio !== ''): ?>
-          <p class="profile__bio"><?= nl2br(trux_e($bio)) ?></p>
-        <?php endif; ?>
-        <?php if ($location !== '' || $websiteUrl !== ''): ?>
-          <div class="profileMeta">
-            <?php if ($location !== ''): ?>
-              <span class="profileMeta__item"><?= trux_e($location) ?></span>
-            <?php endif; ?>
-            <?php if ($websiteUrl !== ''): ?>
-              <a class="profileMeta__item" href="<?= trux_e($websiteUrl) ?>" target="_blank" rel="noopener noreferrer"><?= trux_e($websiteLabel !== '' ? $websiteLabel : $websiteUrl) ?></a>
-            <?php endif; ?>
-          </div>
-        <?php endif; ?>
+      <div class="profile__identity">
+        <div class="profile__avatar<?= $avatarUrl !== '' ? ' profile__avatar--image' : '' ?>" aria-hidden="true">
+          <?php if ($avatarUrl !== ''): ?>
+            <img class="profile__avatarImage" src="<?= trux_e($avatarUrl) ?>" alt="">
+          <?php endif; ?>
+        </div>
+        <div class="profile__titleBlock">
+          <h1 class="profile__username"><?= $displayName !== '' ? trux_e($displayName) : '@' . trux_e((string)$profileUser['username']) ?></h1>
+          <div class="profile__subtitle">@<?= trux_e((string)$profileUser['username']) ?></div>
+          <?php if ($bio !== ''): ?>
+            <p class="profile__bio"><?= nl2br(trux_e($bio)) ?></p>
+          <?php endif; ?>
+          <?php if ($location !== '' || $websiteUrl !== ''): ?>
+            <div class="profileMeta">
+              <?php if ($location !== ''): ?>
+                <span class="profileMeta__item"><?= trux_e($location) ?></span>
+              <?php endif; ?>
+              <?php if ($websiteUrl !== ''): ?>
+                <a class="profileMeta__item" href="<?= trux_e($websiteUrl) ?>" target="_blank" rel="noopener noreferrer"><?= trux_e($websiteLabel !== '' ? $websiteLabel : $websiteUrl) ?></a>
+              <?php endif; ?>
+            </div>
+          <?php endif; ?>
+        </div>
       </div>
     </div>
-  </section>
 
-  <section class="profile__stats">
-    <div class="profileStats">
-      <div class="profileStats__left">
-        <div class="profileStat">
-          <div class="profileStat__value"><?= number_format((int)$followCounts['followers']) ?></div>
-          <div class="profileStat__label">Followers</div>
-        </div>
-        <div class="profileStat">
-          <div class="profileStat__value"><?= number_format((int)$followCounts['following']) ?></div>
-          <div class="profileStat__label">Following</div>
-        </div>
-        <div class="profileStat">
-          <div class="profileStat__value" <?= $joinedDateRaw !== '' ? 'data-time-ago="1" data-time-source="' . trux_e($joinedDateRaw) . '" title="' . trux_e($joinedDateExact) . '"' : '' ?>><?= trux_e($joinedDate) ?></div>
-          <div class="profileStat__label">Joined</div>
-        </div>
-      </div>
-      <div class="profileStats__right">
-        <?php if ($isSelf): ?>
-          <a class="btn btn--neonFollow" href="<?= TRUX_BASE_URL ?>/edit_profile.php"><span class="btn__text">Edit Profile</span></a>
-        <?php elseif (!$me): ?>
-          <button class="btn btn--neonFollow is-disabled" type="button" disabled><span class="btn__text">Log in to follow</span></button>
-        <?php else: ?>
-          <div class="profileActions">
-            <form class="profileFollowForm" method="post" action="<?= TRUX_BASE_URL ?>/follow.php">
-              <?= trux_csrf_field() ?>
-              <input type="hidden" name="action" value="<?= $isFollowing ? 'unfollow' : 'follow' ?>">
-              <input type="hidden" name="user_id" value="<?= (int)$profileUser['id'] ?>">
-              <input type="hidden" name="user" value="<?= trux_e((string)$profileUser['username']) ?>">
-              <button class="btn btn--neonFollow<?= $isFollowing ? ' is-following' : '' ?>" type="submit"><span class="btn__text"><?= $isFollowing ? 'Following' : 'Follow' ?></span></button>
-            </form>
-            <form class="profileMuteForm" method="post" action="<?= TRUX_BASE_URL ?>/mute_user.php">
-              <?= trux_csrf_field() ?>
-              <input type="hidden" name="action" value="<?= $isMuted ? 'unmute' : 'mute' ?>">
-              <input type="hidden" name="user_id" value="<?= (int)$profileUser['id'] ?>">
-              <input type="hidden" name="user" value="<?= trux_e((string)$profileUser['username']) ?>">
-              <button class="btn btn--small btn--ghost<?= $isMuted ? ' is-active' : '' ?>" type="submit"><?= $isMuted ? 'Muted' : 'Mute' ?></button>
-            </form>
-            <a class="btn btn--small btn--ghost" href="<?= TRUX_BASE_URL ?>/messages.php?with=<?= trux_e(rawurlencode((string)$profileUser['username'])) ?>">Message</a>
+    <div class="profile__mastheadSection profile__mastheadSection--stats">
+      <div class="profileStats">
+        <div class="profileStats__left">
+          <div class="profileStat">
+            <div class="profileStat__value"><?= number_format((int)$followCounts['followers']) ?></div>
+            <div class="profileStat__label">Followers</div>
           </div>
-        <?php endif; ?>
+          <div class="profileStat">
+            <div class="profileStat__value"><?= number_format((int)$followCounts['following']) ?></div>
+            <div class="profileStat__label">Following</div>
+          </div>
+          <div class="profileStat">
+            <div class="profileStat__value" <?= $joinedDateRaw !== '' ? 'data-time-ago="1" data-time-source="' . trux_e($joinedDateRaw) . '" title="' . trux_e($joinedDateExact) . '"' : '' ?>><?= trux_e($joinedDate) ?></div>
+            <div class="profileStat__label">Joined</div>
+          </div>
+        </div>
+        <div class="profileStats__right">
+          <?php if ($isSelf): ?>
+            <a class="btn btn--neonFollow" href="<?= TRUX_BASE_URL ?>/edit_profile.php"><span class="btn__text">Edit Profile</span></a>
+          <?php elseif (!$me): ?>
+            <button class="btn btn--neonFollow is-disabled" type="button" disabled><span class="btn__text">Log in to follow</span></button>
+          <?php else: ?>
+            <div class="profileActions">
+              <form class="profileFollowForm" method="post" action="<?= TRUX_BASE_URL ?>/follow.php">
+                <?= trux_csrf_field() ?>
+                <input type="hidden" name="action" value="<?= $isFollowing ? 'unfollow' : 'follow' ?>">
+                <input type="hidden" name="user_id" value="<?= (int)$profileUser['id'] ?>">
+                <input type="hidden" name="user" value="<?= trux_e((string)$profileUser['username']) ?>">
+                <button class="btn btn--neonFollow<?= $isFollowing ? ' is-following' : '' ?>" type="submit"><span class="btn__text"><?= $isFollowing ? 'Following' : 'Follow' ?></span></button>
+              </form>
+              <form class="profileMuteForm" method="post" action="<?= TRUX_BASE_URL ?>/mute_user.php">
+                <?= trux_csrf_field() ?>
+                <input type="hidden" name="action" value="<?= $isMuted ? 'unmute' : 'mute' ?>">
+                <input type="hidden" name="user_id" value="<?= (int)$profileUser['id'] ?>">
+                <input type="hidden" name="user" value="<?= trux_e((string)$profileUser['username']) ?>">
+                <button class="btn btn--small btn--ghost<?= $isMuted ? ' is-active' : '' ?>" type="submit"><?= $isMuted ? 'Muted' : 'Mute' ?></button>
+              </form>
+              <a class="btn btn--small btn--ghost" href="<?= TRUX_BASE_URL ?>/messages.php?with=<?= trux_e(rawurlencode((string)$profileUser['username'])) ?>">Message</a>
+            </div>
+          <?php endif; ?>
+        </div>
       </div>
     </div>
-  </section>
 
-  <section class="card profile__tabs">
-    <div class="card__body">
+    <div class="profile__mastheadSection profile__mastheadSection--tabs">
       <nav class="profileTabs" aria-label="Profile sections">
         <?php foreach ([
             'posts' => 'Posts',
@@ -450,7 +450,7 @@ require_once __DIR__ . '/_header.php';
   <?php elseif ($tab === 'posts'): ?>
     <section class="profile__feed">
       <div class="profile__feedHead"><h2 class="profile__feedTitle">Posts</h2></div>
-      <div class="profile__posts feed">
+      <div class="profile__posts feed" data-auto-pager-list="profile-posts">
         <?php if (!$posts): ?>
           <div class="card"><div class="card__body">No posts yet.</div></div>
         <?php else: ?>
@@ -458,7 +458,7 @@ require_once __DIR__ . '/_header.php';
         <?php endif; ?>
       </div>
       <?php if ($nextBefore): ?>
-        <div class="pager"><a class="btn" href="<?= trux_e($profileUrl(['tab' => 'posts', 'before' => $nextBefore])) ?>">Load more</a></div>
+        <div class="pager" data-auto-pager="profile-posts"><a class="btn" data-no-fx="1" href="<?= trux_e($profileUrl(['tab' => 'posts', 'before' => $nextBefore])) ?>">Load more</a></div>
       <?php endif; ?>
     </section>
   <?php elseif ($tab === 'replies'): ?>
@@ -493,12 +493,12 @@ require_once __DIR__ . '/_header.php';
         </div>
       </div>
       <?php if ($likedPosts): ?>
-        <div class="profile__posts feed">
+        <div class="profile__posts feed" data-auto-pager-list="profile-liked-posts">
           <?php $renderPosts($likedPosts, $likedInteractionMap, $me, 'liked_at', 'Liked '); ?>
         </div>
       <?php endif; ?>
       <?php if ($hasMoreLikedPosts): ?>
-        <div class="pager"><a class="btn" href="<?= trux_e($profileUrl(['tab' => 'liked', 'liked_posts_page' => $likedPostsPage + 1])) ?>">Load more liked posts</a></div>
+        <div class="pager" data-auto-pager="profile-liked-posts"><a class="btn" data-no-fx="1" href="<?= trux_e($profileUrl(['tab' => 'liked', 'liked_posts_page' => $likedPostsPage + 1])) ?>">Load more liked posts</a></div>
       <?php endif; ?>
       <section class="card profilePanelCard">
         <div class="card__body">
@@ -532,12 +532,12 @@ require_once __DIR__ . '/_header.php';
         </div>
       </div>
       <?php if ($bookmarkedPosts): ?>
-        <div class="profile__posts feed">
+        <div class="profile__posts feed" data-auto-pager-list="profile-bookmarked-posts">
           <?php $renderPosts($bookmarkedPosts, $bookmarkInteractionMap, $me, 'bookmarked_at', 'Saved '); ?>
         </div>
       <?php endif; ?>
       <?php if ($hasMoreBookmarkedPosts): ?>
-        <div class="pager"><a class="btn" href="<?= trux_e($profileUrl(['tab' => 'bookmarks', 'bookmark_posts_page' => $bookmarkPostsPage + 1])) ?>">Load more bookmarked posts</a></div>
+        <div class="pager" data-auto-pager="profile-bookmarked-posts"><a class="btn" data-no-fx="1" href="<?= trux_e($profileUrl(['tab' => 'bookmarks', 'bookmark_posts_page' => $bookmarkPostsPage + 1])) ?>">Load more bookmarked posts</a></div>
       <?php endif; ?>
       <section class="card profilePanelCard">
         <div class="card__body">

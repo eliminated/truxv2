@@ -135,87 +135,90 @@ require_once __DIR__ . '/_header.php';
       </div>
     </div>
 
-    <?php foreach ($posts as $p): ?>
-      <?php $editedAt = isset($p['edited_at']) && $p['edited_at'] !== null ? (string)$p['edited_at'] : ''; ?>
-      <article class="card post" data-post-id="<?= (int)$p['id'] ?>">
-        <div class="card__body">
-          <div class="post__head">
-            <?php
-            $postAvatarPath = trim((string)($p['avatar_path'] ?? ''));
-            $postAvatarUrl = $postAvatarPath !== '' ? trux_public_url($postAvatarPath) : '';
-            ?>
-            <a class="post__avatar<?= $postAvatarUrl !== '' ? ' post__avatar--image' : '' ?>" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$p['username']) ?>" aria-label="View @<?= trux_e((string)$p['username']) ?> profile">
-              <?php if ($postAvatarUrl !== ''): ?>
-                <img class="post__avatarImage" src="<?= trux_e($postAvatarUrl) ?>" alt="" loading="lazy" decoding="async">
-              <?php endif; ?>
-            </a>
-
-            <div class="post__meta">
-              <div class="post__nameRow">
-                <a class="post__user" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$p['username']) ?>">@<?= trux_e((string)$p['username']) ?></a>
-              </div>
-              <div class="post__subRow">
-                <span
-                  class="post__time"
-                  title="<?= trux_e(trux_format_exact_time((string)$p['created_at'])) ?>"
-                  data-time-ago="1"
-                  data-time-source="<?= trux_e((string)$p['created_at']) ?>">
-                  <?= trux_e(trux_time_ago((string)$p['created_at'])) ?>
-                </span>
-                <?php if ($editedAt !== ''): ?>
-                  <span class="editedMeta" data-post-edited-for="<?= (int)$p['id'] ?>">
-                    <span class="editedMeta__label">EDITED AT</span>
-                    <span
-                      class="editedMeta__time"
-                      title="<?= trux_e(trux_format_exact_time($editedAt)) ?>"
-                      data-time-ago="1"
-                      data-time-source="<?= trux_e($editedAt) ?>">
-                      <?= trux_e(trux_time_ago($editedAt)) ?>
-                    </span>
-                  </span>
+    <div data-auto-pager-list="search-posts">
+      <?php foreach ($posts as $p): ?>
+        <?php $editedAt = isset($p['edited_at']) && $p['edited_at'] !== null ? (string)$p['edited_at'] : ''; ?>
+        <article class="card post" data-post-id="<?= (int)$p['id'] ?>">
+          <div class="card__body">
+            <div class="post__head">
+              <?php
+              $postAvatarPath = trim((string)($p['avatar_path'] ?? ''));
+              $postAvatarUrl = $postAvatarPath !== '' ? trux_public_url($postAvatarPath) : '';
+              ?>
+              <a class="post__avatar<?= $postAvatarUrl !== '' ? ' post__avatar--image' : '' ?>" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$p['username']) ?>" aria-label="View @<?= trux_e((string)$p['username']) ?> profile">
+                <?php if ($postAvatarUrl !== ''): ?>
+                  <img class="post__avatarImage" src="<?= trux_e($postAvatarUrl) ?>" alt="" loading="lazy" decoding="async">
                 <?php endif; ?>
-                <span class="post__dot" aria-hidden="true">&bull;</span>
-                <a class="post__id" href="<?= TRUX_BASE_URL ?>/post.php?id=<?= (int)$p['id'] ?>">#<?= (int)$p['id'] ?></a>
+              </a>
+
+              <div class="post__meta">
+                <div class="post__nameRow">
+                  <a class="post__user" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$p['username']) ?>">@<?= trux_e((string)$p['username']) ?></a>
+                </div>
+                <div class="post__subRow">
+                  <span
+                    class="post__time"
+                    title="<?= trux_e(trux_format_exact_time((string)$p['created_at'])) ?>"
+                    data-time-ago="1"
+                    data-time-source="<?= trux_e((string)$p['created_at']) ?>">
+                    <?= trux_e(trux_time_ago((string)$p['created_at'])) ?>
+                  </span>
+                  <?php if ($editedAt !== ''): ?>
+                    <span class="editedMeta" data-post-edited-for="<?= (int)$p['id'] ?>">
+                      <span class="editedMeta__label">EDITED AT</span>
+                      <span
+                        class="editedMeta__time"
+                        title="<?= trux_e(trux_format_exact_time($editedAt)) ?>"
+                        data-time-ago="1"
+                        data-time-source="<?= trux_e($editedAt) ?>">
+                        <?= trux_e(trux_time_ago($editedAt)) ?>
+                      </span>
+                    </span>
+                  <?php endif; ?>
+                  <span class="post__dot" aria-hidden="true">&bull;</span>
+                  <a class="post__id" href="<?= TRUX_BASE_URL ?>/post.php?id=<?= (int)$p['id'] ?>">#<?= (int)$p['id'] ?></a>
+                </div>
               </div>
+
+              <?php if ($me && (int)$p['user_id'] === (int)$me['id']): ?>
+                <div class="post__actions">
+                  <?php
+                  $entityType = 'post';
+                  $entityId = (int)$p['id'];
+                  require __DIR__ . '/_owner_actions_menu.php';
+                  ?>
+                </div>
+              <?php endif; ?>
             </div>
 
-            <?php if ($me && (int)$p['user_id'] === (int)$me['id']): ?>
-              <div class="post__actions">
-                <?php
-                $entityType = 'post';
-                $entityId = (int)$p['id'];
-                require __DIR__ . '/_owner_actions_menu.php';
-                ?>
+            <div class="post__body"><?= trux_render_post_body((string)$p['body']) ?></div>
+
+            <?php
+            $postImagePath = trim((string)($p['image_path'] ?? ''));
+            $postImageUrl = $postImagePath !== '' ? trux_public_url($postImagePath) : '';
+            ?>
+            <?php if ($postImageUrl !== ''): ?>
+              <div class="post__image">
+                <img src="<?= trux_e($postImageUrl) ?>" alt="Post image" loading="lazy" decoding="async">
               </div>
             <?php endif; ?>
+
+            <?php
+            $postId = (int)$p['id'];
+            $stats = $interactionMap[$postId] ?? ['likes' => 0, 'comments' => 0, 'shares' => 0, 'liked' => false, 'shared' => false];
+            $isLoggedIn = (bool)$me;
+            require __DIR__ . '/_post_actions_bar.php';
+            ?>
           </div>
-
-          <div class="post__body"><?= trux_render_post_body((string)$p['body']) ?></div>
-
-          <?php
-          $postImagePath = trim((string)($p['image_path'] ?? ''));
-          $postImageUrl = $postImagePath !== '' ? trux_public_url($postImagePath) : '';
-          ?>
-          <?php if ($postImageUrl !== ''): ?>
-            <div class="post__image">
-              <img src="<?= trux_e($postImageUrl) ?>" alt="Post image" loading="lazy" decoding="async">
-            </div>
-          <?php endif; ?>
-
-          <?php
-          $postId = (int)$p['id'];
-          $stats = $interactionMap[$postId] ?? ['likes' => 0, 'comments' => 0, 'shares' => 0, 'liked' => false, 'shared' => false];
-          $isLoggedIn = (bool)$me;
-          require __DIR__ . '/_post_actions_bar.php';
-          ?>
-        </div>
-      </article>
-    <?php endforeach; ?>
+        </article>
+      <?php endforeach; ?>
+    </div>
 
     <?php if ($nextBefore): ?>
-      <div class="pager">
+      <div class="pager" data-auto-pager="search-posts">
         <a
           class="btn"
+          data-no-fx="1"
           href="<?= TRUX_BASE_URL ?>/search.php?q=<?= urlencode($q) ?>&filter=<?= urlencode($searchFilter) ?>&before=<?= (int)$nextBefore ?>">
           Load more
         </a>

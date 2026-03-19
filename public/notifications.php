@@ -9,6 +9,20 @@ if (!$me) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $redirectPath = '/notifications.php';
+    $rawRedirect = $_POST['redirect'] ?? '';
+    if (is_string($rawRedirect)) {
+        $candidateRedirect = trim($rawRedirect);
+        if (
+            $candidateRedirect !== ''
+            && str_starts_with($candidateRedirect, '/')
+            && !str_starts_with($candidateRedirect, '//')
+            && !preg_match('/[\r\n]/', $candidateRedirect)
+        ) {
+            $redirectPath = $candidateRedirect;
+        }
+    }
+
     $action = $_POST['action'] ?? '';
     if (is_string($action) && $action === 'mark_all_read') {
         trux_mark_all_notifications_read((int)$me['id']);
@@ -16,7 +30,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         trux_flash_set('error', 'Invalid notification action.');
     }
-    trux_redirect('/notifications.php');
+    trux_redirect($redirectPath);
 }
 
 $notifications = trux_fetch_notifications((int)$me['id'], 60);
@@ -37,6 +51,7 @@ require_once __DIR__ . '/_header.php';
         <form method="post" action="<?= TRUX_BASE_URL ?>/notifications.php" class="inline">
           <?= trux_csrf_field() ?>
           <input type="hidden" name="action" value="mark_all_read">
+          <input type="hidden" name="redirect" value="/notifications.php">
           <button class="btn btn--small btn--ghost" type="submit">Mark all as read</button>
         </form>
       <?php endif; ?>

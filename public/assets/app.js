@@ -1633,15 +1633,24 @@
     btn.classList.toggle("is-loading", loading);
   };
 
-  document
-    .querySelectorAll('form[data-ajax-action="1"][data-action-kind="bookmark"]')
-    .forEach((form) => {
+  const syncBookmarkOwnerStates = (root = document) => {
+    if (!root || typeof root.querySelectorAll !== "function") return;
+
+    root.querySelectorAll('form[data-ajax-action="1"][data-action-kind="bookmark"]').forEach((form) => {
       if (!(form instanceof HTMLFormElement)) return;
       const postId = Number(form.dataset.postId || "0");
       const button = form.querySelector(".postAct");
       if (!postId || !(button instanceof HTMLElement)) return;
       setOwnerBookmarkState(postId, button.classList.contains("is-active"));
     });
+  };
+
+  syncBookmarkOwnerStates(document);
+
+  document.addEventListener("trux:content-added", (e) => {
+    const root = e instanceof CustomEvent ? e.detail?.root : null;
+    syncBookmarkOwnerStates(root && typeof root.querySelectorAll === "function" ? root : document);
+  });
 
   document.addEventListener("submit", async (e) => {
     const form = e.target;
@@ -2063,4 +2072,224 @@
 
   window.addEventListener("pageshow", restoreScrollState);
   restoreScrollState();
+})();
+
+(() => {
+  const states = new WeakMap();
+
+  const getState = (pager) => {
+    let state = states.get(pager);
+    if (!state) {
+      state = {
+        loading: false,
+        observer: null,
+      };
+      states.set(pager, state);
+    }
+    return state;
+  };
+
+  const escapeAttrValue = (value) =>
+    String(value).replaceAll("\\", "\\\\").replaceAll('"', '\\"');
+
+  const findList = (key, root = document) => {
+    if (!key || !root || typeof root.querySelector !== "function") return null;
+    return root.querySelector(`[data-auto-pager-list="${escapeAttrValue(key)}"]`);
+  };
+
+  const findPager = (key, root = document) => {
+    if (!key || !root || typeof root.querySelector !== "function") return null;
+    return root.querySelector(`[data-auto-pager="${escapeAttrValue(key)}"]`);
+  };
+
+  const getLink = (pager) => pager.querySelector("a[href]");
+
+  const getLinkLabel = (link) => {
+    if (!(link instanceof HTMLAnchorElement)) return "Load more";
+    if (!link.dataset.autoPagerLabel) {
+      link.dataset.autoPagerLabel = (link.textContent || "Load more").trim() || "Load more";
+    }
+    return link.dataset.autoPagerLabel;
+  };
+
+  const setLoading = (pager, loading) => {
+    const link = getLink(pager);
+    pager.classList.toggle("is-loading", loading);
+    if (!(link instanceof HTMLAnchorElement)) return;
+
+    const defaultLabel = getLinkLabel(link);
+    link.textContent = loading ? "Loading older posts..." : defaultLabel;
+    link.setAttribute("aria-disabled", loading ? "true" : "false");
+    if (loading) {
+      link.setAttribute("aria-busy", "true");
+    } else {
+      link.removeAttribute("aria-busy");
+    }
+  };
+
+  const clearStatus = (pager) => {
+    pager.classList.remove("is-error");
+    const status = pager.querySelector("[data-auto-pager-status]");
+    if (status instanceof HTMLElement) {
+      status.remove();
+    }
+  };
+
+  const setStatus = (pager, message) => {
+    clearStatus(pager);
+    if (!message) return;
+
+    const status = document.createElement("span");
+    status.className = "pager__status";
+    status.setAttribute("data-auto-pager-status", "1");
+    status.setAttribute("role", "status");
+    status.textContent = String(message);
+    pager.classList.add("is-error");
+    pager.appendChild(status);
+  };
+
+  const stopObserving = (pager) => {
+    const state = states.get(pager);
+    if (
+      typeof IntersectionObserver !== "undefined" &&
+      state?.observer instanceof IntersectionObserver
+    ) {
+      state.observer.disconnect();
+      state.observer = null;
+    }
+  };
+
+  const announceContentAdded = (root) => {
+    if (!(root instanceof HTMLElement)) return;
+
+    document.dispatchEvent(
+      new CustomEvent("trux:content-added", {
+        detail: { root },
+      })
+    );
+
+    if (typeof window.truxRefreshTimeAgo === "function") {
+      window.truxRefreshTimeAgo();
+    } else {
+      window.dispatchEvent(new Event("trux:times:refresh"));
+    }
+  };
+
+  const loadNextPage = async (pager) => {
+    if (!(pager instanceof HTMLElement)) return;
+
+    const state = getState(pager);
+    if (state.loading) return;
+
+    const key = (pager.getAttribute("data-auto-pager") || "").trim();
+    const link = getLink(pager);
+    const currentList = findList(key);
+    if (!key || !(link instanceof HTMLAnchorElement) || !(currentList instanceof HTMLElement)) {
+      stopObserving(pager);
+      return;
+    }
+
+    state.loading = true;
+    stopObserving(pager);
+    clearStatus(pager);
+    setLoading(pager, true);
+
+    try {
+      const res = await fetch(link.href, {
+        headers: {
+          Accept: "text/html",
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error(`Request failed (${res.status}).`);
+      }
+
+      const html = await res.text();
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      const nextList = findList(key, doc);
+      if (!(nextList instanceof HTMLElement)) {
+        window.location.href = res.url || link.href;
+        return;
+      }
+
+      const fragment = document.createDocumentFragment();
+      Array.from(nextList.children).forEach((child) => {
+        fragment.appendChild(document.importNode(child, true));
+      });
+
+      if (fragment.childNodes.length > 0) {
+        currentList.appendChild(fragment);
+        announceContentAdded(currentList);
+      }
+
+      const nextPager = findPager(key, doc);
+      stopObserving(pager);
+      states.delete(pager);
+
+      if (nextPager instanceof HTMLElement) {
+        const importedPager = document.importNode(nextPager, true);
+        pager.replaceWith(importedPager);
+        initAutoPager(importedPager);
+      } else {
+        pager.remove();
+      }
+    } catch (err) {
+      state.loading = false;
+      setLoading(pager, false);
+      setStatus(
+        pager,
+        err instanceof Error ? err.message : "Could not load older posts."
+      );
+      observePager(pager);
+      if (typeof window.truxToast === "function") {
+        window.truxToast("Could not load older posts.", "error");
+      }
+    }
+  };
+
+  const observePager = (pager) => {
+    if (!(pager instanceof HTMLElement) || !("IntersectionObserver" in window)) return;
+
+    const state = getState(pager);
+    stopObserving(pager);
+    state.observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            void loadNextPage(pager);
+          }
+        });
+      },
+      {
+        rootMargin: "480px 0px 220px 0px",
+      }
+    );
+    state.observer.observe(pager);
+  };
+
+  const initAutoPager = (pager) => {
+    if (!(pager instanceof HTMLElement)) return;
+    if (pager.dataset.autoPagerReady === "1") return;
+
+    const key = (pager.getAttribute("data-auto-pager") || "").trim();
+    if (!key || !(findList(key) instanceof HTMLElement)) return;
+
+    pager.dataset.autoPagerReady = "1";
+    pager.addEventListener("click", (e) => {
+      const link = e.target.closest("a[href]");
+      if (!(link instanceof HTMLAnchorElement)) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      if (link.target && link.target !== "_self") return;
+
+      e.preventDefault();
+      void loadNextPage(pager);
+    });
+
+    observePager(pager);
+  };
+
+  document.querySelectorAll("[data-auto-pager]").forEach((pager) => {
+    initAutoPager(pager);
+  });
 })();

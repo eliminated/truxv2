@@ -1,4 +1,39 @@
 # Omincus Updates
+## Omnicus v0.4.8 - Header Notifications & Infinite Feed Loading
+
+**Branch**: Production
+**Date**: 2026-03-19
+
+***
+
+### Added
+
+- New header notification dropdown with unread badge, recent activity preview, and quick access to the full notifications page
+- Quick `Mark all as read` action inside the header notification menu
+- Automatic loading of older posts while scrolling on the home feed, search results, profile post sections, and bookmarked posts
+- Visible pager loading/error states for auto-loaded post lists
+
+***
+
+### Changed
+
+- Header search now uses an icon-first expanding button treatment instead of a plain text submit control
+- Mark-all-read notification flows now support safe in-app redirect targets so users can return to the page they were on
+- Profile masthead styling now groups hero, stats, and tabs into a more unified card layout
+- Existing `Load more` links remain as non-JavaScript fallback while feeds progressively append older posts when JavaScript is available
+
+***
+
+### Technical
+
+- Added recent-notification preload and redirect-path handling in `public/_header.php`
+- Added redirect validation support to `public/notifications.php`
+- Added client-side auto-pager logic in `public/assets/app.js` and matching pager state styles in `public/assets/style.css`
+- Added auto-pager markup hooks in `public/index.php`, `public/search.php`, `public/profile.php`, and `public/bookmarks.php`
+- Verified syntax with `C:\\xampp\\php\\php.exe -l` on `public/_header.php`, `public/notifications.php`, `public/index.php`, `public/search.php`, `public/profile.php`, and `public/bookmarks.php`, plus `node --check public/assets/app.js`
+
+***
+
 ## Omnicus v0.4.7 - Profile Tabs & Settings Navigation
 
 **Branch**: Production
