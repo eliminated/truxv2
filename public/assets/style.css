@@ -527,6 +527,10 @@ h1 {
   z-index: 2;
 }
 
+.card.post .card__body>.post__head {
+  z-index: 4;
+}
+
 /* Corner HUD accents */
 .card.post .card__body::before {
   content: "";
@@ -1578,7 +1582,9 @@ a.post__id:focus-visible {
   padding: 8px;
   border-radius: 14px;
   border: 1px solid rgba(122, 167, 255, .22);
-  background: rgba(9, 14, 25, .96);
+  overflow: hidden;
+  isolation: isolate;
+  background: linear-gradient(180deg, #0b1220, #070c16);
   box-shadow:
     0 20px 56px rgba(0, 0, 0, .48),
     0 0 32px rgba(122, 167, 255, .10);
@@ -1587,7 +1593,7 @@ a.post__id:focus-visible {
   transform: translateY(-6px) scale(.98);
   transform-origin: top right;
   transition: opacity .16s ease, transform .16s ease;
-  z-index: 30;
+  z-index: 120;
 }
 
 .contentMenu.is-open .contentMenu__panel {
