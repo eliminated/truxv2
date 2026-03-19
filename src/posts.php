@@ -895,3 +895,18 @@ function trux_fetch_user_liked_comments(int $userId, int $limit = 100, int $offs
         return [];
     }
 }
+
+function trux_fetch_user_by_email(string $email): ?array {
+    $email = trim(strtolower($email));
+    if ($email === '') {
+        return null;
+    }
+
+    $db   = trux_db();
+    $stmt = $db->prepare(
+        'SELECT id, username, email, display_name FROM users WHERE email = ? LIMIT 1'
+    );
+    $stmt->execute([$email]);
+    $row = $stmt->fetch();
+    return $row ?: null;
+}

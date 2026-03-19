@@ -2,22 +2,23 @@
 declare(strict_types=1);
 require_once __DIR__ . '/_bootstrap.php';
 
-if (trux_is_logged_in()) trux_redirect(TRUX_BASE_URL . '/');
+if (trux_is_logged_in())
+  trux_redirect(TRUX_BASE_URL . '/');
 
 $login = '';
 $error = null;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $login = is_string($_POST['login'] ?? null) ? trim((string)$_POST['login']) : '';
-    $password = is_string($_POST['password'] ?? null) ? (string)$_POST['password'] : '';
+  $login = is_string($_POST['login'] ?? null) ? trim((string) $_POST['login']) : '';
+  $password = is_string($_POST['password'] ?? null) ? (string) $_POST['password'] : '';
 
-    $res = trux_attempt_login($login, $password);
-    if ($res['ok'] ?? false) {
-        trux_flash_set('success', 'Welcome back!');
-        trux_redirect(TRUX_BASE_URL . '/');
-    } else {
-        $error = (string)($res['error'] ?? 'Login failed.');
-    }
+  $res = trux_attempt_login($login, $password);
+  if ($res['ok'] ?? false) {
+    trux_flash_set('success', 'Welcome back!');
+    trux_redirect(TRUX_BASE_URL . '/');
+  } else {
+    $error = (string) ($res['error'] ?? 'Login failed.');
+  }
 }
 
 require_once __DIR__ . '/_header.php';
@@ -47,6 +48,9 @@ require_once __DIR__ . '/_header.php';
       <div class="row">
         <button class="btn" type="submit">Login</button>
         <a class="muted" href="<?= TRUX_BASE_URL ?>/register.php">Create account</a>
+      </div>
+      <div style="margin-top:10px;">
+        <a class="muted" href="<?= TRUX_BASE_URL ?>/forgot_password.php">Forgot your password?</a>
       </div>
     </form>
   </div>

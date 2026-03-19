@@ -61,3 +61,9 @@ define('TRUX_ALLOWED_IMAGE_MIME', [
 ]);
 
 define('BASE_URL', rtrim($_ENV['TRUX_BASE_URL'] ?? 'http://localhost/truxv2/public', '/'));
+
+define('TRUX_MAIL_HOST',      (string)trux_env('TRUX_MAIL_HOST',      'smtp.hostinger.com'));
+define('TRUX_MAIL_PORT',      (int)trux_env('TRUX_MAIL_PORT',         '465'));
+define('TRUX_MAIL_USER',      (string)trux_env('TRUX_MAIL_USER',      ''));
+define('TRUX_MAIL_PASS',      (string)trux_env('TRUX_MAIL_PASS',      ''));
+define('TRUX_MAIL_FROM_NAME', (string)trux_env('TRUX_MAIL_FROM_NAME', 'TruX'));
