@@ -1,4 +1,44 @@
 # Omincus Updates
+## Omnicus v0.4.10 - UX Improvements
+
+**Branch**: Production
+**Date**: 2026-03-20
+
+***
+
+### Fixed
+
+- Fixed the owner post action menu bookmark flow so clicking `Bookmark` on your own post no longer throws `setActionActive is not defined`
+- Owner and non-owner post bookmark toggles now keep the three-dot menu state and the main post action bar label/state in sync
+- New post publishing now redirects straight to the new post instead of leaving a static success message behind
+
+***
+
+### Added
+
+- Posts now support click-to-open comments from the card itself, with pointer-style hover feedback across the feed cards
+- New shared post menu for all posts with working bookmark and copy-link actions, plus placeholder `Not interested`, `Mute user`, and `Report` actions for non-owner posts
+- Dedicated mobile override stylesheet at `public/assets/mobile.css` that loads automatically for smaller screens and tightens shared layouts across feed, profile, settings, messages, and the comment dock
+- Bookmark actions on posts now show a visible saved-count badge alongside likes, comments, and shares
+
+***
+
+### Changed
+
+- Post media now uses a more restrained X-style presentation with capped image height so tall uploads do not dominate the viewport
+- Post body, media, and action rows now share a narrower readable width so large desktop cards feel more balanced
+- Post pages across `public/index.php`, `public/search.php`, `public/profile.php`, `public/bookmarks.php`, and `public/post.php` now use the same shared context-menu rendering
+
+***
+
+### Technical
+
+- Added same-scope post bookmark state syncing plus shared menu action handlers in `public/assets/app.js`
+- Added reusable post context menu markup in `public/_post_content_menu.php`
+- Added automatic mobile stylesheet loading in `public/_header.php`
+
+***
+
 ## Omnicus v0.4.9 - Profile Media Cropper
 
 **Branch**: Production

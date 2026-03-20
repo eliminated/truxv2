@@ -21,13 +21,17 @@ $interactionMap = trux_fetch_post_interactions(
     [(int)$post['id']],
     $me ? (int)$me['id'] : null
 );
-$postStats = $interactionMap[(int)$post['id']] ?? ['likes' => 0, 'comments' => 0, 'shares' => 0, 'liked' => false, 'shared' => false];
+$postStats = $interactionMap[(int)$post['id']] ?? ['likes' => 0, 'comments' => 0, 'shares' => 0, 'liked' => false, 'shared' => false, 'bookmarked' => false];
+$postId = (int)$post['id'];
+$postUrl = TRUX_BASE_URL . '/post.php?id=' . $postId;
+$postIsOwner = $me && (int)$post['user_id'] === (int)$me['id'];
+$postBookmarked = (bool)($postStats['bookmarked'] ?? false);
 
 require_once __DIR__ . '/_header.php';
 ?>
 
 <?php $editedAt = isset($post['edited_at']) && $post['edited_at'] !== null ? (string)$post['edited_at'] : ''; ?>
-<article class="card post post--single" data-post-id="<?= (int)$post['id'] ?>">
+<article class="card post post--single" data-post-id="<?= $postId ?>" data-post-click-target="1" data-post-url="<?= trux_e($postUrl) ?>">
   <div class="card__body">
     <div class="post__head">
       <?php
@@ -69,15 +73,15 @@ require_once __DIR__ . '/_header.php';
         </div>
       </div>
 
-      <?php if ($me && (int)$post['user_id'] === (int)$me['id']): ?>
-        <div class="post__actions">
-          <?php
-          $entityType = 'post';
-          $entityId = (int)$post['id'];
-          require __DIR__ . '/_owner_actions_menu.php';
-          ?>
-        </div>
-      <?php endif; ?>
+      <div class="post__actions">
+        <?php
+        $isOwner = $postIsOwner;
+        $isLoggedIn = (bool)$me;
+        $bookmarked = $postBookmarked;
+        $postUsername = (string)$post['username'];
+        require __DIR__ . '/_post_content_menu.php';
+        ?>
+      </div>
     </div>
 
     <div class="post__body"><?= trux_render_post_body((string)$post['body']) ?></div>
@@ -93,7 +97,6 @@ require_once __DIR__ . '/_header.php';
     <?php endif; ?>
 
     <?php
-    $postId = (int)$post['id'];
     $stats = $postStats;
     $isLoggedIn = (bool)$me;
     require __DIR__ . '/_post_actions_bar.php';

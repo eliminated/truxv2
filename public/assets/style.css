@@ -1930,8 +1930,10 @@ a.post__id:focus-visible {
 }
 
 .post__body {
+  max-width: min(100%, 720px);
   line-height: 1.62;
   color: #e7edf8;
+  font-size: clamp(15px, 1.2vw, 16px);
 }
 
 .mentionLink,
@@ -2001,6 +2003,8 @@ a.post__id:focus-visible {
 
 .post__image {
   margin-top: 14px;
+  margin-inline: auto;
+  max-width: min(100%, 720px);
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid rgba(100, 194, 255, .26);
@@ -2012,15 +2016,36 @@ a.post__id:focus-visible {
   display: block;
   width: 100%;
   height: auto;
+  max-height: clamp(280px, 62vh, 540px);
+  object-position: center;
 }
 
 .post__actionsBar {
   margin-top: 14px;
+  max-width: min(100%, 720px);
   padding-top: 10px;
   border-top: 1px solid rgba(103, 189, 255, .22);
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+.card.post[data-post-click-target="1"],
+.card.post[data-post-click-target="1"] .post__body,
+.card.post[data-post-click-target="1"] .post__image,
+.card.post[data-post-click-target="1"] .post__meta,
+.card.post[data-post-click-target="1"] .post__subRow {
+  cursor: pointer;
+}
+
+.card.post[data-post-click-target="1"] a,
+.card.post[data-post-click-target="1"] button,
+.card.post[data-post-click-target="1"] input,
+.card.post[data-post-click-target="1"] textarea,
+.card.post[data-post-click-target="1"] select,
+.card.post[data-post-click-target="1"] .contentMenu__panel,
+.card.post[data-post-click-target="1"] .post__actionsBar {
+  cursor: auto;
 }
 
 .postActForm {

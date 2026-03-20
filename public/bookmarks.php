@@ -118,8 +118,15 @@ $bookmarkBaseParams = static function (array $overrides = []) use ($bookmarkFilt
 
     <div data-auto-pager-list="bookmarks-posts">
       <?php foreach ($bookmarkedPosts as $p): ?>
-        <?php $editedAt = isset($p['edited_at']) && $p['edited_at'] !== null ? (string)$p['edited_at'] : ''; ?>
-        <article class="card post" data-post-id="<?= (int)$p['id'] ?>">
+        <?php
+        $postId = (int)$p['id'];
+        $postUrl = TRUX_BASE_URL . '/post.php?id=' . $postId;
+        $postStats = $postInteractionMap[$postId] ?? ['likes' => 0, 'comments' => 0, 'shares' => 0, 'liked' => false, 'shared' => false, 'bookmarked' => true];
+        $postBookmarked = (bool)($postStats['bookmarked'] ?? false);
+        $postIsOwner = $me && (int)$p['user_id'] === (int)$me['id'];
+        $editedAt = isset($p['edited_at']) && $p['edited_at'] !== null ? (string)$p['edited_at'] : '';
+        ?>
+        <article class="card post" data-post-id="<?= $postId ?>" data-post-click-target="1" data-post-url="<?= trux_e($postUrl) ?>">
           <div class="card__body">
             <div class="post__head">
               <?php
@@ -153,6 +160,16 @@ $bookmarkBaseParams = static function (array $overrides = []) use ($bookmarkFilt
                   <span class="muted">Saved <?= trux_e(trux_time_ago((string)$p['bookmarked_at'])) ?></span>
                 </div>
               </div>
+
+              <div class="post__actions">
+                <?php
+                $isOwner = $postIsOwner;
+                $isLoggedIn = true;
+                $bookmarked = $postBookmarked;
+                $postUsername = (string)$p['username'];
+                require __DIR__ . '/_post_content_menu.php';
+                ?>
+              </div>
             </div>
 
             <div class="post__body"><?= trux_render_post_body((string)$p['body']) ?></div>
@@ -168,8 +185,7 @@ $bookmarkBaseParams = static function (array $overrides = []) use ($bookmarkFilt
             <?php endif; ?>
 
             <?php
-            $postId = (int)$p['id'];
-            $stats = $postInteractionMap[$postId] ?? ['likes' => 0, 'comments' => 0, 'shares' => 0, 'liked' => false, 'shared' => false, 'bookmarked' => true];
+            $stats = $postStats;
             $isLoggedIn = true;
             require __DIR__ . '/_post_actions_bar.php';
             ?>

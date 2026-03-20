@@ -64,7 +64,7 @@ if (!trux_post_exists($postId)) {
 
 trux_toggle_post_bookmark($postId, (int)$me['id']);
 $stats = trux_fetch_post_interactions([$postId], (int)$me['id']);
-$postStats = $stats[$postId] ?? ['bookmarked' => false];
+$postStats = $stats[$postId] ?? ['bookmarked' => false, 'bookmarks' => 0];
 
 if ($isJson) {
     header('Content-Type: application/json; charset=utf-8');
@@ -72,6 +72,7 @@ if ($isJson) {
         'ok' => true,
         'post_id' => $postId,
         'bookmarked' => (bool)$postStats['bookmarked'],
+        'bookmarks_count' => (int)$postStats['bookmarks'],
     ]);
     exit;
 }

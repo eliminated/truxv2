@@ -713,6 +713,7 @@ function trux_fetch_post_interactions(array $postIds, ?int $viewerId): array {
             'likes' => 0,
             'comments' => 0,
             'shares' => 0,
+            'bookmarks' => 0,
             'liked' => false,
             'shared' => false,
             'bookmarked' => false,
@@ -751,6 +752,16 @@ function trux_fetch_post_interactions(array $postIds, ?int $viewerId): array {
         foreach ($sharesStmt->fetchAll() as $row) {
             $pid = (int)$row['post_id'];
             if (isset($out[$pid])) $out[$pid]['shares'] = (int)$row['c'];
+        }
+
+        $bookmarksStmt = $db->prepare("SELECT post_id, COUNT(*) AS c FROM post_bookmarks WHERE post_id IN ($placeholders) GROUP BY post_id");
+        foreach ($ids as $i => $id) {
+            $bookmarksStmt->bindValue($i + 1, $id, PDO::PARAM_INT);
+        }
+        $bookmarksStmt->execute();
+        foreach ($bookmarksStmt->fetchAll() as $row) {
+            $pid = (int)$row['post_id'];
+            if (isset($out[$pid])) $out[$pid]['bookmarks'] = (int)$row['c'];
         }
 
         $viewer = (int)($viewerId ?? 0);

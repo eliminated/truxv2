@@ -205,13 +205,18 @@ $excerpt = static function (string $text, int $limit = 180): string {
 
 $renderPosts = static function (array $items, array $interactionMap, ?array $viewer, string $timeKey = '', string $timePrefix = ''): void {
     foreach ($items as $p) {
+        $postId = (int)$p['id'];
+        $postUrl = TRUX_BASE_URL . '/post.php?id=' . $postId;
+        $postStats = $interactionMap[$postId] ?? ['likes' => 0, 'comments' => 0, 'shares' => 0, 'liked' => false, 'shared' => false, 'bookmarked' => false];
+        $postBookmarked = (bool)($postStats['bookmarked'] ?? false);
+        $postIsOwner = $viewer && (int)$p['user_id'] === (int)$viewer['id'];
         $editedAt = isset($p['edited_at']) && $p['edited_at'] !== null ? (string)$p['edited_at'] : '';
         $postAvatarPath = trim((string)($p['avatar_path'] ?? ''));
         $postAvatarUrl = $postAvatarPath !== '' ? trux_public_url($postAvatarPath) : '';
         $postImagePath = trim((string)($p['image_path'] ?? ''));
         $postImageUrl = $postImagePath !== '' ? trux_public_url($postImagePath) : '';
         ?>
-        <article class="card post" data-post-id="<?= (int)$p['id'] ?>">
+        <article class="card post" data-post-id="<?= $postId ?>" data-post-click-target="1" data-post-url="<?= trux_e($postUrl) ?>">
           <div class="card__body">
             <div class="post__head">
               <a class="post__avatar<?= $postAvatarUrl !== '' ? ' post__avatar--image' : '' ?>" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$p['username']) ?>" aria-label="View @<?= trux_e((string)$p['username']) ?> profile">
@@ -250,15 +255,15 @@ $renderPosts = static function (array $items, array $interactionMap, ?array $vie
                   <?php endif; ?>
                 </div>
               </div>
-              <?php if ($viewer && (int)$p['user_id'] === (int)$viewer['id']): ?>
-                <div class="post__actions">
-                  <?php
-                  $entityType = 'post';
-                  $entityId = (int)$p['id'];
-                  require __DIR__ . '/_owner_actions_menu.php';
-                  ?>
-                </div>
-              <?php endif; ?>
+              <div class="post__actions">
+                <?php
+                $isOwner = $postIsOwner;
+                $isLoggedIn = (bool)$viewer;
+                $bookmarked = $postBookmarked;
+                $postUsername = (string)$p['username'];
+                require __DIR__ . '/_post_content_menu.php';
+                ?>
+              </div>
             </div>
             <div class="post__body"><?= trux_render_post_body((string)$p['body']) ?></div>
             <?php if ($postImageUrl !== ''): ?>
@@ -267,8 +272,7 @@ $renderPosts = static function (array $items, array $interactionMap, ?array $vie
               </div>
             <?php endif; ?>
             <?php
-            $postId = (int)$p['id'];
-            $stats = $interactionMap[$postId] ?? ['likes' => 0, 'comments' => 0, 'shares' => 0, 'liked' => false, 'shared' => false, 'bookmarked' => false];
+            $stats = $postStats;
             $isLoggedIn = (bool)$viewer;
             require __DIR__ . '/_post_actions_bar.php';
             ?>

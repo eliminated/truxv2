@@ -6,6 +6,7 @@ $stats = is_array($stats ?? null) ? $stats : [];
 $likesCount = (int)($stats['likes'] ?? 0);
 $commentsCount = (int)($stats['comments'] ?? 0);
 $sharesCount = (int)($stats['shares'] ?? 0);
+$bookmarksCount = (int)($stats['bookmarks'] ?? 0);
 $liked = (bool)($stats['liked'] ?? false);
 $shared = (bool)($stats['shared'] ?? false);
 $bookmarked = (bool)($stats['bookmarked'] ?? false);
@@ -79,6 +80,7 @@ $isLoggedIn = (bool)$isLoggedIn;
           <path d="M7 4.8h10a1 1 0 0 1 1 1V20l-6-3.8L6 20V5.8a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
         </svg>
         <span data-action-label="bookmark"><?= $bookmarked ? 'Saved' : 'Bookmark' ?></span>
+        <span class="postAct__count" data-bookmark-count-for="<?= $postId ?>"><?= $bookmarksCount ?></span>
       </button>
     </form>
   <?php else: ?>
@@ -87,6 +89,7 @@ $isLoggedIn = (bool)$isLoggedIn;
         <path d="M7 4.8h10a1 1 0 0 1 1 1V20l-6-3.8L6 20V5.8a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
       </svg>
       <span>Bookmark</span>
+      <span class="postAct__count" data-bookmark-count-for="<?= $postId ?>"><?= $bookmarksCount ?></span>
     </a>
   <?php endif; ?>
 </div>

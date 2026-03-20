@@ -675,6 +675,83 @@
     </div>
   `;
 
+  const syncPostBookmarkState = (postId, bookmarked) => {
+    document
+      .querySelectorAll(`form[data-ajax-action="1"][data-action-kind="bookmark"][data-post-id="${postId}"] .postAct`)
+      .forEach((node) => {
+        if (!(node instanceof HTMLElement)) return;
+        node.classList.toggle("is-active", !!bookmarked);
+        node.setAttribute("aria-label", bookmarked ? "Remove bookmark" : "Bookmark post");
+        const label = node.querySelector("[data-action-label='bookmark']");
+        if (label instanceof HTMLElement) {
+          label.textContent = bookmarked ? "Saved" : "Bookmark";
+        }
+      });
+
+    document
+      .querySelectorAll(`[data-owner-bookmark="1"][data-owner-type="post"][data-owner-id="${postId}"]`)
+      .forEach((node) => {
+        if (!(node instanceof HTMLButtonElement)) return;
+        node.classList.toggle("is-active", !!bookmarked);
+        node.setAttribute("aria-label", bookmarked ? "Remove bookmark" : "Bookmark");
+        const label = node.querySelector("[data-owner-bookmark-label='1']");
+        if (label instanceof HTMLElement) {
+          label.textContent = bookmarked ? "Saved" : "Bookmark";
+        }
+      });
+  };
+
+  const syncPostBookmarkCount = (postId, count) => {
+    document.querySelectorAll(`[data-bookmark-count-for="${postId}"]`).forEach((node) => {
+      node.textContent = String(count);
+    });
+  };
+
+  const notifyMenuAction = (message) => {
+    if (!message) return;
+    if (typeof window.truxToast === "function") {
+      window.truxToast(message);
+      return;
+    }
+    window.alert(message);
+  };
+
+  const resolveAbsoluteUrl = (value) => {
+    try {
+      return new URL(String(value || "/"), window.location.origin).toString();
+    } catch {
+      return window.location.href;
+    }
+  };
+
+  const copyText = async (value) => {
+    if (navigator.clipboard && typeof navigator.clipboard.writeText === "function") {
+      await navigator.clipboard.writeText(value);
+      return;
+    }
+
+    const helper = document.createElement("textarea");
+    helper.value = value;
+    helper.setAttribute("readonly", "readonly");
+    helper.style.position = "fixed";
+    helper.style.opacity = "0";
+    helper.style.pointerEvents = "none";
+    document.body.appendChild(helper);
+    helper.select();
+    helper.setSelectionRange(0, helper.value.length);
+
+    let copied = false;
+    try {
+      copied = document.execCommand("copy");
+    } finally {
+      helper.remove();
+    }
+
+    if (!copied) {
+      throw new Error("Copy unavailable.");
+    }
+  };
+
   const closeAllContentMenus = (exceptMenu) => {
     document.querySelectorAll("[data-content-menu='1']").forEach((menu) => {
       if (!(menu instanceof HTMLElement)) return;
@@ -1073,6 +1150,8 @@
 
     const clone = sourcePost.cloneNode(true);
     clone.classList.add("commentDock__postPreview");
+    clone.removeAttribute("data-post-click-target");
+    clone.removeAttribute("data-post-url");
 
     clone.querySelectorAll(".post__actionsBar, .post__actions").forEach((el) => el.remove());
     clone.querySelectorAll(".row.row--spaced").forEach((el) => el.remove());
@@ -1211,7 +1290,10 @@
         }
 
         if (entityType === "post") {
-          setActionActive("bookmark", entityId, !!data.bookmarked);
+          syncPostBookmarkState(entityId, !!data.bookmarked);
+          if (typeof data.bookmarks_count === "number") {
+            syncPostBookmarkCount(entityId, data.bookmarks_count);
+          }
           if (!data.bookmarked && window.location.href.includes("/bookmarks.php")) {
             removePostCards(entityId);
           }
@@ -1226,6 +1308,33 @@
       } finally {
         ownerBookmarkBtn.disabled = false;
       }
+      return;
+    }
+
+    const copyLinkBtn = e.target.closest("[data-post-copy-link='1']");
+    if (copyLinkBtn instanceof HTMLButtonElement) {
+      e.preventDefault();
+      closeAllContentMenus();
+
+      const postUrl = resolveAbsoluteUrl(copyLinkBtn.getAttribute("data-post-url") || `${window.TRUX_BASE_URL || ""}/`);
+      try {
+        await copyText(postUrl);
+        notifyMenuAction("Post link copied");
+      } catch {
+        window.alert(`Copy this post link:\n\n${postUrl}`);
+      }
+      return;
+    }
+
+    const placeholderActionBtn = e.target.closest("[data-post-placeholder-action='1']");
+    if (placeholderActionBtn instanceof HTMLButtonElement) {
+      e.preventDefault();
+      closeAllContentMenus();
+
+      const fallbackLabel = placeholderActionBtn.getAttribute("data-post-placeholder-label") || "This action";
+      const message =
+        placeholderActionBtn.getAttribute("data-post-placeholder-message") || `${fallbackLabel} is coming soon.`;
+      notifyMenuAction(message);
       return;
     }
 
@@ -1289,6 +1398,35 @@
     if (openBtn instanceof HTMLElement) {
       e.preventDefault();
       openDock(openBtn);
+      return;
+    }
+
+    const postCard = e.target.closest("[data-post-click-target='1']");
+    if (postCard instanceof HTMLElement) {
+      const ignoreSelector = [
+        "a",
+        "button",
+        "form",
+        "input",
+        "label",
+        "select",
+        "textarea",
+        "[data-content-menu='1']",
+        ".post__actionsBar",
+        ".post__actions",
+      ].join(", ");
+
+      if (e.target.closest(ignoreSelector)) {
+        return;
+      }
+
+      const selection = window.getSelection ? window.getSelection() : null;
+      if (selection && String(selection).trim() !== "") {
+        return;
+      }
+
+      e.preventDefault();
+      openDock(postCard);
       return;
     }
 
@@ -1584,6 +1722,7 @@
       like: `[data-like-count-for="${postId}"]`,
       share: `[data-share-count-for="${postId}"]`,
       comment: `[data-comment-count-for="${postId}"]`,
+      bookmark: `[data-bookmark-count-for="${postId}"]`,
     };
     const selector = selectorByKind[kind];
     if (!selector) return;
@@ -1686,6 +1825,9 @@
         }
         setActionActive("share", postId, !!data.shared);
       } else if (kind === "bookmark") {
+        if (typeof data.bookmarks_count === "number") {
+          setActionCount("bookmark", postId, data.bookmarks_count);
+        }
         setActionActive("bookmark", postId, !!data.bookmarked);
         if (!data.bookmarked && window.location.href.includes("/bookmarks.php")) {
           removePostCards(postId);
@@ -1750,17 +1892,12 @@
         throw new Error(data.error || "Could not create post.");
       }
 
-      form.reset();
-      const textarea = form.querySelector("textarea[name='body']");
-      if (textarea instanceof HTMLTextAreaElement) {
-        textarea.style.height = "auto";
-      }
-
-      const postUrl = data?.post?.url || "/";
-      setFlash(
-        "success",
-        `Posted successfully. <a href="${postUrl}" data-no-fx="1">Open your post</a>`
-      );
+      const postUrl = new URL(
+        String(data?.post?.url || `${window.TRUX_BASE_URL || ""}/`),
+        window.location.origin
+      ).toString();
+      window.location.assign(postUrl);
+      return;
     } catch (err) {
       setFlash("error", (err instanceof Error ? err.message : "Could not create post."));
     } finally {

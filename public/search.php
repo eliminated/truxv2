@@ -137,8 +137,15 @@ require_once __DIR__ . '/_header.php';
 
     <div data-auto-pager-list="search-posts">
       <?php foreach ($posts as $p): ?>
-        <?php $editedAt = isset($p['edited_at']) && $p['edited_at'] !== null ? (string)$p['edited_at'] : ''; ?>
-        <article class="card post" data-post-id="<?= (int)$p['id'] ?>">
+        <?php
+        $postId = (int)$p['id'];
+        $postUrl = TRUX_BASE_URL . '/post.php?id=' . $postId;
+        $postStats = $interactionMap[$postId] ?? ['likes' => 0, 'comments' => 0, 'shares' => 0, 'liked' => false, 'shared' => false, 'bookmarked' => false];
+        $postBookmarked = (bool)($postStats['bookmarked'] ?? false);
+        $postIsOwner = $me && (int)$p['user_id'] === (int)$me['id'];
+        $editedAt = isset($p['edited_at']) && $p['edited_at'] !== null ? (string)$p['edited_at'] : '';
+        ?>
+        <article class="card post" data-post-id="<?= $postId ?>" data-post-click-target="1" data-post-url="<?= trux_e($postUrl) ?>">
           <div class="card__body">
             <div class="post__head">
               <?php
@@ -180,15 +187,15 @@ require_once __DIR__ . '/_header.php';
                 </div>
               </div>
 
-              <?php if ($me && (int)$p['user_id'] === (int)$me['id']): ?>
-                <div class="post__actions">
-                  <?php
-                  $entityType = 'post';
-                  $entityId = (int)$p['id'];
-                  require __DIR__ . '/_owner_actions_menu.php';
-                  ?>
-                </div>
-              <?php endif; ?>
+              <div class="post__actions">
+                <?php
+                $isOwner = $postIsOwner;
+                $isLoggedIn = (bool)$me;
+                $bookmarked = $postBookmarked;
+                $postUsername = (string)$p['username'];
+                require __DIR__ . '/_post_content_menu.php';
+                ?>
+              </div>
             </div>
 
             <div class="post__body"><?= trux_render_post_body((string)$p['body']) ?></div>
@@ -204,8 +211,7 @@ require_once __DIR__ . '/_header.php';
             <?php endif; ?>
 
             <?php
-            $postId = (int)$p['id'];
-            $stats = $interactionMap[$postId] ?? ['likes' => 0, 'comments' => 0, 'shares' => 0, 'liked' => false, 'shared' => false];
+            $stats = $postStats;
             $isLoggedIn = (bool)$me;
             require __DIR__ . '/_post_actions_bar.php';
             ?>
