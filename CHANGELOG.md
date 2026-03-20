@@ -2,7 +2,7 @@
 ## Omnicus v0.4.9 - Profile Media Cropper
 
 **Branch**: Production
-**Date**: 2026-03-19
+**Date**: 2026-03-20
 
 ***
 
@@ -11,6 +11,7 @@
 - Fixed-aspect crop workflow for profile photo and profile banner uploads on `public/edit_profile.php`
 - Reusable profile media crop modal with drag-to-position, zoom control, and live preview
 - Automatic crop flow that opens immediately after a user selects a new profile image from their library
+- Browser tab logo/favicon sourced from `src/logo/trux_logo.png`
 
 ***
 
@@ -30,6 +31,7 @@
 - Added profile media crop UI hooks in `public/edit_profile.php`
 - Added cropper behavior in `public/assets/app.js` and matching modal/preview styles in `public/assets/style.css`
 - Added simple header menu visibility toggles in `public/_header.php` so placeholder entries can stay in code without appearing in the live menu
+- Added `public/favicon.php` plus the shared `<link rel="icon">` hook in `public/_header.php` so the browser tab can load the project logo from `src/logo`
 - Verified syntax with `C:\\xampp\\php\\php.exe -l public\\edit_profile.php`, `C:\\xampp\\php\\php.exe -l src\\upload.php`, and `node --check public\\assets\\app.js`
 - Confirmed local XAMPP PHP GD support during validation so crop uploads can complete end to end
 - Added client-side recrop support that can load an existing saved avatar/banner back into the upload input before applying a new crop

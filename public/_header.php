@@ -37,6 +37,7 @@ if (is_string($rawRequestUri) && $rawRequestUri !== '') {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= trux_e(TRUX_APP_NAME) ?></title>
+  <link rel="icon" type="image/png" href="<?= TRUX_BASE_URL ?>/favicon.php?v=<?= filemtime(dirname(__DIR__) . '/src/logo/trux_logo.png') ?>">
   <link rel="stylesheet" href="<?= TRUX_BASE_URL ?>/assets/style.css?v=<?= filemtime(__DIR__ . '/assets/style.css') ?>">
   <script defer src="<?= TRUX_BASE_URL ?>/assets/app.js?v=<?= filemtime(__DIR__ . '/assets/app.js') ?>"></script>
   <script>window.TRUX_BASE_URL = "<?= TRUX_BASE_URL ?>";</script>
