@@ -39,9 +39,10 @@ $isLoggedIn = (bool)$isLoggedIn;
     class="postAct"
     type="button"
     data-comment-open="1"
+    data-post-action-kind="comment"
     data-post-id="<?= $postId ?>"
-    data-post-url="/post.php?id=<?= $postId ?>"
-    aria-label="Open comments">
+    data-post-url="<?= trux_e(trux_post_viewer_path($postId)) ?>"
+    aria-label="Open Post Viewer">
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
       <path d="M20 14.6c0 2-1.8 3.6-4 3.6H9l-4 3V6.8c0-2 1.8-3.6 4-3.6h7c2.2 0 4 1.6 4 3.6v7.8Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
     </svg>

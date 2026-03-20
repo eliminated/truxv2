@@ -139,7 +139,7 @@ require_once __DIR__ . '/_header.php';
       <?php foreach ($posts as $p): ?>
         <?php
         $postId = (int)$p['id'];
-        $postUrl = TRUX_BASE_URL . '/post.php?id=' . $postId;
+        $postUrl = trux_post_viewer_url($postId);
         $postStats = $interactionMap[$postId] ?? ['likes' => 0, 'comments' => 0, 'shares' => 0, 'liked' => false, 'shared' => false, 'bookmarked' => false];
         $postBookmarked = (bool)($postStats['bookmarked'] ?? false);
         $postIsOwner = $me && (int)$p['user_id'] === (int)$me['id'];
@@ -183,7 +183,7 @@ require_once __DIR__ . '/_header.php';
                     </span>
                   <?php endif; ?>
                   <span class="post__dot" aria-hidden="true">&bull;</span>
-                  <a class="post__id" href="<?= TRUX_BASE_URL ?>/post.php?id=<?= (int)$p['id'] ?>">#<?= (int)$p['id'] ?></a>
+                  <a class="post__id" href="<?= trux_e(trux_post_viewer_url((int)$p['id'])) ?>">#<?= (int)$p['id'] ?></a>
                 </div>
               </div>
 

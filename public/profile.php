@@ -206,7 +206,7 @@ $excerpt = static function (string $text, int $limit = 180): string {
 $renderPosts = static function (array $items, array $interactionMap, ?array $viewer, string $timeKey = '', string $timePrefix = ''): void {
     foreach ($items as $p) {
         $postId = (int)$p['id'];
-        $postUrl = TRUX_BASE_URL . '/post.php?id=' . $postId;
+        $postUrl = trux_post_viewer_url($postId);
         $postStats = $interactionMap[$postId] ?? ['likes' => 0, 'comments' => 0, 'shares' => 0, 'liked' => false, 'shared' => false, 'bookmarked' => false];
         $postBookmarked = (bool)($postStats['bookmarked'] ?? false);
         $postIsOwner = $viewer && (int)$p['user_id'] === (int)$viewer['id'];
@@ -241,7 +241,7 @@ $renderPosts = static function (array $items, array $interactionMap, ?array $vie
                     </span>
                   <?php endif; ?>
                   <span class="post__dot" aria-hidden="true">&bull;</span>
-                  <a class="post__id" href="<?= TRUX_BASE_URL ?>/post.php?id=<?= (int)$p['id'] ?>">#<?= (int)$p['id'] ?></a>
+                  <a class="post__id" href="<?= trux_e(trux_post_viewer_url((int)$p['id'])) ?>">#<?= (int)$p['id'] ?></a>
                   <?php if ($timeKey !== '' && !empty($p[$timeKey])): ?>
                     <span class="post__dot" aria-hidden="true">&bull;</span>
                     <span class="muted">
@@ -332,7 +332,7 @@ $renderCommentCards = static function (array $items, array $voteMap, string $mod
           </div>
           <div class="post__body"><?= trux_render_comment_body((string)$comment['body']) ?></div>
           <div class="profileActivityCard__context">
-            <span class="muted">On <a href="<?= TRUX_BASE_URL ?>/post.php?id=<?= (int)$comment['post_id'] ?>&comment_id=<?= $commentId ?>">post #<?= (int)$comment['post_id'] ?></a> by <a href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= urlencode((string)($comment['post_username'] ?? '')) ?>">@<?= trux_e((string)($comment['post_username'] ?? '')) ?></a></span>
+            <span class="muted">On <a href="<?= trux_e(trux_post_viewer_url((int)$comment['post_id'], $commentId)) ?>">post #<?= (int)$comment['post_id'] ?></a> by <a href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= urlencode((string)($comment['post_username'] ?? '')) ?>">@<?= trux_e((string)($comment['post_username'] ?? '')) ?></a></span>
             <?php if ($postExcerpt !== ''): ?>
               <div class="profileActivityCard__excerpt"><?= trux_e($postExcerpt) ?></div>
             <?php endif; ?>

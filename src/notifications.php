@@ -403,14 +403,32 @@ function trux_mark_all_notifications_read(int $userId): void {
     }
 }
 
+function trux_delete_all_notifications(int $userId): void {
+    if ($userId <= 0) {
+        return;
+    }
+
+    try {
+        $db = trux_db();
+        $stmt = $db->prepare(
+            'DELETE FROM notifications
+             WHERE recipient_user_id = ?'
+        );
+        $stmt->execute([$userId]);
+    } catch (PDOException) {
+        // Ignore when the table is unavailable.
+    }
+}
+
 function trux_notification_url(array $notification): string {
     $type = (string)($notification['type'] ?? '');
     $actorUsername = (string)($notification['actor_username'] ?? '');
     $postId = isset($notification['post_id']) && $notification['post_id'] !== null ? (int)$notification['post_id'] : 0;
+    $commentId = isset($notification['comment_id']) && $notification['comment_id'] !== null ? (int)$notification['comment_id'] : 0;
 
     return match ($type) {
         'follow' => $actorUsername !== '' ? TRUX_BASE_URL . '/profile.php?u=' . urlencode($actorUsername) : TRUX_BASE_URL . '/notifications.php',
-        default => $postId > 0 ? TRUX_BASE_URL . '/post.php?id=' . $postId : TRUX_BASE_URL . '/notifications.php',
+        default => $postId > 0 ? trux_post_viewer_url($postId, $commentId > 0 ? $commentId : null) : TRUX_BASE_URL . '/notifications.php',
     };
 }
 

@@ -65,7 +65,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         'ok' => true,
                         'post' => [
                             'id' => $postId,
-                            'url' => TRUX_BASE_URL . '/post.php?id=' . $postId,
+                            'url' => trux_post_viewer_url($postId),
                             'user_id' => (int)($post['user_id'] ?? $user['id']),
                             'username' => (string)($post['username'] ?? $user['username']),
                             'body' => (string)($post['body'] ?? $body),
@@ -79,7 +79,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     exit;
                 }
                 trux_flash_set('success', 'Posted!');
-                trux_redirect('/post.php?id=' . $postId);
+                trux_redirect(trux_post_viewer_path($postId));
             }
         }
     }

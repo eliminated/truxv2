@@ -2,7 +2,7 @@
 declare(strict_types=1);
 
 $postId = isset($postId) ? (int)$postId : 0;
-$postUrl = isset($postUrl) ? (string)$postUrl : TRUX_BASE_URL . '/post.php?id=' . $postId;
+$postUrl = isset($postUrl) ? (string)$postUrl : trux_post_viewer_url($postId);
 $postUsername = isset($postUsername) ? trim((string)$postUsername) : '';
 $isOwner = !empty($isOwner);
 $isLoggedIn = !empty($isLoggedIn);
@@ -64,11 +64,11 @@ $muteMessage = $postUsername !== '' ? 'Mute controls for @' . $postUsername . ' 
       </a>
     <?php endif; ?>
 
-    <a class="contentMenu__item" role="menuitem" href="<?= trux_e($postUrl) ?>" data-no-fx="1">
+    <a class="contentMenu__item" role="menuitem" href="<?= trux_e($postUrl) ?>" data-no-fx="1" data-post-open-viewer-link="1">
       <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path d="M14 5h5v5M10 14 19 5M19 13v4a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
       </svg>
-      <span>Open post</span>
+      <span>Open viewer page</span>
     </a>
 
     <button

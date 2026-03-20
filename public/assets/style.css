@@ -203,21 +203,167 @@ a:hover {
 }
 
 .brand {
-  font-weight: 900;
-  letter-spacing: .5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
   color: var(--text);
-  position: relative;
+  user-select: none;
 }
 
-.brand::after {
+.brand__core {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+  padding: 8px 14px 8px 8px;
+  border-radius: 18px;
+  border: 1px solid rgba(122, 167, 255, .22);
+  background:
+    linear-gradient(180deg, rgba(15, 24, 40, .92), rgba(9, 16, 29, .88));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .04),
+    0 10px 26px rgba(0, 0, 0, .22);
+  transition: transform .22s ease, border-color .22s ease, box-shadow .22s ease, background .22s ease;
+}
+
+.brand__logoWrap {
+  position: relative;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 13px;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 30% 20%, rgba(110, 225, 255, .3), transparent 55%),
+    linear-gradient(145deg, rgba(19, 31, 53, .98), rgba(10, 18, 31, .96));
+  box-shadow:
+    inset 0 0 0 1px rgba(138, 204, 255, .18),
+    0 8px 20px rgba(0, 0, 0, .28);
+  transition: transform .22s ease, box-shadow .22s ease, filter .22s ease;
+}
+
+.brand__logoWrap::before {
   content: "";
+  position: absolute;
+  inset: -20%;
+  background:
+    linear-gradient(120deg, transparent 20%, rgba(255, 255, 255, .14) 48%, transparent 74%);
+  opacity: .55;
+  transform: translateX(-70%) rotate(14deg);
+  transition: transform .34s ease, opacity .22s ease;
+}
+
+.brand__logo {
+  position: relative;
+  z-index: 1;
+  width: 27px;
+  height: 27px;
   display: block;
-  height: 2px;
-  margin-top: 6px;
-  width: 44px;
-  background: linear-gradient(90deg, var(--neonA), var(--neonB));
-  border-radius: 999px;
-  opacity: .7;
+  border-radius: 8px;
+  transform: translateZ(0);
+  transition: transform .22s ease, filter .22s ease;
+}
+
+.brand__label {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  font-size: clamp(18px, 1.6vw, 23px);
+  font-weight: 900;
+  letter-spacing: .04em;
+  line-height: 1;
+  color: #f2f7ff;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .25);
+  transition: transform .22s ease, color .22s ease, text-shadow .22s ease, letter-spacing .22s ease;
+}
+
+.brand__home {
+  position: relative;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 13px;
+  border: 1px solid rgba(122, 167, 255, .24);
+  background:
+    linear-gradient(180deg, rgba(14, 23, 39, .92), rgba(9, 16, 28, .9));
+  color: #bde2ff;
+  text-decoration: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .05),
+    0 8px 20px rgba(0, 0, 0, .2);
+  transition: transform .22s ease, border-color .22s ease, color .22s ease, box-shadow .22s ease, background .22s ease;
+}
+
+.brand__home svg {
+  width: 18px;
+  height: 18px;
+  transition: transform .22s ease;
+}
+
+.brand__core:hover,
+.brand__core:focus-within {
+  transform: translateY(-1px) scale(1.01);
+  border-color: rgba(122, 167, 255, .42);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .07),
+    0 14px 32px rgba(0, 0, 0, .28),
+    0 0 28px rgba(95, 198, 255, .08);
+}
+
+.brand__core:hover .brand__logoWrap,
+.brand__core:focus-within .brand__logoWrap {
+  transform: translateY(-1px) scale(1.08) rotate(-4deg);
+  filter: saturate(1.08) brightness(1.06);
+  box-shadow:
+    inset 0 0 0 1px rgba(158, 221, 255, .26),
+    0 12px 26px rgba(0, 0, 0, .32),
+    0 0 24px rgba(105, 211, 255, .18);
+}
+
+.brand__core:hover .brand__logoWrap::before,
+.brand__core:focus-within .brand__logoWrap::before {
+  transform: translateX(82%) rotate(14deg);
+  opacity: .82;
+}
+
+.brand__core:hover .brand__logo,
+.brand__core:focus-within .brand__logo {
+  transform: scale(1.06) rotate(4deg);
+  filter: saturate(1.12) brightness(1.05);
+}
+
+.brand__core:hover .brand__label,
+.brand__core:focus-within .brand__label {
+  transform: translateX(1px) scale(1.02);
+  color: #ffffff;
+  letter-spacing: .055em;
+  text-shadow:
+    0 0 14px rgba(111, 208, 255, .28),
+    0 1px 0 rgba(0, 0, 0, .25);
+}
+
+.brand__home:hover,
+.brand__home:focus-visible {
+  transform: translateY(-1px) scale(1.05);
+  border-color: rgba(122, 167, 255, .46);
+  color: #eff8ff;
+  text-decoration: none;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, .08),
+    0 12px 28px rgba(0, 0, 0, .3),
+    0 0 20px rgba(103, 212, 255, .18);
+}
+
+.brand__home:hover svg,
+.brand__home:focus-visible svg {
+  transform: scale(1.08) translateY(-1px);
 }
 
 .search {
@@ -1937,14 +2083,16 @@ a.post__id:focus-visible {
 }
 
 .mentionLink,
-.hashtagLink {
+.hashtagLink,
+.richLink {
   color: #8cc4ff;
   font-weight: 700;
   text-decoration: none;
 }
 
 .mentionLink:hover,
-.hashtagLink:hover {
+.hashtagLink:hover,
+.richLink:hover {
   text-decoration: underline;
 }
 
@@ -2190,10 +2338,6 @@ body.entityEdit-open {
   gap: 8px;
 }
 
-.commentDock__openPost {
-  min-height: 36px;
-}
-
 .commentDock__close {
   width: 36px;
   height: 36px;
@@ -2245,6 +2389,14 @@ body.entityEdit-open {
 .commentDock__postPreview .post__body {
   font-size: 15px;
   line-height: 1.62;
+}
+
+.commentDock__postPreview .post__actionsBar {
+  margin-top: 18px;
+}
+
+.commentDock__postPreview [data-post-action-kind="comment"] {
+  display: none;
 }
 
 .commentDock__postPreview .row.row--spaced {
@@ -2820,12 +2972,6 @@ body.entityEdit-open {
 
   .commentDock__headActions {
     gap: 6px;
-  }
-
-  .commentDock__openPost {
-    min-height: 32px;
-    padding: 7px 10px;
-    font-size: 12px;
   }
 
   .commentDock__close {
@@ -3499,6 +3645,10 @@ body.entityEdit-open {
   cursor: pointer;
 }
 
+.notificationMenu__action--danger {
+  color: rgba(255, 182, 195, .96);
+}
+
 .notificationMenu__link {
   flex: 0 0 auto;
   color: rgba(164, 220, 255, .94);
@@ -3513,6 +3663,11 @@ body.entityEdit-open {
 .notificationMenu__link:focus-visible {
   color: #f3f8ff;
   text-decoration: none;
+}
+
+.notificationMenu__action--danger:hover,
+.notificationMenu__action--danger:focus-visible {
+  color: #ffdfe7;
 }
 
 .notificationMenu__empty {
@@ -3793,7 +3948,7 @@ body.entityEdit-open {
   /* Row 1: Brand + Nav */
   .brand {
     order: 1;
-    flex: 0 0 auto;
+    flex: 0 1 auto;
   }
 
   .nav {
@@ -5138,6 +5293,31 @@ body.motion--reduced .postAct:hover,
 body.motion--reduced .nav__icon:hover,
 body.motion--reduced .iconBtn:hover {
   transform: none;
+}
+
+body.motion--reduced .brand__core,
+body.motion--reduced .brand__logoWrap,
+body.motion--reduced .brand__logoWrap::before,
+body.motion--reduced .brand__logo,
+body.motion--reduced .brand__label,
+body.motion--reduced .brand__home,
+body.motion--reduced .brand__home svg {
+  transition: none !important;
+}
+
+body.motion--reduced .brand__core:hover,
+body.motion--reduced .brand__core:focus-within,
+body.motion--reduced .brand__core:hover .brand__logoWrap,
+body.motion--reduced .brand__core:focus-within .brand__logoWrap,
+body.motion--reduced .brand__core:hover .brand__logo,
+body.motion--reduced .brand__core:focus-within .brand__logo,
+body.motion--reduced .brand__core:hover .brand__label,
+body.motion--reduced .brand__core:focus-within .brand__label,
+body.motion--reduced .brand__home:hover,
+body.motion--reduced .brand__home:focus-visible,
+body.motion--reduced .brand__home:hover svg,
+body.motion--reduced .brand__home:focus-visible svg {
+  transform: none !important;
 }
 
 body.motion--reduced .iconBtn--danger,

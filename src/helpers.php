@@ -22,6 +22,42 @@ function trux_public_url(?string $path): string {
     return TRUX_BASE_URL . '/' . ltrim($value, '/');
 }
 
+function trux_post_viewer_path(int $postId, ?int $commentId = null, array $params = []): string {
+    if ($postId <= 0) {
+        return '/';
+    }
+
+    $query = [
+        'id' => $postId,
+        'viewer' => '1',
+    ];
+
+    if ($commentId !== null && $commentId > 0) {
+        $query['comment_id'] = $commentId;
+    }
+
+    foreach ($params as $key => $value) {
+        if (!is_string($key) || $key === '' || $value === null) {
+            continue;
+        }
+
+        if (is_bool($value)) {
+            $query[$key] = $value ? '1' : '0';
+            continue;
+        }
+
+        if (is_scalar($value)) {
+            $query[$key] = (string)$value;
+        }
+    }
+
+    return '/post.php?' . http_build_query($query);
+}
+
+function trux_post_viewer_url(int $postId, ?int $commentId = null, array $params = []): string {
+    return TRUX_BASE_URL . trux_post_viewer_path($postId, $commentId, $params);
+}
+
 function trux_redirect(string $path): void {
     $url = (str_starts_with($path, 'http://') || str_starts_with($path, 'https://'))
         ? $path
@@ -186,7 +222,7 @@ function trux_extract_mentions(string $body): array {
     return array_values(array_unique($mentions));
 }
 
-function trux_render_rich_text_line(string $line): string {
+function trux_render_non_url_rich_text_segment(string $line): string {
     $pattern = '/(^|[^A-Za-z0-9_])(@[A-Za-z0-9_]{3,32}|#[A-Za-z0-9_]{1,50})\b/';
     $cursor = 0;
     $out = '';
@@ -231,6 +267,141 @@ function trux_render_rich_text_line(string $line): string {
     $tail = substr($line, $cursor);
     if ($tail !== false && $tail !== '') {
         $out .= trux_e($tail);
+    }
+
+    return $out;
+}
+
+function trux_split_url_suffix(string $rawUrl): array {
+    $url = $rawUrl;
+    $suffix = '';
+
+    while ($url !== '') {
+        $lastChar = substr($url, -1);
+        if ($lastChar === '' || $lastChar === false) {
+            break;
+        }
+
+        if (in_array($lastChar, ['.', ',', '!', '?', ';', ':', '"', "'"], true)) {
+            $suffix = $lastChar . $suffix;
+            $url = substr($url, 0, -1);
+            continue;
+        }
+
+        $pairs = [
+            ')' => '(',
+            ']' => '[',
+            '}' => '{',
+        ];
+        if (isset($pairs[$lastChar])) {
+            $openChar = $pairs[$lastChar];
+            if (substr_count($url, $openChar) < substr_count($url, $lastChar)) {
+                $suffix = $lastChar . $suffix;
+                $url = substr($url, 0, -1);
+                continue;
+            }
+        }
+
+        break;
+    }
+
+    return [$url, $suffix];
+}
+
+function trux_normalize_rich_text_url(string $url): string {
+    $trimmed = trim($url);
+    if ($trimmed === '' || !preg_match('#^https?://#i', $trimmed)) {
+        return $trimmed;
+    }
+
+    $parsedUrl = parse_url($trimmed);
+    $parsedBase = parse_url(TRUX_BASE_URL);
+    if (!is_array($parsedUrl) || !is_array($parsedBase)) {
+        return $trimmed;
+    }
+
+    $candidateHost = strtolower((string)($parsedUrl['host'] ?? ''));
+    $baseHost = strtolower((string)($parsedBase['host'] ?? ''));
+    if ($candidateHost === '' || $baseHost === '' || $candidateHost !== $baseHost) {
+        return $trimmed;
+    }
+
+    $candidatePort = isset($parsedUrl['port']) ? (int)$parsedUrl['port'] : null;
+    $basePort = isset($parsedBase['port']) ? (int)$parsedBase['port'] : null;
+    if ($candidatePort !== $basePort) {
+        if (!(($candidatePort === null || $candidatePort === 80) && ($basePort === null || $basePort === 80))) {
+            if (!(($candidatePort === null || $candidatePort === 443) && ($basePort === null || $basePort === 443))) {
+                return $trimmed;
+            }
+        }
+    }
+
+    $basePath = rtrim((string)($parsedBase['path'] ?? ''), '/');
+    $candidatePath = (string)($parsedUrl['path'] ?? '');
+    if ($basePath === '' || $candidatePath !== $basePath . '/post.php') {
+        return $trimmed;
+    }
+
+    parse_str((string)($parsedUrl['query'] ?? ''), $query);
+    $postId = isset($query['id']) && preg_match('/^\d+$/', (string)$query['id']) ? (int)$query['id'] : 0;
+    if ($postId <= 0) {
+        return $trimmed;
+    }
+
+    $commentId = isset($query['comment_id']) && preg_match('/^\d+$/', (string)$query['comment_id'])
+        ? (int)$query['comment_id']
+        : null;
+
+    return trux_post_viewer_url($postId, $commentId !== null && $commentId > 0 ? $commentId : null);
+}
+
+function trux_render_link_token(string $url): string {
+    $normalizedHref = trux_normalize_rich_text_url($url);
+    if ($normalizedHref === '') {
+        return trux_e($url);
+    }
+
+    return '<a class="richLink" href="' . trux_e($normalizedHref) . '">' . trux_e($url) . '</a>';
+}
+
+function trux_render_rich_text_line(string $line): string {
+    $pattern = '#https?://[^\s<]+#i';
+    $cursor = 0;
+    $out = '';
+
+    $matched = preg_match_all($pattern, $line, $matches, PREG_OFFSET_CAPTURE);
+    if (!is_int($matched) || $matched <= 0) {
+        return trux_render_non_url_rich_text_segment($line);
+    }
+
+    foreach ($matches[0] as $match) {
+        $rawUrl = (string)($match[0] ?? '');
+        $fullOffset = (int)($match[1] ?? 0);
+        if ($rawUrl === '' || $fullOffset < $cursor) {
+            continue;
+        }
+
+        $before = substr($line, $cursor, $fullOffset - $cursor);
+        if ($before !== false && $before !== '') {
+            $out .= trux_render_non_url_rich_text_segment($before);
+        }
+
+        [$cleanUrl, $suffix] = trux_split_url_suffix($rawUrl);
+        if ($cleanUrl !== '') {
+            $out .= trux_render_link_token($cleanUrl);
+        } else {
+            $out .= trux_e($rawUrl);
+        }
+        if ($suffix !== '') {
+            $out .= trux_e($suffix);
+        }
+
+        $cursor = $fullOffset + strlen($rawUrl);
+    }
+
+    $tail = substr($line, $cursor);
+    if ($tail !== false && $tail !== '') {
+        $out .= trux_render_non_url_rich_text_segment($tail);
     }
 
     return $out;

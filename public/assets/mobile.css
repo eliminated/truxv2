@@ -8,6 +8,35 @@
     gap: 10px;
   }
 
+  .brand {
+    align-self: flex-start;
+  }
+
+  .brand__core {
+    gap: 9px;
+    padding: 7px 12px 7px 7px;
+  }
+
+  .brand__logoWrap,
+  .brand__home {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+  }
+
+  .brand__logoWrap {
+    flex-basis: 34px;
+  }
+
+  .brand__logo {
+    width: 24px;
+    height: 24px;
+  }
+
+  .brand__label {
+    font-size: 18px;
+  }
+
   .searchWrap {
     width: 100%;
     max-width: none;
@@ -115,6 +144,18 @@
     padding: 10px 0;
   }
 
+  .brand {
+    gap: 8px;
+  }
+
+  .brand__core {
+    padding-right: 10px;
+  }
+
+  .brand__label {
+    font-size: 16px;
+  }
+
   .card__body {
     padding: 13px;
   }
@@ -147,13 +188,8 @@
   }
 
   .commentDock__headActions {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .commentDock__openPost {
-    width: 100%;
-    justify-content: center;
+    width: auto;
+    justify-content: flex-end;
   }
 
   .profile__masthead,

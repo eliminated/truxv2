@@ -126,4 +126,4 @@ if (is_string($back) && $back !== '' && str_starts_with($back, TRUX_BASE_URL)) {
     trux_redirect(str_replace(TRUX_BASE_URL, '', $back));
 }
 
-trux_redirect('/post.php?id=' . $postId);
+trux_redirect(trux_post_viewer_path($postId, $commentId > 0 ? $commentId : null));

@@ -37,7 +37,13 @@ if (is_string($rawRequestUri) && $rawRequestUri !== '') {
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= trux_e(TRUX_APP_NAME) ?></title>
-  <link rel="icon" type="image/png" href="<?= TRUX_BASE_URL ?>/favicon.php?v=<?= filemtime(dirname(__DIR__) . '/src/logo/trux_logo.png') ?>">
+  <?php
+  $faviconVersion = max(
+    (int)(filemtime(__DIR__ . '/favicon.php') ?: 0),
+    (int)(filemtime(dirname(__DIR__) . '/src/logo/trux_logo.png') ?: 0)
+  );
+  ?>
+  <link rel="icon" type="image/png" sizes="32x32" href="<?= TRUX_BASE_URL ?>/favicon.php?v=<?= $faviconVersion ?>">
   <link rel="stylesheet" href="<?= TRUX_BASE_URL ?>/assets/style.css?v=<?= filemtime(__DIR__ . '/assets/style.css') ?>">
   <link rel="stylesheet" href="<?= TRUX_BASE_URL ?>/assets/mobile.css?v=<?= filemtime(__DIR__ . '/assets/mobile.css') ?>">
   <script defer src="<?= TRUX_BASE_URL ?>/assets/app.js?v=<?= filemtime(__DIR__ . '/assets/app.js') ?>"></script>
@@ -47,7 +53,27 @@ if (is_string($rawRequestUri) && $rawRequestUri !== '') {
 <body class="<?= trux_e(implode(' ', $bodyClasses)) ?>">
   <header class="topbar">
     <div class="container topbar__inner">
-      <a class="brand" href="<?= TRUX_BASE_URL ?>/"><?= trux_e(TRUX_APP_NAME) ?></a>
+      <div class="brand" aria-label="<?= trux_e(TRUX_APP_NAME) ?>">
+        <div class="brand__core">
+          <span class="brand__logoWrap" aria-hidden="true">
+            <img
+              class="brand__logo"
+              src="<?= TRUX_BASE_URL ?>/favicon.php?v=<?= $faviconVersion ?>"
+              alt=""
+              width="32"
+              height="32"
+              loading="eager"
+              decoding="async">
+          </span>
+          <span class="brand__label"><?= trux_e(TRUX_APP_NAME) ?></span>
+        </div>
+
+        <a class="brand__home" href="<?= TRUX_BASE_URL ?>/" aria-label="Go to home" title="Home">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M4 10.8 12 4l8 6.8M7 9.9V20h10V9.9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+      </div>
 
       <div class="searchWrap">
         <form class="search" method="get" action="<?= TRUX_BASE_URL ?>/search.php" role="search">
@@ -112,6 +138,14 @@ if (is_string($rawRequestUri) && $rawRequestUri !== '') {
                       <input type="hidden" name="action" value="mark_all_read">
                       <input type="hidden" name="redirect" value="<?= trux_e($notificationRedirectPath) ?>">
                       <button class="notificationMenu__action" type="submit">Mark all as read</button>
+                    </form>
+                  <?php endif; ?>
+                  <?php if ($notificationMenuItems): ?>
+                    <form method="post" action="<?= TRUX_BASE_URL ?>/notifications.php" class="notificationMenu__form" data-confirm="Clear every notification from your feed?">
+                      <?= trux_csrf_field() ?>
+                      <input type="hidden" name="action" value="clean_all">
+                      <input type="hidden" name="redirect" value="<?= trux_e($notificationRedirectPath) ?>">
+                      <button class="notificationMenu__action notificationMenu__action--danger" type="submit">Clean all</button>
                     </form>
                   <?php endif; ?>
                   <a class="notificationMenu__link" href="<?= TRUX_BASE_URL ?>/notifications.php">Open page</a>

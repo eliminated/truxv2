@@ -463,7 +463,6 @@
   const replyUserIdField = dock.querySelector("[data-comment-reply-user-id]");
   const replyingBox = dock.querySelector("[data-comment-replying]");
   const replyingUser = dock.querySelector("[data-comment-replying-user]");
-  const openPostLink = dock.querySelector("[data-comment-open-post]");
   const editModal = document.getElementById("entityEditModal");
   const editForm = editModal?.querySelector("[data-entity-edit-form='1']");
   const editTitle = editModal?.querySelector("[data-edit-title='1']");
@@ -473,6 +472,8 @@
   const editFlash = editModal?.querySelector("[data-edit-flash='1']");
   const editTextarea = editForm?.querySelector("textarea[name='body']");
   const editSubmitBtn = editForm?.querySelector("[data-edit-submit='1']");
+  const postPagePath = new URL(`${window.TRUX_BASE_URL || ""}/post.php`, window.location.origin).pathname;
+  const isStandalonePostRoute = window.location.pathname === postPagePath;
 
   let currentPostId = 0;
   let lastTrigger = null;
@@ -828,6 +829,26 @@
   };
 
   const isOpen = () => !dock.hasAttribute("hidden");
+  const getStandalonePostExitUrl = () => {
+    const fallback = `${window.TRUX_BASE_URL || ""}/`;
+    const referrer = String(document.referrer || "").trim();
+    if (!referrer) {
+      return fallback;
+    }
+
+    try {
+      const referrerUrl = new URL(referrer, window.location.origin);
+      if (referrerUrl.origin !== window.location.origin) {
+        return fallback;
+      }
+      if (referrerUrl.pathname === window.location.pathname && referrerUrl.search === window.location.search) {
+        return fallback;
+      }
+      return referrerUrl.toString();
+    } catch {
+      return fallback;
+    }
+  };
 
   const setCommentCount = (postId, count) => {
     const nodes = document.querySelectorAll(`[data-comment-count-for="${postId}"]`);
@@ -1153,7 +1174,7 @@
     clone.removeAttribute("data-post-click-target");
     clone.removeAttribute("data-post-url");
 
-    clone.querySelectorAll(".post__actionsBar, .post__actions").forEach((el) => el.remove());
+    clone.querySelectorAll("[data-post-open-viewer-link='1']").forEach((el) => el.remove());
     clone.querySelectorAll(".row.row--spaced").forEach((el) => el.remove());
     clone.querySelectorAll("[data-comment-open]").forEach((el) => {
       el.setAttribute("disabled", "disabled");
@@ -1172,10 +1193,6 @@
     lastTrigger = trigger;
 
     if (postIdField) postIdField.value = String(postId);
-    if (openPostLink) {
-      const href = trigger.getAttribute("data-post-url") || `${window.TRUX_BASE_URL || ""}/post.php?id=${postId}`;
-      openPostLink.setAttribute("href", href);
-    }
 
     fillPostPane(trigger, postId);
     dock.removeAttribute("hidden");
@@ -1195,7 +1212,7 @@
     }
   };
 
-  const closeDock = () => {
+  const closeDock = (options = {}) => {
     if (!isOpen()) return;
     closeEditModal({ restoreFocus: false });
     dock.setAttribute("hidden", "hidden");
@@ -1204,6 +1221,10 @@
     if (postIdField) postIdField.value = "";
     clearReplyState();
     resetCommentPaging();
+    if (options.exitStandaloneRoute && isStandalonePostRoute) {
+      window.location.assign(getStandalonePostExitUrl());
+      return;
+    }
     if (lastTrigger && typeof lastTrigger.focus === "function") {
       lastTrigger.focus();
     }
@@ -1433,7 +1454,7 @@
     const closeBtn = e.target.closest("[data-comment-close]");
     if (closeBtn instanceof HTMLElement) {
       e.preventDefault();
-      closeDock();
+      closeDock({ exitStandaloneRoute: true });
       return;
     }
 
@@ -1561,7 +1582,7 @@
         return;
       }
       closeAllContentMenus();
-      closeDock();
+      closeDock({ exitStandaloneRoute: true });
     }
   });
 
@@ -1693,8 +1714,11 @@
   const params = new URLSearchParams(window.location.search);
   const autoCommentId = Number(params.get("comment_id") || "0");
   const autoPostId = Number(params.get("id") || "0");
-  if (autoCommentId > 0 && autoPostId > 0) {
-    const autoTrigger = document.querySelector(`[data-comment-open="1"][data-post-id="${autoPostId}"]`);
+  const viewerMode = params.get("viewer") === "1";
+  if (autoPostId > 0 && (autoCommentId > 0 || viewerMode || isStandalonePostRoute)) {
+    const autoTrigger =
+      document.querySelector(`[data-comment-open="1"][data-post-id="${autoPostId}"]`) ||
+      document.querySelector(`.post[data-post-id="${autoPostId}"]`);
     if (autoTrigger instanceof HTMLElement) {
       window.setTimeout(() => openDock(autoTrigger, { commentId: autoCommentId }), 80);
     }

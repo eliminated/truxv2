@@ -11,6 +11,9 @@
 - Fixed the owner post action menu bookmark flow so clicking `Bookmark` on your own post no longer throws `setActionActive is not defined`
 - Owner and non-owner post bookmark toggles now keep the three-dot menu state and the main post action bar label/state in sync
 - New post publishing now redirects straight to the new post instead of leaving a static success message behind
+- Fixed bookmarked post/comment filter and pager links on `public/bookmarks.php` so they stay under `TRUX_BASE_URL` instead of generating broken root-level URLs
+- Fixed header brand hover scoping so hovering the new home icon no longer triggers the logo/text hover animation
+- Fixed browser-tab favicon sizing by cropping the visible logo area before rendering the shared favicon asset
 
 ***
 
@@ -20,6 +23,11 @@
 - New shared post menu for all posts with working bookmark and copy-link actions, plus placeholder `Not interested`, `Mute user`, and `Report` actions for non-owner posts
 - Dedicated mobile override stylesheet at `public/assets/mobile.css` that loads automatically for smaller screens and tightens shared layouts across feed, profile, settings, messages, and the comment dock
 - Bookmark actions on posts now show a visible saved-count badge alongside likes, comments, and shares
+- Renamed the shared post popup UI from `Post Comments` to `Post Viewer`
+- Post Viewer now keeps post actions in the popup preview column with `Like`, `Share`, `Bookmark`, and the three-dot post menu while leaving `Comment` to the thread pane
+- Notification hover menu now includes a real `Clean all` action alongside `Mark all as read`
+- Rich-text bodies now auto-link pasted `http://` and `https://` URLs across posts, comments, and replies
+- Header branding now shows the project logo to the left of the plain `TruX` label plus a dedicated home icon button on the right
 
 ***
 
@@ -28,6 +36,13 @@
 - Post media now uses a more restrained X-style presentation with capped image height so tall uploads do not dominate the viewport
 - Post body, media, and action rows now share a narrower readable width so large desktop cards feel more balanced
 - Post pages across `public/index.php`, `public/search.php`, `public/profile.php`, `public/bookmarks.php`, and `public/post.php` now use the same shared context-menu rendering
+- Direct post links, new-post redirects, notification targets, and comment/reply-related post redirects now open through the `Post Viewer` flow instead of relying on the old standalone single-post experience
+- The standalone `public/post.php` page is now treated as a hidden Post Viewer entry route, so users land in the popup UI instead of a visible duplicate post page
+- Post-related notifications that point to comments or replies now open the Post Viewer with the target comment highlighted
+- Internal site links such as `http://localhost/truxv2/public/post.php?id=8` are now normalized to the `Post Viewer` route when rendered in posts, comments, and replies
+- Inserted links in posts, comments, and replies now use the shared blue link treatment already used for mentions and hashtags
+- The post action menu now hides the redundant `Open viewer page` entry when that menu is rendered inside Post Viewer itself
+- The header brand is no longer a linked underlined text label; it now behaves as a branded display block with hover animation while the separate home icon owns navigation back to the main page
 
 ***
 
@@ -36,6 +51,11 @@
 - Added same-scope post bookmark state syncing plus shared menu action handlers in `public/assets/app.js`
 - Added reusable post context menu markup in `public/_post_content_menu.php`
 - Added automatic mobile stylesheet loading in `public/_header.php`
+- Added shared Post Viewer URL helpers in `src/helpers.php` and reused them across post, notification, comment, bookmark, and edit redirect flows
+- Extended `src/helpers.php` rich-text rendering so URL autolinking and internal post-link normalization happen in one shared path for posts, comments, replies, and profile rich text
+- Added notification cleanup support in `src/notifications.php` plus matching controller handling in `public/notifications.php`
+- Updated `public/favicon.php` to generate a tighter rendered favicon from `src/logo/trux_logo.png` instead of streaming the raw padded source image
+- Reworked header brand markup in `public/_header.php` with matching animation/responsive rules in `public/assets/style.css` and `public/assets/mobile.css`
 
 ***
 

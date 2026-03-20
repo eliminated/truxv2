@@ -7,10 +7,9 @@ declare(strict_types=1);
   <div class="commentDock__backdrop" data-comment-close="1"></div>
   <section class="commentDock__panel" role="dialog" aria-modal="true" aria-labelledby="commentDockTitle">
     <header class="commentDock__head">
-      <h2 id="commentDockTitle">Post Comments</h2>
+      <h2 id="commentDockTitle">Post Viewer</h2>
       <div class="commentDock__headActions">
-        <a class="btn btn--small btn--ghost commentDock__openPost" href="<?= TRUX_BASE_URL ?>/" target="_self" data-comment-open-post="1">Open post</a>
-        <button class="iconBtn commentDock__close" type="button" aria-label="Close comments" data-comment-close="1">
+        <button class="iconBtn commentDock__close" type="button" aria-label="Close post viewer" data-comment-close="1">
           <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
             <path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
           </svg>

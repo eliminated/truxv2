@@ -27,6 +27,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (is_string($action) && $action === 'mark_all_read') {
         trux_mark_all_notifications_read((int)$me['id']);
         trux_flash_set('success', 'All notifications marked as read.');
+    } elseif (is_string($action) && $action === 'clean_all') {
+        trux_delete_all_notifications((int)$me['id']);
+        trux_flash_set('success', 'All notifications cleared.');
     } else {
         trux_flash_set('error', 'Invalid notification action.');
     }
@@ -48,12 +51,20 @@ require_once __DIR__ . '/_header.php';
     <div class="row row--spaced">
       <h2 class="h2">Latest</h2>
       <?php if ($notifications): ?>
-        <form method="post" action="<?= TRUX_BASE_URL ?>/notifications.php" class="inline">
-          <?= trux_csrf_field() ?>
-          <input type="hidden" name="action" value="mark_all_read">
-          <input type="hidden" name="redirect" value="/notifications.php">
-          <button class="btn btn--small btn--ghost" type="submit">Mark all as read</button>
-        </form>
+        <div class="row">
+          <form method="post" action="<?= TRUX_BASE_URL ?>/notifications.php" class="inline">
+            <?= trux_csrf_field() ?>
+            <input type="hidden" name="action" value="mark_all_read">
+            <input type="hidden" name="redirect" value="/notifications.php">
+            <button class="btn btn--small btn--ghost" type="submit">Mark all as read</button>
+          </form>
+          <form method="post" action="<?= TRUX_BASE_URL ?>/notifications.php" class="inline" data-confirm="Clear every notification from your feed?">
+            <?= trux_csrf_field() ?>
+            <input type="hidden" name="action" value="clean_all">
+            <input type="hidden" name="redirect" value="/notifications.php">
+            <button class="btn btn--small btn--ghost" type="submit">Clean all</button>
+          </form>
+        </div>
       <?php endif; ?>
     </div>
 
