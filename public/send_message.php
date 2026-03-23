@@ -46,11 +46,40 @@ if (!$recipientUser || (int)$recipientUser['id'] === $viewerId) {
     trux_redirect('/messages.php');
 }
 
+if (trux_is_report_system_user((string)$recipientUser['username'])) {
+    trux_flash_set('error', 'This inbox is read-only.');
+    trux_redirect('/messages.php');
+}
+
+if (trux_block_exists_between((int)$me['id'], (int)$recipientUser['id'])) {
+    trux_flash_set('error', 'You cannot message this user.');
+    trux_redirect('/messages.php');
+}
+
+if (trux_moderation_is_user_dm_restricted($viewerId)) {
+    trux_flash_set('error', 'Your account currently cannot send direct messages.');
+    trux_redirect('/messages.php' . ($conversationId > 0 ? '?id=' . $conversationId : '?with=' . rawurlencode((string)$recipientUser['username'])));
+}
+
 $savedConversationId = trux_send_direct_message($viewerId, (int)$recipientUser['id'], $body);
 if ($savedConversationId <= 0) {
     trux_flash_set('error', 'Could not send message.');
     trux_redirect('/messages.php?with=' . rawurlencode((string)$recipientUser['username']));
 }
+
+trux_moderation_record_activity_event('direct_message_sent', $viewerId, [
+    'subject_type' => 'conversation',
+    'subject_id' => $savedConversationId,
+    'related_user_id' => (int)$recipientUser['id'],
+    'source_url' => '/messages.php?id=' . $savedConversationId,
+    'metadata' => [
+        'recipient_user_id' => (int)$recipientUser['id'],
+        'recipient_username' => (string)$recipientUser['username'],
+        'body_length' => mb_strlen($body),
+        'link_count' => trux_moderation_link_count($body),
+        'body_hash' => trux_moderation_text_fingerprint($body),
+    ],
+]);
 
 trux_flash_set('success', 'Message sent.');
 trux_redirect('/messages.php?id=' . $savedConversationId);

@@ -51,6 +51,11 @@ try {
     $targetUsername = (string)$targetUser['username'];
     $backToProfile = '/profile.php?u=' . urlencode($targetUsername);
 
+    if (trux_is_report_system_user($targetUsername)) {
+        trux_flash_set('error', 'Action unavailable.');
+        trux_redirect('/');
+    }
+
     if ((int)$me['id'] === $targetId) {
         trux_flash_set('error', 'You cannot mute yourself.');
         trux_redirect($backToProfile);
@@ -59,9 +64,27 @@ try {
     if ($action === 'mute') {
         trux_mute_user((int)$me['id'], $targetId);
         trux_remove_notifications_from_actor((int)$me['id'], $targetId);
+        trux_moderation_record_activity_event('user_muted', (int)$me['id'], [
+            'subject_type' => 'user',
+            'subject_id' => $targetId,
+            'related_user_id' => $targetId,
+            'source_url' => $backToProfile,
+            'metadata' => [
+                'target_username' => $targetUsername,
+            ],
+        ]);
         trux_flash_set('success', 'Muted @' . $targetUsername . '. You will no longer receive notifications from this user.');
     } else {
         trux_unmute_user((int)$me['id'], $targetId);
+        trux_moderation_record_activity_event('user_unmuted', (int)$me['id'], [
+            'subject_type' => 'user',
+            'subject_id' => $targetId,
+            'related_user_id' => $targetId,
+            'source_url' => $backToProfile,
+            'metadata' => [
+                'target_username' => $targetUsername,
+            ],
+        ]);
         trux_flash_set('success', 'Unmuted @' . $targetUsername . '.');
     }
 

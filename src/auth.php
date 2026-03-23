@@ -11,7 +11,8 @@ function trux_current_user(): ?array {
     $db = trux_db();
     $stmt = $db->prepare(
         'SELECT id, username, email, display_name, bio, about_me, location, website_url, profile_links_json,
-                avatar_path, banner_path, show_likes_public, show_bookmarks_public, created_at
+                avatar_path, banner_path, show_likes_public, show_bookmarks_public,
+                notify_report_updates_default, staff_role, created_at
          FROM users
          WHERE id = ?'
     );
@@ -88,9 +89,41 @@ function trux_attempt_login(string $login, string $password): array {
     $stmt->execute([$login, $login]);
     $u = $stmt->fetch();
 
-    if (!$u || !isset($u['password_hash'])) return ['ok' => false, 'error' => 'Invalid credentials.'];
-    if (!password_verify($password, (string)$u['password_hash'])) return ['ok' => false, 'error' => 'Invalid credentials.'];
+    if (!$u || !isset($u['password_hash'])) {
+        trux_moderation_record_activity_event('login_failed', null, [
+            'metadata' => [
+                'login_identifier' => $login,
+            ],
+        ]);
+        return ['ok' => false, 'error' => 'Invalid credentials.'];
+    }
+    if (!password_verify($password, (string)$u['password_hash'])) {
+        trux_moderation_record_activity_event('login_failed', (int)$u['id'], [
+            'metadata' => [
+                'login_identifier' => $login,
+            ],
+        ]);
+        return ['ok' => false, 'error' => 'Invalid credentials.'];
+    }
+
+    $activeRestriction = trux_moderation_fetch_active_access_block((int)$u['id']);
+    if ($activeRestriction) {
+        trux_moderation_record_activity_event('login_blocked_by_enforcement', (int)$u['id'], [
+            'subject_type' => 'user_enforcement',
+            'subject_id' => (int)($activeRestriction['id'] ?? 0),
+            'metadata' => [
+                'login_identifier' => $login,
+                'action_key' => (string)($activeRestriction['action_key'] ?? ''),
+            ],
+        ]);
+        return ['ok' => false, 'error' => trux_moderation_access_block_message($activeRestriction)];
+    }
 
     trux_login_user((int)$u['id']);
+    trux_moderation_record_activity_event('login_success', (int)$u['id'], [
+        'metadata' => [
+            'login_identifier' => $login,
+        ],
+    ]);
     return ['ok' => true];
 }

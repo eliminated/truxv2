@@ -110,18 +110,33 @@ $muteMessage = $postUsername !== '' ? 'Mute controls for @' . $postUsername . ' 
         <span><?= trux_e($muteLabel) ?></span>
       </button>
 
-      <button
-        class="contentMenu__item contentMenu__item--danger"
-        type="button"
-        role="menuitem"
-        data-post-placeholder-action="1"
-        data-post-placeholder-label="Report"
-        data-post-placeholder-message="Reporting tools are coming soon.">
-        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <path d="M6 20V5m0 0h9l-1.5 3L15 11H6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
-        </svg>
-        <span>Report</span>
-      </button>
+      <?php if ($isLoggedIn): ?>
+        <button
+          class="contentMenu__item contentMenu__item--danger"
+          type="button"
+          role="menuitem"
+          data-report-action="1"
+          data-report-target-type="post"
+          data-report-target-id="<?= $postId ?>"
+          data-report-open-url="<?= trux_e($postUrl) ?>"
+          data-report-target-label="<?= trux_e($postUsername !== '' ? 'Post #' . $postId . ' by @' . $postUsername : 'Post #' . $postId) ?>">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M6 20V5m0 0h9l-1.5 3L15 11H6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span>Report</span>
+        </button>
+      <?php else: ?>
+        <a
+          class="contentMenu__item contentMenu__item--danger"
+          role="menuitem"
+          href="<?= TRUX_BASE_URL ?>/login.php"
+          aria-label="Log in to report this post">
+          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+            <path d="M6 20V5m0 0h9l-1.5 3L15 11H6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span>Report</span>
+        </a>
+      <?php endif; ?>
     <?php endif; ?>
 
     <?php if ($isOwner): ?>

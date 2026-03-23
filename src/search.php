@@ -10,16 +10,19 @@ function trux_search_users(string $term, int $limit = 10): array {
 
     $escaped = trux_like_escape($term);
     $like = '%' . $escaped . '%';
+    $hiddenUsername = trux_report_system_username();
 
     $stmt = $db->prepare(
         "SELECT id, username, created_at
          FROM users
          WHERE username LIKE ? ESCAPE '\\\\'
+           AND username <> ?
          ORDER BY username ASC
          LIMIT ?"
     );
     $stmt->bindValue(1, $like, PDO::PARAM_STR);
-    $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+    $stmt->bindValue(2, $hiddenUsername, PDO::PARAM_STR);
+    $stmt->bindValue(3, $limit, PDO::PARAM_INT);
     $stmt->execute();
 
     return $stmt->fetchAll();
@@ -34,16 +37,19 @@ function trux_search_users_by_prefix(string $term, int $limit = 6): array {
     $limit = max(1, min(10, $limit));
     $db = trux_db();
     $like = trux_like_escape($prefix) . '%';
+    $hiddenUsername = trux_report_system_username();
 
     $stmt = $db->prepare(
         "SELECT id, username
          FROM users
          WHERE username LIKE ? ESCAPE '\\\\'
+           AND username <> ?
          ORDER BY username ASC
          LIMIT ?"
     );
     $stmt->bindValue(1, $like, PDO::PARAM_STR);
-    $stmt->bindValue(2, $limit, PDO::PARAM_INT);
+    $stmt->bindValue(2, $hiddenUsername, PDO::PARAM_STR);
+    $stmt->bindValue(3, $limit, PDO::PARAM_INT);
     $stmt->execute();
 
     return $stmt->fetchAll();

@@ -12,33 +12,6 @@ function trux_discovery_cutoff_datetime(int $hours): string
     }
 }
 
-/**
- * Discovery 1.0 ranked feed — scored, diversified, page-based.
- *
- * Signals
- * ───────
- *   + likes      × 1.00
- *   + comments   × 1.75
- *   + shares     × 2.25
- *   + freshness bonus  +2.00  (post < 36 h old)
- *   + social-graph     +2.50  (viewer follows the author)
- *   + author-affinity  +1.50  (viewer previously liked/shared that author's posts)
- *   - log time decay   LOG(1 + hours_old) × 0.80
- *
- * Fixes vs original codex build
- * ──────────────────────────────
- *   • Pagination is now page-based (offset) so score ordering is stable
- *     across pages.  The old id < :before_id cursor was incompatible with
- *     ORDER BY discovery_score and silently dropped high-scoring posts.
- *   • "Prior interaction" boost (viewer already engaged with THIS post)
- *     has been replaced with author-affinity (viewer engaged with OTHER
- *     posts by the same author).  Boosting already-seen posts pushed
- *     stale content back to the top.
- *   • Linear decay (-hours × 0.04) replaced with log decay
- *     (LOG(1 + hours) × 0.80) which is aggressive in the first few hours
- *     and flattens for older content.
- *   • Per-author diversity cap: at most 3 posts from one author per page.
- */
 function trux_fetch_discovery_feed(?int $viewerId, int $limit = 20, int $page = 1): array
 {
     $limit  = max(1, min(50, $limit));
@@ -50,12 +23,8 @@ function trux_fetch_discovery_feed(?int $viewerId, int $limit = 20, int $page = 
     $db = trux_db();
 
     $maxPerAuthor = 3;
-    // Fetch a pool large enough that after the diversity cap we still have
-    // enough rows to satisfy $offset + $limit.
     $fetchLimit = min(($offset + $limit + 1) * $maxPerAuthor + $maxPerAuthor, 500);
 
-    // Log decay: aggressive early, flattens for old posts.
-    // Examples:  1h → −0.55,  6h → −1.56,  24h → −2.57,  72h → −3.43
     $decaySql = 'LOG(1 + TIMESTAMPDIFF(HOUR, p.created_at, CURRENT_TIMESTAMP)) * 0.80';
 
     if ($viewer > 0) {
@@ -71,8 +40,6 @@ function trux_fetch_discovery_feed(?int $viewerId, int $limit = 20, int $page = 
             )
         ";
 
-        // Author-affinity sub-query: has the viewer engaged with OTHER posts
-        // by this author?  (liked or shared any of their posts)
         $extraJoins = "
             LEFT JOIN follows vf
                 ON  vf.follower_id  = :viewer_fol
@@ -91,8 +58,16 @@ function trux_fetch_discovery_feed(?int $viewerId, int $limit = 20, int $page = 
             LEFT JOIN muted_users mu
                 ON  mu.user_id       = :viewer_mut
                 AND mu.muted_user_id = p.user_id
+            LEFT JOIN blocked_users bl_out
+                ON  bl_out.user_id         = :viewer_blk_out
+                AND bl_out.blocked_user_id = p.user_id
+            LEFT JOIN blocked_users bl_in
+                ON  bl_in.user_id          = p.user_id
+                AND bl_in.blocked_user_id  = :viewer_blk_in
         ";
-        $whereSql = 'WHERE mu.muted_user_id IS NULL';
+        $whereSql = 'WHERE mu.muted_user_id       IS NULL
+                       AND bl_out.blocked_user_id IS NULL
+                       AND bl_in.user_id          IS NULL';
     } else {
         $scoreSql = "
             (
@@ -139,18 +114,18 @@ function trux_fetch_discovery_feed(?int $viewerId, int $limit = 20, int $page = 
         $stmt->bindValue(':fresh_cutoff', $freshCutoff, PDO::PARAM_STR);
 
         if ($viewer > 0) {
-            $stmt->bindValue(':viewer_fol',   $viewer, PDO::PARAM_INT);
-            $stmt->bindValue(':viewer_aff_l', $viewer, PDO::PARAM_INT);
-            $stmt->bindValue(':viewer_aff_s', $viewer, PDO::PARAM_INT);
-            $stmt->bindValue(':viewer_mut',   $viewer, PDO::PARAM_INT);
+            $stmt->bindValue(':viewer_fol',     $viewer, PDO::PARAM_INT);
+            $stmt->bindValue(':viewer_aff_l',   $viewer, PDO::PARAM_INT);
+            $stmt->bindValue(':viewer_aff_s',   $viewer, PDO::PARAM_INT);
+            $stmt->bindValue(':viewer_mut',     $viewer, PDO::PARAM_INT);
+            $stmt->bindValue(':viewer_blk_out', $viewer, PDO::PARAM_INT);
+            $stmt->bindValue(':viewer_blk_in',  $viewer, PDO::PARAM_INT);
         }
 
         $stmt->bindValue(':fetch_limit', $fetchLimit, PDO::PARAM_INT);
         $stmt->execute();
         $rows = $stmt->fetchAll();
 
-        // Per-author diversity cap — at most $maxPerAuthor posts per author
-        // across the entire fetched pool before pagination.
         $authorCounts = [];
         $diversified  = [];
         foreach ($rows as $row) {
@@ -163,15 +138,10 @@ function trux_fetch_discovery_feed(?int $viewerId, int $limit = 20, int $page = 
 
         return array_slice($diversified, $offset, $limit);
     } catch (PDOException) {
-        // Graceful fallback to plain reverse-chronological feed
         return trux_fetch_discovery_fallback($limit, $offset);
     }
 }
 
-/**
- * Plain reverse-chronological fallback used when the scored query fails
- * (e.g. missing tables during initial setup).
- */
 function trux_fetch_discovery_fallback(int $limit, int $offset): array
 {
     $limit  = max(1, min(50, $limit));
@@ -195,18 +165,13 @@ function trux_fetch_discovery_fallback(int $limit, int $offset): array
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Trending hashtags
-// Window tightened to 72 h (was 240 h / 10 days) so "trending" reflects
-// what is actually active right now.
-// ─────────────────────────────────────────────────────────────────────────────
 function trux_fetch_trending_hashtags(int $limit = 8, int $windowHours = 72): array
 {
     $limit       = max(1, min(20, $limit));
-    $windowHours = max(1, min(24 * 30, $windowHours)); // accept caller override, cap 30 days
+    $windowHours = max(1, min(24 * 30, $windowHours));
 
     $windowCutoff = trux_discovery_cutoff_datetime($windowHours);
-    $recentCutoff = trux_discovery_cutoff_datetime(24); // "recent" = last 24 h
+    $recentCutoff = trux_discovery_cutoff_datetime(24);
 
     try {
         $db   = trux_db();
@@ -232,21 +197,11 @@ function trux_fetch_trending_hashtags(int $limit = 8, int $windowHours = 72): ar
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Suggested users
-//
-// Weight changes vs original:
-//   • Mutual connections: 6.00 → 8.00  (stronger social signal)
-//   • Follower cap: 250 → 500, weight 0.05 → 0.04
-//     (allows more range without dominating; on small networks most users
-//      have 0 mutuals so follower weight was the only signal firing)
-//   • Recent posts: 1.50 → 2.00  (rewards active creators more)
-// ─────────────────────────────────────────────────────────────────────────────
 function trux_fetch_discovery_suggestions(?int $viewerId, int $limit = 6): array
 {
     $limit  = max(1, min(20, $limit));
     $viewer = (int)($viewerId ?? 0);
-    $recentCutoff = trux_discovery_cutoff_datetime(24 * 14); // 2-week activity window
+    $recentCutoff = trux_discovery_cutoff_datetime(24 * 14);
 
     try {
         $db = trux_db();
@@ -287,15 +242,25 @@ function trux_fetch_discovery_suggestions(?int $viewerId, int $limit = 6): array
                  LEFT JOIN muted_users mu
                      ON  mu.user_id       = :viewer_muted
                      AND mu.muted_user_id = u.id
+                 LEFT JOIN blocked_users bl_out
+                     ON  bl_out.user_id         = :viewer_blk_out
+                     AND bl_out.blocked_user_id = u.id
+                 LEFT JOIN blocked_users bl_in
+                     ON  bl_in.user_id          = u.id
+                     AND bl_in.blocked_user_id  = :viewer_blk_in
                  WHERE  u.id <> :viewer_self
-                   AND  existing.following_id IS NULL
-                   AND  mu.muted_user_id      IS NULL
+                   AND  existing.following_id    IS NULL
+                   AND  mu.muted_user_id         IS NULL
+                   AND  bl_out.blocked_user_id   IS NULL
+                   AND  bl_in.user_id            IS NULL
                  ORDER  BY discovery_score DESC, recent_posts DESC, u.id DESC
                  LIMIT  :limit_rows'
             );
             $stmt->bindValue(':viewer_mutual',   $viewer,       PDO::PARAM_INT);
             $stmt->bindValue(':viewer_existing',  $viewer,       PDO::PARAM_INT);
             $stmt->bindValue(':viewer_muted',     $viewer,       PDO::PARAM_INT);
+            $stmt->bindValue(':viewer_blk_out',   $viewer,       PDO::PARAM_INT);
+            $stmt->bindValue(':viewer_blk_in',    $viewer,       PDO::PARAM_INT);
             $stmt->bindValue(':viewer_self',      $viewer,       PDO::PARAM_INT);
             $stmt->bindValue(':recent_cutoff',    $recentCutoff, PDO::PARAM_STR);
             $stmt->bindValue(':limit_rows',       $limit,        PDO::PARAM_INT);
@@ -303,7 +268,6 @@ function trux_fetch_discovery_suggestions(?int $viewerId, int $limit = 6): array
             return $stmt->fetchAll();
         }
 
-        // Anonymous visitor — rank by follower count + recent activity only
         $stmt = $db->prepare(
             'SELECT u.id, u.username, u.display_name, u.avatar_path,
                     0                                                   AS mutual_count,

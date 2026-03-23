@@ -1,11 +1,12 @@
 <?php
+
 declare(strict_types=1);
 require_once __DIR__ . '/_bootstrap.php';
 
 trux_require_login();
 $me = trux_current_user();
 if (!$me) {
-    trux_redirect('/login.php');
+  trux_redirect('/login.php');
 }
 
 $viewerId = (int)$me['id'];
@@ -17,33 +18,54 @@ $selectedMessages = [];
 $recipientUser = null;
 
 if ($selectedConversationId > 0) {
-    $selectedConversation = trux_fetch_direct_conversation_for_user($selectedConversationId, $viewerId);
-    if (!$selectedConversation) {
-        trux_flash_set('error', 'Conversation not found.');
-        trux_redirect('/messages.php');
-    }
+  $selectedConversation = trux_fetch_direct_conversation_for_user($selectedConversationId, $viewerId);
+  if (!$selectedConversation) {
+    trux_flash_set('error', 'Conversation not found.');
+    trux_redirect('/messages.php');
+  }
 } elseif ($withUsername !== '') {
-    $recipientUser = trux_fetch_user_by_username($withUsername);
-    if (!$recipientUser || (int)$recipientUser['id'] === $viewerId) {
-        trux_flash_set('error', 'User not found.');
-        trux_redirect('/messages.php');
+  if (trux_is_report_system_user($withUsername)) {
+    $systemUser = trux_fetch_report_system_user();
+    if ($systemUser && (int)$systemUser['id'] !== $viewerId) {
+      $existingConversation = trux_fetch_direct_conversation_between($viewerId, (int)$systemUser['id']);
+      if ($existingConversation) {
+        trux_redirect('/messages.php?id=' . (int)$existingConversation['id']);
+      }
     }
 
-    $selectedConversation = trux_fetch_direct_conversation_between($viewerId, (int)$recipientUser['id']);
+    trux_flash_set('error', 'This inbox only appears after the system sends you an update.');
+    trux_redirect('/messages.php');
+  }
+
+  $recipientUser = trux_fetch_user_by_username($withUsername);
+  if (!$recipientUser || (int)$recipientUser['id'] === $viewerId) {
+    trux_flash_set('error', 'User not found.');
+    trux_redirect('/messages.php');
+  }
+
+  $selectedConversation = trux_fetch_direct_conversation_between($viewerId, (int)$recipientUser['id']);
 }
 
 $conversations = trux_fetch_direct_conversations($viewerId, 50);
 
 if (!$selectedConversation && $withUsername === '' && $conversations) {
-    $selectedConversation = trux_fetch_direct_conversation_for_user((int)$conversations[0]['id'], $viewerId);
+  $selectedConversation = trux_fetch_direct_conversation_for_user((int)$conversations[0]['id'], $viewerId);
 }
 
 if ($selectedConversation) {
-    $selectedMessages = trux_fetch_direct_messages((int)$selectedConversation['id'], $viewerId, 150);
-    if (!$recipientUser) {
-        $recipientUser = trux_fetch_user_by_id((int)$selectedConversation['other_user_id']);
-    }
+  $selectedMessages = trux_fetch_direct_messages((int)$selectedConversation['id'], $viewerId, 150);
+  if (!$recipientUser) {
+    $recipientUser = trux_fetch_user_by_id((int)$selectedConversation['other_user_id']);
+  }
 }
+
+$dmBlockedByViewer = $recipientUser && trux_has_blocked_user($viewerId, (int)$recipientUser['id']);
+$dmBlockedByThem   = $recipientUser && trux_has_blocked_user((int)$recipientUser['id'], $viewerId);
+$viewerDmRestricted = trux_moderation_is_user_dm_restricted($viewerId);
+$recipientIsReportSystem = $recipientUser && trux_is_report_system_user((string)$recipientUser['username']);
+$recipientLabel = $recipientUser
+  ? trux_direct_message_actor_label((string)$recipientUser['username'], (string)($recipientUser['display_name'] ?? ''))
+  : '';
 
 $activeConversationId = (int)($selectedConversation['id'] ?? 0);
 
@@ -78,7 +100,7 @@ require_once __DIR__ . '/_header.php';
               href="<?= TRUX_BASE_URL ?>/messages.php?id=<?= $conversationId ?>"
               <?= $isActive ? 'aria-current="page"' : '' ?>>
               <div class="messagesList__row">
-                <span class="messagesList__user">@<?= trux_e((string)$conversation['other_username']) ?></span>
+                <span class="messagesList__user"><?= trux_e(trux_direct_message_actor_label((string)$conversation['other_username'], (string)($conversation['other_display_name'] ?? ''))) ?></span>
                 <?php if ($lastAt !== ''): ?>
                   <span
                     class="messagesList__time muted"
@@ -104,12 +126,29 @@ require_once __DIR__ . '/_header.php';
 
   <section class="card messagesThread">
     <div class="card__body">
-      <?php if ($recipientUser): ?>
+      <?php if ($recipientUser && $dmBlockedByThem): ?>
+        <div class="messagesThread__empty muted" style="text-align:center;padding:3rem 1rem;">
+          <p style="font-size:18px;font-weight:900;color:var(--text);margin:0 0 8px;"><?= trux_e($recipientLabel) ?> has blocked you</p>
+          <p style="margin:0;">You are not able to send messages to this user.</p>
+        </div>
+      <?php elseif ($recipientUser && $viewerDmRestricted): ?>
+        <div class="messagesThread__empty muted" style="text-align:center;padding:3rem 1rem;">
+          <p style="font-size:18px;font-weight:900;color:var(--text);margin:0 0 8px;">Direct messages are restricted</p>
+          <p style="margin:0;">You can still read messages and receive moderation updates, but you cannot send new direct messages right now.</p>
+        </div>
+      <?php elseif ($recipientUser && $dmBlockedByViewer): ?>
+        <div class="messagesThread__empty muted" style="text-align:center;padding:3rem 1rem;">
+          <p style="font-size:18px;font-weight:900;color:var(--text);margin:0 0 8px;">You have blocked <?= trux_e($recipientLabel) ?></p>
+          <p style="margin:0;">Unblock this user from their profile to send messages.</p>
+        </div>
+      <?php elseif ($recipientUser): ?>
         <div class="messagesThread__head">
           <div>
-            <h2>@<?= trux_e((string)$recipientUser['username']) ?></h2>
+            <h2><?= trux_e($recipientLabel) ?></h2>
             <div class="muted">
-              <?php if ($activeConversationId > 0): ?>
+              <?php if ($recipientIsReportSystem): ?>
+                Automated moderation updates. Replies are disabled for this inbox.
+              <?php elseif ($activeConversationId > 0): ?>
                 Conversation active
               <?php else: ?>
                 New conversation
@@ -124,29 +163,67 @@ require_once __DIR__ . '/_header.php';
                 <button class="btn btn--small btn--ghost" type="submit">Mark as read</button>
               </form>
             <?php endif; ?>
-            <a class="btn btn--small btn--ghost" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$recipientUser['username']) ?>">View profile</a>
+            <?php if (!$recipientIsReportSystem): ?>
+              <a class="btn btn--small btn--ghost" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$recipientUser['username']) ?>">View profile</a>
+            <?php endif; ?>
           </div>
         </div>
 
         <div class="messagesThread__messages">
           <?php if (!$selectedMessages): ?>
-            <div class="muted">No messages yet. Say hello.</div>
+            <div class="muted"><?= $recipientIsReportSystem ? 'No moderation updates yet.' : 'No messages yet. Say hello.' ?></div>
           <?php else: ?>
             <?php foreach ($selectedMessages as $message): ?>
               <?php
               $isMine = (int)$message['sender_user_id'] === $viewerId;
               $messageTime = (string)$message['created_at'];
+              $messageId = (int)$message['id'];
+              $messageSenderUsername = (string)($message['sender_username'] ?? '');
+              $canReportMessage = !$isMine && !trux_is_report_system_user($messageSenderUsername);
+              $messageReportLabel = 'Message #' . $messageId . ' from @' . $messageSenderUsername;
+              $messageReportUrl = TRUX_BASE_URL . '/messages.php?id=' . $activeConversationId . '#message-' . $messageId;
               ?>
-              <article class="messageBubble<?= $isMine ? ' messageBubble--mine' : '' ?>">
+              <article id="message-<?= $messageId ?>" class="messageBubble<?= $isMine ? ' messageBubble--mine' : '' ?>">
                 <div class="messageBubble__meta">
-                  <span class="messageBubble__author"><?= $isMine ? 'You' : '@' . trux_e((string)$message['sender_username']) ?></span>
-                  <span
-                    class="muted"
-                    data-time-ago="1"
-                    data-time-source="<?= trux_e($messageTime) ?>"
-                    title="<?= trux_e(trux_format_exact_time($messageTime)) ?>">
-                    <?= trux_e(trux_time_ago($messageTime)) ?>
-                  </span>
+                  <div class="messageBubble__metaMain">
+                    <span class="messageBubble__author"><?= $isMine ? 'You' : trux_e(trux_direct_message_actor_label($messageSenderUsername, (string)($message['sender_display_name'] ?? ''))) ?></span>
+                    <span
+                      class="muted"
+                      data-time-ago="1"
+                      data-time-source="<?= trux_e($messageTime) ?>"
+                      title="<?= trux_e(trux_format_exact_time($messageTime)) ?>">
+                      <?= trux_e(trux_time_ago($messageTime)) ?>
+                    </span>
+                  </div>
+                  <?php if ($canReportMessage): ?>
+                    <div class="contentMenu messageBubble__menu" data-content-menu="1">
+                      <button
+                        class="contentMenu__trigger"
+                        type="button"
+                        aria-label="Open message actions"
+                        data-content-menu-trigger="1">
+                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                          <path d="M6.5 12a1.5 1.5 0 1 0 0-.01V12Zm5.5 0a1.5 1.5 0 1 0 0-.01V12Zm5.5 0a1.5 1.5 0 1 0 0-.01V12Z" fill="currentColor" />
+                        </svg>
+                      </button>
+                      <div class="contentMenu__panel" role="menu" aria-label="Message actions">
+                        <button
+                          class="contentMenu__item contentMenu__item--danger"
+                          type="button"
+                          role="menuitem"
+                          data-report-action="1"
+                          data-report-target-type="message"
+                          data-report-target-id="<?= $messageId ?>"
+                          data-report-open-url="<?= trux_e($messageReportUrl) ?>"
+                          data-report-target-label="<?= trux_e($messageReportLabel) ?>">
+                          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                            <path d="M6 20V5m0 0h9l-1.5 3L15 11H6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                          </svg>
+                          <span>Report message</span>
+                        </button>
+                      </div>
+                    </div>
+                  <?php endif; ?>
                 </div>
                 <div class="messageBubble__body"><?= trux_render_comment_body((string)$message['body']) ?></div>
               </article>
@@ -154,22 +231,32 @@ require_once __DIR__ . '/_header.php';
           <?php endif; ?>
         </div>
 
-        <form class="messagesComposer" method="post" action="<?= TRUX_BASE_URL ?>/send_message.php">
-          <?= trux_csrf_field() ?>
-          <?php if ($activeConversationId > 0): ?>
-            <input type="hidden" name="conversation_id" value="<?= $activeConversationId ?>">
-          <?php else: ?>
-            <input type="hidden" name="recipient_id" value="<?= (int)$recipientUser['id'] ?>">
-          <?php endif; ?>
-          <label class="field">
-            <span>Message</span>
-            <textarea name="body" rows="4" maxlength="2000" required placeholder="Write a private message..." data-mention-input="1"></textarea>
-          </label>
-          <div class="row row--spaced">
-            <span class="muted">Only text messages for now.</span>
-            <button class="btn" type="submit">Send message</button>
+        <?php if ($recipientIsReportSystem): ?>
+          <div class="messagesThread__empty muted">
+            This inbox only sends automated report updates. Replies are not accepted.
           </div>
-        </form>
+        <?php elseif ($viewerDmRestricted): ?>
+          <div class="messagesThread__empty muted">
+            Direct messaging is currently disabled on your account. You can still review this thread and receive system updates here.
+          </div>
+        <?php else: ?>
+          <form class="messagesComposer" method="post" action="<?= TRUX_BASE_URL ?>/send_message.php">
+            <?= trux_csrf_field() ?>
+            <?php if ($activeConversationId > 0): ?>
+              <input type="hidden" name="conversation_id" value="<?= $activeConversationId ?>">
+            <?php else: ?>
+              <input type="hidden" name="recipient_id" value="<?= (int)$recipientUser['id'] ?>">
+            <?php endif; ?>
+            <label class="field">
+              <span>Message</span>
+              <textarea name="body" rows="4" maxlength="2000" required placeholder="Write a private message..." data-mention-input="1"></textarea>
+            </label>
+            <div class="row row--spaced">
+              <span class="muted">Only text messages for now.</span>
+              <button class="btn" type="submit">Send message</button>
+            </div>
+          </form>
+        <?php endif; ?>
       <?php else: ?>
         <div class="messagesThread__empty muted">
           Select a conversation from the inbox or start one from a user profile.

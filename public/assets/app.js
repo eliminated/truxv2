@@ -1061,6 +1061,18 @@
             aria-label="${c.bookmarked ? "Remove bookmark" : "Bookmark comment"}">
             <span data-comment-bookmark-label="1">${c.bookmarked ? "Saved" : "Bookmark"}</span>
           </button>
+          ${
+            c.can_report
+              ? `<button
+            type="button"
+            class="commentDock__reportBtn"
+            data-report-action="1"
+            data-report-target-type="comment"
+            data-report-target-id="${c.id}"
+            data-report-open-url="${esc(c.report_url || `${window.TRUX_BASE_URL || ""}/post.php?id=${c.post_id}&viewer=1&comment_id=${c.id}`)}"
+            data-report-target-label="${esc(c.report_label || `Comment #${c.id} by @${c.username}`)}">Report</button>`
+              : ""
+          }
           <button
             type="button"
             class="commentDock__replyBtn"
@@ -1576,6 +1588,20 @@
 
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      const reportModal = document.getElementById("postReportModal");
+      if (
+        reportModal instanceof HTMLElement &&
+        !reportModal.hasAttribute("hidden")
+      ) {
+        e.preventDefault();
+        const closeTrigger = reportModal.querySelector(
+          "[data-report-close='1'], [data-report-cancel='1']"
+        );
+        if (closeTrigger instanceof HTMLElement) {
+          closeTrigger.click();
+        }
+        return;
+      }
       if (isEditOpen()) {
         e.preventDefault();
         closeEditModal();
@@ -3323,4 +3349,363 @@
   document.querySelectorAll("[data-auto-pager]").forEach((pager) => {
     initAutoPager(pager);
   });
+})();
+
+(() => {
+  const reviewModals = Array.from(
+    document.querySelectorAll("[data-review-modal='1']")
+  ).filter((modal) => modal instanceof HTMLElement);
+  if (!reviewModals.length) return;
+
+  const modalMap = new Map();
+  reviewModals.forEach((modal) => {
+    if (!(modal instanceof HTMLElement) || !modal.id) return;
+    if (document.body && modal.parentElement !== document.body) {
+      document.body.appendChild(modal);
+    }
+    modalMap.set(modal.id, modal);
+  });
+
+  let activeReviewModal = null;
+  let reviewReturnFocus = null;
+
+  const applyModalResetUrl = (modal) => {
+    if (!(modal instanceof HTMLElement)) return;
+    const resetUrl = modal.getAttribute("data-review-modal-reset-url") || "";
+    if (!resetUrl || !window.history || typeof window.history.replaceState !== "function") {
+      return;
+    }
+
+    try {
+      window.history.replaceState({}, "", resetUrl);
+    } catch {
+      // Ignore URL reset failures and still close the modal.
+    }
+  };
+
+  const closeReviewModal = (options = {}) => {
+    if (!(activeReviewModal instanceof HTMLElement)) return;
+
+    const shouldRestoreFocus = options.restoreFocus !== false;
+    const closingModal = activeReviewModal;
+    activeReviewModal.setAttribute("hidden", "hidden");
+    document.body.classList.remove("reviewModal-open");
+    applyModalResetUrl(closingModal);
+
+    if (
+      shouldRestoreFocus &&
+      reviewReturnFocus &&
+      typeof reviewReturnFocus.focus === "function"
+    ) {
+      reviewReturnFocus.focus();
+    }
+
+    activeReviewModal = null;
+    reviewReturnFocus = null;
+  };
+
+  const openReviewModal = (modalId, trigger = null) => {
+    const modal = modalMap.get(String(modalId || ""));
+    if (!(modal instanceof HTMLElement)) {
+      return false;
+    }
+
+    if (activeReviewModal && activeReviewModal !== modal) {
+      closeReviewModal({ restoreFocus: false });
+    }
+
+    reviewReturnFocus = trigger instanceof HTMLElement ? trigger : null;
+    activeReviewModal = modal;
+    modal.removeAttribute("hidden");
+    document.body.classList.add("reviewModal-open");
+
+    window.setTimeout(() => {
+      const focusTarget = modal.querySelector(
+        "input:not([type='hidden']), select, textarea, button"
+      );
+      if (focusTarget instanceof HTMLElement) {
+        focusTarget.focus();
+      }
+    }, 20);
+
+    return true;
+  };
+
+  document.addEventListener("click", (e) => {
+    if (!(e.target instanceof Element)) return;
+
+    const closeTrigger = e.target.closest("[data-review-modal-close='1']");
+    if (closeTrigger instanceof HTMLElement) {
+      e.preventDefault();
+      closeReviewModal();
+      return;
+    }
+
+    const openTrigger = e.target.closest("[data-review-modal-open]");
+    if (openTrigger instanceof HTMLElement) {
+      const modalId = openTrigger.getAttribute("data-review-modal-open") || "";
+      if (!modalId) return;
+      e.preventDefault();
+      openReviewModal(modalId, openTrigger);
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (!(activeReviewModal instanceof HTMLElement)) return;
+    closeReviewModal();
+  });
+
+  const autoOpenModal = document.querySelector("[data-review-modal-autopen='1']");
+  if (autoOpenModal instanceof HTMLElement && autoOpenModal.id) {
+    openReviewModal(autoOpenModal.id);
+  }
+})();
+
+(() => {
+  const reportModal = document.getElementById("postReportModal");
+  if (!(reportModal instanceof HTMLElement)) return;
+
+  const reportForm = reportModal.querySelector("[data-report-form='1']");
+  const reportTargetTypeField = reportModal.querySelector("[data-report-target-type='1']");
+  const reportTargetIdField = reportModal.querySelector("[data-report-target-id='1']");
+  const reportTargetText = reportModal.querySelector("[data-report-target-text='1']");
+  const reportOpenLink = reportModal.querySelector("[data-report-open-link='1']");
+  const reportFlash = reportModal.querySelector("[data-report-flash='1']");
+  const reportReasonField = reportModal.querySelector("[data-report-reason='1']");
+  const reportDetailsField = reportModal.querySelector("[data-report-details='1']");
+  const reportUpdatesField = reportModal.querySelector("[data-report-updates='1']");
+  const reportSubmitBtn = reportModal.querySelector("[data-report-submit='1']");
+
+  if (
+    !(reportForm instanceof HTMLFormElement) ||
+    !(reportTargetTypeField instanceof HTMLInputElement) ||
+    !(reportTargetIdField instanceof HTMLInputElement) ||
+    !(reportTargetText instanceof HTMLElement) ||
+    !(reportOpenLink instanceof HTMLAnchorElement) ||
+    !(reportFlash instanceof HTMLElement) ||
+    !(reportReasonField instanceof HTMLSelectElement) ||
+    !(reportDetailsField instanceof HTMLTextAreaElement) ||
+    !(reportUpdatesField instanceof HTMLInputElement) ||
+    !(reportSubmitBtn instanceof HTMLButtonElement)
+  ) {
+    return;
+  }
+
+  let reportReturnFocus = null;
+
+  const readJson = async (res) => {
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { ok: false, error: text || "Request failed." };
+    }
+  };
+
+  const getCsrfToken = () => {
+    const input = document.querySelector("input[name='_csrf']");
+    return input instanceof HTMLInputElement ? input.value : "";
+  };
+
+  const resolveAbsoluteUrl = (value) => {
+    try {
+      return new URL(String(value || "/"), window.location.origin).toString();
+    } catch {
+      return window.location.href;
+    }
+  };
+
+  const closeAllContentMenus = () => {
+    document.querySelectorAll("[data-content-menu='1']").forEach((menu) => {
+      if (!(menu instanceof HTMLElement)) return;
+      menu.classList.remove("is-open");
+      const post = menu.closest(".post");
+      if (post instanceof HTMLElement) {
+        post.classList.remove("post--menuOpen");
+      }
+    });
+  };
+
+  const setReportFlash = (message = "") => {
+    const text = String(message || "").trim();
+    if (!text) {
+      reportFlash.hidden = true;
+      reportFlash.textContent = "";
+      return;
+    }
+    reportFlash.hidden = false;
+    reportFlash.textContent = text;
+  };
+
+  const isReportOpen = () => !reportModal.hasAttribute("hidden");
+
+  const setReportBusy = (busy) => {
+    reportSubmitBtn.disabled = !!busy;
+    reportReasonField.disabled = !!busy;
+    reportDetailsField.readOnly = !!busy;
+    reportUpdatesField.disabled = !!busy;
+  };
+
+  const openReportModal = (options = {}) => {
+    const targetType = String(options.targetType || "").trim().toLowerCase();
+    const targetId = Number(options.targetId || 0);
+    const targetLabel = String(options.targetLabel || "").trim();
+    const openUrl = resolveAbsoluteUrl(options.openUrl || `${window.TRUX_BASE_URL || ""}/`);
+    const trigger = options.trigger;
+    if (!targetType || targetId <= 0) {
+      return false;
+    }
+
+    reportReturnFocus =
+      trigger instanceof HTMLElement || trigger instanceof HTMLButtonElement
+        ? trigger
+        : null;
+
+    reportForm.reset();
+    reportTargetTypeField.value = targetType;
+    reportTargetIdField.value = String(targetId);
+    reportTargetText.textContent = targetLabel || `${targetType} #${targetId}`;
+    reportOpenLink.href = openUrl;
+    setReportFlash("");
+    setReportBusy(false);
+    reportModal.removeAttribute("hidden");
+    document.body.classList.add("reportModal-open");
+
+    window.setTimeout(() => {
+      reportReasonField.focus();
+    }, 20);
+
+    return true;
+  };
+
+  const closeReportModal = (options = {}) => {
+    if (!isReportOpen()) return;
+
+    const shouldRestoreFocus = options.restoreFocus !== false;
+    reportModal.setAttribute("hidden", "hidden");
+    document.body.classList.remove("reportModal-open");
+    reportForm.reset();
+    reportTargetTypeField.value = "";
+    reportTargetIdField.value = "";
+    reportTargetText.textContent = "Content";
+    reportOpenLink.href = `${window.TRUX_BASE_URL || ""}/`;
+    setReportFlash("");
+    setReportBusy(false);
+
+    if (
+      shouldRestoreFocus &&
+      reportReturnFocus &&
+      typeof reportReturnFocus.focus === "function"
+    ) {
+      reportReturnFocus.focus();
+    }
+    reportReturnFocus = null;
+  };
+
+  document.addEventListener("click", (e) => {
+    if (!(e.target instanceof Element)) return;
+
+    const closeTrigger = e.target.closest(
+      "[data-report-close='1'], [data-report-cancel='1']"
+    );
+    if (closeTrigger instanceof HTMLElement) {
+      e.preventDefault();
+      closeReportModal();
+      return;
+    }
+
+    const reportBtn = e.target.closest("[data-report-action='1']");
+    if (reportBtn instanceof HTMLElement) {
+      e.preventDefault();
+      closeAllContentMenus();
+
+      const targetType = reportBtn.getAttribute("data-report-target-type") || "";
+      const targetId = Number(reportBtn.getAttribute("data-report-target-id") || "0");
+      const targetLabel = reportBtn.getAttribute("data-report-target-label") || "";
+      const openUrl = reportBtn.getAttribute("data-report-open-url") || "";
+
+      if (!openReportModal({ targetType, targetId, targetLabel, openUrl, trigger: reportBtn })) {
+        window.alert("Reporting is unavailable right now.");
+      }
+    }
+  });
+
+  reportForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+
+    const targetType = reportTargetTypeField.value.trim().toLowerCase();
+    const targetId = Number(reportTargetIdField.value || "0");
+    const reasonKey = reportReasonField.value.trim();
+    const details = reportDetailsField.value.trim();
+    const wantsReporterDmUpdates = !!reportUpdatesField.checked;
+
+    if (!targetType || targetId <= 0) {
+      setReportFlash("Action unavailable right now.");
+      return;
+    }
+
+    if (!reasonKey) {
+      setReportFlash("Choose a violation before submitting.");
+      reportReasonField.focus();
+      return;
+    }
+
+    const csrf = getCsrfToken();
+    if (!csrf) {
+      setReportFlash("Session expired. Please refresh the page and try again.");
+      return;
+    }
+
+    const body = new URLSearchParams({
+      _csrf: csrf,
+      target_type: targetType,
+      target_id: String(targetId),
+      reason_key: reasonKey,
+      details,
+    });
+    if (wantsReporterDmUpdates) {
+      body.append("wants_reporter_dm_updates", "1");
+    }
+
+    setReportFlash("");
+    setReportBusy(true);
+
+    try {
+      const res = await fetch(
+        `${window.TRUX_BASE_URL || ""}/report.php?format=json`,
+        {
+          method: "POST",
+          headers: { Accept: "application/json" },
+          body,
+        }
+      );
+      const data = await readJson(res);
+      if (res.status === 401 && data.login_url) {
+        window.location.href = String(data.login_url);
+        return;
+      }
+      if (!res.ok || !data.ok) {
+        throw new Error(data.error || "Could not submit the report.");
+      }
+
+      closeReportModal();
+      if (typeof window.truxToast === "function") {
+        window.truxToast(
+          String(data.message || "Report submitted."),
+          "success"
+        );
+      }
+    } catch (err) {
+      setReportFlash(
+        err instanceof Error ? err.message : "Could not submit the report."
+      );
+    } finally {
+      if (isReportOpen()) {
+        setReportBusy(false);
+      }
+    }
+  });
+
+  window.truxOpenReportModal = openReportModal;
 })();

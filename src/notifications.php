@@ -9,6 +9,7 @@ function trux_notification_defaults(): array {
         'notify_follows' => true,
         'notify_post_comments' => true,
         'notify_replies' => true,
+        'notify_report_updates_default' => false,
     ];
 }
 
@@ -37,6 +38,10 @@ function trux_notification_pref_labels(): array {
         'notify_replies' => [
             'title' => 'Replies to your comments',
             'description' => 'When someone replies to one of your comments.',
+        ],
+        'notify_report_updates_default' => [
+            'title' => 'Report update DMs',
+            'description' => 'Preselect private moderation follow-up messages when you submit a report.',
         ],
     ];
 }
@@ -68,7 +73,8 @@ function trux_fetch_notification_preferences(int $userId): array {
     try {
         $db = trux_db();
         $stmt = $db->prepare(
-            'SELECT notify_post_likes, notify_comment_votes, notify_mentions, notify_follows, notify_post_comments, notify_replies
+            'SELECT notify_post_likes, notify_comment_votes, notify_mentions, notify_follows, notify_post_comments, notify_replies,
+                    notify_report_updates_default
              FROM users
              WHERE id = ?
              LIMIT 1'
@@ -112,7 +118,8 @@ function trux_update_notification_preferences(int $userId, array $submitted): bo
                  notify_mentions = ?,
                  notify_follows = ?,
                  notify_post_comments = ?,
-                 notify_replies = ?
+                 notify_replies = ?,
+                 notify_report_updates_default = ?
              WHERE id = ?'
         );
         $stmt->execute([
@@ -122,6 +129,7 @@ function trux_update_notification_preferences(int $userId, array $submitted): bo
             $values['notify_follows'],
             $values['notify_post_comments'],
             $values['notify_replies'],
+            $values['notify_report_updates_default'],
             $userId,
         ]);
         return true;
@@ -183,7 +191,15 @@ function trux_notification_event_key(string $type, int $actorUserId, ?int $postI
     ]);
 }
 
-function trux_create_notification(int $recipientUserId, int $actorUserId, string $type, ?int $postId = null, ?int $commentId = null): void {
+function trux_create_custom_notification(
+    int $recipientUserId,
+    int $actorUserId,
+    string $type,
+    string $eventKey,
+    ?int $postId = null,
+    ?int $commentId = null,
+    ?string $targetUrl = null
+): void {
     if ($recipientUserId <= 0 || $actorUserId <= 0 || $recipientUserId === $actorUserId || $type === '') {
         return;
     }
@@ -202,10 +218,10 @@ function trux_create_notification(int $recipientUserId, int $actorUserId, string
 
     try {
         $db = trux_db();
-        $eventKey = trux_notification_event_key($type, $actorUserId, $postId, $commentId);
+        $targetUrl = trux_moderation_clean_path($targetUrl);
         $stmt = $db->prepare(
-            'INSERT INTO notifications (recipient_user_id, actor_user_id, type, event_key, post_id, comment_id)
-             VALUES (?, ?, ?, ?, ?, ?)
+            'INSERT INTO notifications (recipient_user_id, actor_user_id, type, event_key, post_id, comment_id, target_url)
+             VALUES (?, ?, ?, ?, ?, ?, ?)
              ON DUPLICATE KEY UPDATE created_at = created_at'
         );
         $stmt->execute([
@@ -215,10 +231,23 @@ function trux_create_notification(int $recipientUserId, int $actorUserId, string
             $eventKey,
             $postId !== null && $postId > 0 ? $postId : null,
             $commentId !== null && $commentId > 0 ? $commentId : null,
+            $targetUrl,
         ]);
     } catch (PDOException) {
         // Notifications should not break primary actions if the migration is missing.
     }
+}
+
+function trux_create_notification(
+    int $recipientUserId,
+    int $actorUserId,
+    string $type,
+    ?int $postId = null,
+    ?int $commentId = null,
+    ?string $targetUrl = null
+): void {
+    $eventKey = trux_notification_event_key($type, $actorUserId, $postId, $commentId);
+    trux_create_custom_notification($recipientUserId, $actorUserId, $type, $eventKey, $postId, $commentId, $targetUrl);
 }
 
 function trux_remove_notifications_from_actor(int $recipientUserId, int $actorUserId): void {
@@ -317,6 +346,23 @@ function trux_notify_mentions_for_comment(int $postId, int $commentId, int $acto
     }
 }
 
+function trux_notify_moderation_post_review_action(int $recipientUserId, int $postId): void {
+    $systemUserId = trux_report_system_user_id();
+    if ($recipientUserId <= 0 || $postId <= 0 || $systemUserId <= 0) {
+        return;
+    }
+
+    trux_create_custom_notification(
+        $recipientUserId,
+        $systemUserId,
+        'moderation_post_review_action',
+        'moderation_post_review_action:post:' . $postId,
+        null,
+        null,
+        '/notifications.php'
+    );
+}
+
 function trux_count_unread_notifications(int $userId): int {
     if ($userId <= 0) {
         return 0;
@@ -355,7 +401,7 @@ function trux_fetch_notifications(int $userId, int $limit = 50): array {
         $db = trux_db();
         $queryLimit = min(300, max($limit * 3, $limit));
         $stmt = $db->prepare(
-            'SELECT n.id, n.type, n.post_id, n.comment_id, n.read_at, n.created_at, n.actor_user_id, actor.username AS actor_username
+            'SELECT n.id, n.type, n.post_id, n.comment_id, n.target_url, n.read_at, n.created_at, n.actor_user_id, actor.username AS actor_username
              FROM notifications n
              JOIN users actor ON actor.id = n.actor_user_id
              WHERE n.recipient_user_id = ?
@@ -425,6 +471,11 @@ function trux_notification_url(array $notification): string {
     $actorUsername = (string)($notification['actor_username'] ?? '');
     $postId = isset($notification['post_id']) && $notification['post_id'] !== null ? (int)$notification['post_id'] : 0;
     $commentId = isset($notification['comment_id']) && $notification['comment_id'] !== null ? (int)$notification['comment_id'] : 0;
+    $targetUrl = trux_moderation_clean_path((string)($notification['target_url'] ?? ''));
+
+    if ($targetUrl !== null && $targetUrl !== '') {
+        return trux_public_url($targetUrl);
+    }
 
     return match ($type) {
         'follow' => $actorUsername !== '' ? TRUX_BASE_URL . '/profile.php?u=' . urlencode($actorUsername) : TRUX_BASE_URL . '/notifications.php',
@@ -448,6 +499,14 @@ function trux_notification_text(array $notification): string {
         'follow' => $actor . ' started following you.',
         'post_comment' => $actor . ' commented on your post.',
         'comment_reply' => $actor . ' replied to your comment.',
+        'moderation_post_review_action' => 'A moderation review confirmed violations in one of your posts. Moderation action has been taken.',
+        'moderation_post_removed' => 'A moderation review removed one of your posts.',
+        'moderation_comment_removed' => 'A moderation review removed one of your comments or replies.',
+        'moderation_message_removed' => 'A moderation review removed one of your direct messages.',
+        'moderation_warning_issued' => 'A moderation review issued a warning on your account.',
+        'moderation_dm_restricted' => 'A moderation review restricted your direct-message access.',
+        'moderation_account_suspended' => 'A moderation review suspended your account.',
+        'moderation_account_locked' => 'A moderation review locked your account.',
         default => $actor . ' sent you a notification.',
     };
 }

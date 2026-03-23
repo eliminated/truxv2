@@ -8,7 +8,7 @@ function trux_fetch_user_by_id(int $userId): ?array {
 
     $db = trux_db();
     $stmt = $db->prepare(
-        'SELECT id, username, email, display_name, bio, location, website_url, avatar_path, banner_path, created_at
+        'SELECT id, username, email, display_name, bio, location, website_url, avatar_path, banner_path, created_at, staff_role
          FROM users
          WHERE id = ?
          LIMIT 1'
@@ -39,7 +39,7 @@ function trux_fetch_direct_conversation_between(int $viewerId, int $otherUserId)
     $db = trux_db();
     $stmt = $db->prepare(
         'SELECT c.id, c.user_one_id, c.user_two_id, c.created_at, c.updated_at,
-                u.id AS other_user_id, u.username AS other_username
+                u.id AS other_user_id, u.username AS other_username, u.display_name AS other_display_name
          FROM direct_conversations c
          JOIN users u ON u.id = ?
          WHERE c.user_one_id = ? AND c.user_two_id = ?
@@ -59,7 +59,7 @@ function trux_fetch_direct_conversation_for_user(int $conversationId, int $viewe
     $db = trux_db();
     $stmt = $db->prepare(
         'SELECT c.id, c.user_one_id, c.user_two_id, c.created_at, c.updated_at,
-                u.id AS other_user_id, u.username AS other_username
+                u.id AS other_user_id, u.username AS other_username, u.display_name AS other_display_name
          FROM direct_conversations c
          JOIN users u ON u.id = CASE
             WHEN c.user_one_id = :viewer_id THEN c.user_two_id
@@ -155,7 +155,7 @@ function trux_fetch_direct_messages(int $conversationId, int $viewerId, int $lim
     $limit = max(1, min(200, $limit));
     $db = trux_db();
     $stmt = $db->prepare(
-        'SELECT m.id, m.conversation_id, m.sender_user_id, m.body, m.created_at, m.read_at, u.username AS sender_username
+        'SELECT m.id, m.conversation_id, m.sender_user_id, m.body, m.created_at, m.read_at, u.username AS sender_username, u.display_name AS sender_display_name
          FROM direct_messages m
          JOIN users u ON u.id = m.sender_user_id
          WHERE m.conversation_id = ?
@@ -225,7 +225,7 @@ function trux_fetch_direct_conversations(int $viewerId, int $limit = 50): array 
     try {
         $stmt = $db->prepare(
             'SELECT c.id, c.user_one_id, c.user_two_id, c.created_at, c.updated_at,
-                    u.id AS other_user_id, u.username AS other_username,
+                    u.id AS other_user_id, u.username AS other_username, u.display_name AS other_display_name,
                     (
                         SELECT dm.body
                         FROM direct_messages dm
@@ -267,6 +267,21 @@ function trux_fetch_direct_conversations(int $viewerId, int $limit = 50): array 
     } catch (PDOException) {
         return [];
     }
+}
+
+function trux_direct_message_actor_label(?string $username, ?string $displayName = null): string {
+    $name = trim((string)$username);
+    $display = trim((string)$displayName);
+
+    if ($name === '') {
+        return $display !== '' ? $display : 'Unknown';
+    }
+
+    if (trux_is_report_system_user($name)) {
+        return $display !== '' ? $display : trux_report_system_display_name();
+    }
+
+    return '@' . $name;
 }
 
 function trux_direct_message_preview(?string $body, int $limit = 90): string {

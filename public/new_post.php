@@ -58,6 +58,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
 
             if ($error === null) {
+                trux_moderation_record_activity_event('post_created', (int)$user['id'], [
+                    'subject_type' => 'post',
+                    'subject_id' => $postId,
+                    'source_url' => trux_post_viewer_path($postId),
+                    'metadata' => [
+                        'has_image' => is_string($imagePath) && $imagePath !== '',
+                        'body_length' => mb_strlen($body),
+                        'link_count' => trux_moderation_link_count($body),
+                        'body_hash' => trux_moderation_text_fingerprint($body),
+                    ],
+                ]);
+
                 if ($isJson) {
                     $post = trux_fetch_post_by_id($postId);
                     header('Content-Type: application/json; charset=utf-8');

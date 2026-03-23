@@ -106,6 +106,21 @@ if ($commentId <= 0) {
     }
     trux_flash_set('error', 'Could not add comment.');
 } else {
+    $eventType = $parentId !== null && $parentId > 0 ? 'reply_created' : 'comment_created';
+    trux_moderation_record_activity_event($eventType, $me ? (int)$me['id'] : null, [
+        'subject_type' => 'comment',
+        'subject_id' => $commentId,
+        'related_user_id' => $replyToUserId,
+        'source_url' => trux_post_viewer_path($postId, $commentId),
+        'metadata' => [
+            'post_id' => $postId,
+            'parent_comment_id' => $parentId,
+            'body_length' => mb_strlen($text),
+            'link_count' => trux_moderation_link_count($text),
+            'body_hash' => trux_moderation_text_fingerprint($text),
+        ],
+    ]);
+
     if ($isJson) {
         $stats = trux_fetch_post_interactions([$postId], $me ? (int)$me['id'] : null);
         $s = $stats[$postId] ?? ['comments' => 0];

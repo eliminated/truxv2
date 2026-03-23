@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 require_once __DIR__ . '/_bootstrap.php';
@@ -71,18 +72,48 @@ try {
     $backToProfile = '/profile.php?u=' . urlencode($targetUsername);
     $redirectPath = $safeRedirect !== '' ? $safeRedirect : $backToProfile;
 
+    if (trux_is_report_system_user($targetUsername)) {
+        trux_flash_set('error', 'Action unavailable.');
+        trux_redirect($safeRedirect !== '' ? $safeRedirect : '/');
+    }
+
     if ((int)$me['id'] === $targetId) {
         trux_flash_set('error', 'This is you.');
+        trux_redirect($redirectPath);
+    }
+
+    if (trux_block_exists_between((int)$me['id'], $targetId)) {
+        trux_flash_set('error', 'Action unavailable.');
         trux_redirect($redirectPath);
     }
 
     if ($action === 'follow') {
         trux_follow((int)$me['id'], $targetId);
         trux_notify_follow($targetId, (int)$me['id']);
+        trux_moderation_record_activity_event('follow_created', (int)$me['id'], [
+            'subject_type' => 'user',
+            'subject_id' => $targetId,
+            'related_user_id' => $targetId,
+            'source_url' => $redirectPath,
+            'metadata' => [
+                'target_user_id' => $targetId,
+                'target_username' => $targetUsername,
+            ],
+        ]);
         trux_flash_set('success', 'Now following @' . $targetUsername . '.');
     } else {
         trux_unfollow((int)$me['id'], $targetId);
         trux_remove_follow_notification($targetId, (int)$me['id']);
+        trux_moderation_record_activity_event('follow_removed', (int)$me['id'], [
+            'subject_type' => 'user',
+            'subject_id' => $targetId,
+            'related_user_id' => $targetId,
+            'source_url' => $redirectPath,
+            'metadata' => [
+                'target_user_id' => $targetId,
+                'target_username' => $targetUsername,
+            ],
+        ]);
         trux_flash_set('success', 'Unfollowed @' . $targetUsername . '.');
     }
 

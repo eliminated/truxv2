@@ -82,6 +82,11 @@ foreach ($comments as $c) {
         'score' => (int)$vote['score'],
         'viewer_vote' => (int)$vote['viewer_vote'],
         'bookmarked' => (bool)($bookmarkMap[$commentId] ?? false),
+        'can_report' => $viewerId > 0
+            && $viewerId !== (int)$c['user_id']
+            && !trux_is_report_system_user((string)$c['username']),
+        'report_label' => 'Comment #' . $commentId . ' by @' . (string)$c['username'],
+        'report_url' => trux_post_viewer_path((int)$c['post_id'], $commentId),
     ];
 }
 

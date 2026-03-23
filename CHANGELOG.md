@@ -1,4 +1,66 @@
 # Omincus Updates
+## Omnicus v0.5.0
+
+**Branch**: Production
+**Date**: 2026-03-23
+
+***
+
+### Added
+
+- Staff-only moderation area with dashboard, reports queue, suspicious activity review, user review workspace, audit logs, and admin-only `Staff Access`
+- Real moderation modules for `Escalations`, `Rule Tuning`, and `Appeals`, plus the public `/appeal.php` route for account-action appeals
+- Full user-case lifecycle support with case status, priority, resolution fields, closure metadata, escalation linkage, linked notes, linked reports, linked suspicious events, linked enforcements, and linked appeals
+- Account-level enforcement history for confirmed violations, including warnings, DM restrictions, timed suspensions, and account locks
+- Structured report finalization with content outcome, optional case creation/update, optional account action, optional suspension end time, and resolution notes
+- Suspicious-activity triage actions for assignment, review, false-positive, reopen, open linked report, open/create linked user case, and escalate to the admin queue
+- Target-owner moderation notifications for removed posts, comments, messages, and account-level enforcement outcomes, with moderation deep links
+- Persistent reporter-update default in Settings and prechecked report-modal behavior for users who opt into report-update DMs by default
+- Moderation queue badges in the header profile menu and moderation sidebar for reports, user review, suspicious activity, escalations, and appeals
+- Database-backed moderation rule tuning for `repeated_failed_login`, `content_burst`, `dm_burst_multiple_recipients`, `multiple_reports_same_account`, `spam_link_burst`, `duplicate_content_burst`, `follow_burst`, and `multiple_blocks_same_account`
+- New moderation/reporting migrations:
+  `database/migrations/20260320_add_blocked_users.sql`,
+  `database/migrations/20260321_add_moderation_foundations.sql`,
+  `database/migrations/20260321_add_reporter_dm_updates_preference.sql`,
+  `database/migrations/20260321_add_report_system_user.sql`,
+  `database/migrations/20260321_add_moderation_report_review_workspace.sql`,
+  `database/migrations/20260323_add_unified_reporting_and_user_cases.sql`,
+  and `database/migrations/20260323_complete_moderation_v050.sql`
+
+***
+
+### Changed
+
+- Moderation dashboards, queues, and review tools now use a shared responsive moderation shell for desktop and mobile, with live queue badges instead of placeholder future-module cards
+- Report reviews now happen through the dedicated review popup instead of inline queue actions, and archived reports still require owner-only reopen before re-review
+- Reporter DMs now cover submitted, resolved, and dismissed report outcomes without pretending the per-report checkbox changed the global account preference
+- Suspicious-rule evaluation now reads tunable thresholds from the database instead of hardcoded values
+- Post, comment, reply, DM, follow, and block activity logging now carries the metadata needed for rule tuning and burst detection, including text fingerprints and link counts where relevant
+- The moderation workspace now treats account-action appeals as public token-based flows so suspended or locked users can still submit an appeal
+
+***
+
+### Fixed
+
+- Reports page filters now correctly show all matching reports when `All` is selected
+- Suspended and locked accounts are now forced out of active sessions instead of only being blocked on the next login attempt
+- DM-restricted accounts can no longer send outbound direct messages while still receiving moderation/system updates
+- Reporter-update defaults now persist from Settings into the report modal instead of making reporters recheck the box every time
+- Moderation notifications can now deep-link into the correct report, case, escalation, appeal, or appeal form destination without overloading post/comment notification fields
+- The internal `Report System Updates` identity is no longer exposed like a normal public profile/account
+
+***
+
+### Technical
+
+- Expanded the moderation helper layer with enforcement, escalation, appeal, suspicious-triage, rule-config, queue-badge, and case-workflow services
+- Added report discussion and vote persistence plus archived-report immutability rules for non-owner staff
+- Added moderation/security activity recording for login, posting, comments, DMs, follow, mute, and block flows, including the new heuristic metadata fields used by v0.5.0 rules
+- Extended notifications with nullable `target_url` and added moderation outcome notification types for comment removal, message removal, warnings, DM restrictions, suspensions, and locks
+- Added new staff/reporting routes: `/moderation/`, `/moderation/reports.php`, `/moderation/activity.php`, `/moderation/user_review.php`, `/moderation/escalations.php`, `/moderation/rule_tuning.php`, `/moderation/appeals.php`, `/moderation/audit_logs.php`, `/moderation/staff.php`, `/report.php`, `/report_post.php`, `/appeal.php`, and a compatibility redirect for `/assign_staff_role.php`
+
+***
+
 ## Omnicus v0.4.10 - UX Improvements
 
 **Branch**: Production

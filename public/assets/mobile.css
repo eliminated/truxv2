@@ -133,6 +133,44 @@
   .messagesLayout {
     grid-template-columns: 1fr;
   }
+
+  .moderationLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .moderationSidebar {
+    position: static;
+  }
+
+  .moderationPanelGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .moderationPanelGrid--staffAccess,
+  .moderationStaffWorkspaceGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .moderationFilters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .moderationFilters__search {
+    grid-column: span 2;
+  }
+
+  .moderationNav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .moderationTableWrap {
+    display: none;
+  }
+
+  .moderationCards {
+    display: grid;
+    gap: 10px;
+  }
 }
 
 @media (max-width: 640px) {
@@ -192,6 +230,70 @@
     justify-content: flex-end;
   }
 
+  .reportModal__head {
+    flex-wrap: wrap;
+  }
+
+  .reportModal__summary {
+    gap: 10px;
+  }
+
+  .reportModal__checkbox {
+    padding: 12px;
+  }
+
+  .reviewModal {
+    padding: 12px;
+  }
+
+  .reviewModal__panel {
+    width: min(100vw - 16px, 100%);
+    max-height: calc(100vh - 18px);
+  }
+
+  .reviewModal__panel--workspace {
+    width: min(100vw - 10px, 100%);
+    max-height: calc(100vh - 12px);
+  }
+
+  .reviewModal__body {
+    padding: 14px;
+  }
+
+  .reviewModal__grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
+  .reviewModal__grid--staffWorkspace,
+  .reviewModal__grid--userReviewWorkspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+
+  .reviewModal__card--span-rows {
+    grid-row: auto;
+  }
+
+  .reviewModal__head,
+  .reviewModal__headMeta,
+  .reviewModal__sectionHead,
+  .reviewModal__metaRow,
+  .reviewModalVoteList__item,
+  .reviewModalDiscussion__meta {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .reviewModal__formRow,
+  .reviewModal__discussionForm {
+    grid-template-columns: 1fr;
+  }
+
+  .reviewModalWorkspace {
+    grid-template-rows: auto;
+  }
+
   .profile__masthead,
   .profile__feedHead {
     padding: 14px;
@@ -208,5 +310,40 @@
 
   .settingsNav {
     grid-template-columns: 1fr;
+  }
+
+  .moderationFilters {
+    grid-template-columns: 1fr;
+  }
+
+  .moderationFilters__search {
+    grid-column: auto;
+  }
+
+  .moderationNav {
+    grid-template-columns: 1fr;
+  }
+
+  .moderationListItem__top,
+  .moderationRecordCard__head,
+  .moderationPanel__head,
+  .moderationKeyValue,
+  .moderationArchive__summary,
+  .moderationArchive__summaryMeta,
+  .moderationStaffSummary__head,
+  .moderationStaffMeta__row,
+  .moderationStaffConfirmForm__actions {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .moderationStaffMeta {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .moderationStaffActionGrid {
+    flex-direction: column;
+    align-items: stretch;
   }
 }

@@ -1,87 +1,102 @@
 <?php
+
 declare(strict_types=1);
 require_once __DIR__ . '/_bootstrap.php';
 
 trux_require_login();
 $me = trux_current_user();
 if (!$me) {
-    trux_redirect('/login.php');
+  trux_redirect('/login.php');
 }
 
 $settingsSections = [
-    'notifications' => [
-        'title' => 'Notifications',
-        'nav_description' => 'Feed alerts and activity',
-        'hero_description' => 'Choose which activity should appear in your notification feed.',
-    ],
-    'privacy' => [
-        'title' => 'Privacy',
-        'nav_description' => 'Profile visibility controls',
-        'hero_description' => 'Manage what other people can see on your profile.',
-    ],
-    'muted' => [
-        'title' => 'Muted Users',
-        'nav_description' => 'Users you muted',
-        'hero_description' => 'Review and manage the people you have muted.',
-    ],
-    'interface' => [
-        'title' => 'Interface',
-        'nav_description' => 'Current UI status',
-        'hero_description' => 'Check the current state of interface-related options.',
-    ],
+  'notifications' => [
+    'title' => 'Notifications',
+    'nav_description' => 'Feed alerts and activity',
+    'hero_description' => 'Choose which activity should appear in your notification feed.',
+  ],
+  'privacy' => [
+    'title' => 'Privacy',
+    'nav_description' => 'Profile visibility controls',
+    'hero_description' => 'Manage what other people can see on your profile.',
+  ],
+  'muted' => [
+    'title' => 'Muted Users',
+    'nav_description' => 'Users you muted',
+    'hero_description' => 'Review and manage the people you have muted.',
+  ],
+  'blocked' => [
+    'title'            => 'Blocked Users',
+    'nav_description'  => 'Users you blocked',
+    'hero_description' => 'Review and manage users you have blocked.',
+  ],
+  'interface' => [
+    'title' => 'Interface',
+    'nav_description' => 'Current UI status',
+    'hero_description' => 'Check the current state of interface-related options.',
+  ],
 ];
 
 $activeSection = trim(trux_str_param('section', 'notifications'));
 if (!isset($settingsSections[$activeSection])) {
-    $activeSection = 'notifications';
+  $activeSection = 'notifications';
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $redirectSection = trim((string)($_POST['section'] ?? $activeSection));
-    if (!isset($settingsSections[$redirectSection])) {
-        $redirectSection = 'notifications';
-    }
+  $redirectSection = trim((string)($_POST['section'] ?? $activeSection));
+  if (!isset($settingsSections[$redirectSection])) {
+    $redirectSection = 'notifications';
+  }
 
-    $action = $_POST['action'] ?? 'save_notifications';
-    if ($action === 'unmute_user') {
-        $rawMutedUserId = $_POST['muted_user_id'] ?? null;
-        if (is_string($rawMutedUserId) && preg_match('/^\d+$/', $rawMutedUserId)) {
-            trux_unmute_user((int)$me['id'], (int)$rawMutedUserId);
-            trux_flash_set('success', 'User unmuted.');
-        } else {
-            trux_flash_set('error', 'Invalid muted user.');
-        }
-    } elseif ($action === 'save_privacy') {
-        $submitted = [];
-        foreach (array_keys(trux_profile_privacy_defaults()) as $key) {
-            $submitted[$key] = isset($_POST[$key]) && $_POST[$key] === '1';
-        }
-
-        if (trux_update_profile_privacy_preferences((int)$me['id'], $submitted)) {
-            trux_flash_set('success', 'Privacy settings updated.');
-        } else {
-            trux_flash_set('error', 'Could not update privacy settings right now.');
-        }
+  $action = $_POST['action'] ?? 'save_notifications';
+  if ($action === 'unmute_user') {
+    $rawMutedUserId = $_POST['muted_user_id'] ?? null;
+    if (is_string($rawMutedUserId) && preg_match('/^\d+$/', $rawMutedUserId)) {
+      trux_unmute_user((int)$me['id'], (int)$rawMutedUserId);
+      trux_flash_set('success', 'User unmuted.');
     } else {
-        $submitted = [];
-        foreach (array_keys(trux_notification_defaults()) as $key) {
-            $submitted[$key] = isset($_POST[$key]) && $_POST[$key] === '1';
-        }
-
-        if (trux_update_notification_preferences((int)$me['id'], $submitted)) {
-            trux_flash_set('success', 'Notification preferences updated.');
-        } else {
-            trux_flash_set('error', 'Could not update notification preferences right now.');
-        }
+      trux_flash_set('error', 'Invalid muted user.');
+    }
+  } elseif ($action === 'unblock_user') {
+    $rawBlockedUserId = $_POST['blocked_user_id'] ?? null;
+    if (is_string($rawBlockedUserId) && preg_match('/^\d+$/', $rawBlockedUserId)) {
+      trux_unblock_user((int)$me['id'], (int)$rawBlockedUserId);
+      trux_flash_set('success', 'User unblocked.');
+    } else {
+      trux_flash_set('error', 'Invalid user.');
+    }
+  } elseif ($action === 'save_privacy') {
+    $submitted = [];
+    foreach (array_keys(trux_profile_privacy_defaults()) as $key) {
+      $submitted[$key] = isset($_POST[$key]) && $_POST[$key] === '1';
     }
 
-    trux_redirect('/settings.php?section=' . urlencode($redirectSection));
+    if (trux_update_profile_privacy_preferences((int)$me['id'], $submitted)) {
+      trux_flash_set('success', 'Privacy settings updated.');
+    } else {
+      trux_flash_set('error', 'Could not update privacy settings right now.');
+    }
+  } else {
+    $submitted = [];
+    foreach (array_keys(trux_notification_defaults()) as $key) {
+      $submitted[$key] = isset($_POST[$key]) && $_POST[$key] === '1';
+    }
+
+    if (trux_update_notification_preferences((int)$me['id'], $submitted)) {
+      trux_flash_set('success', 'Notification preferences updated.');
+    } else {
+      trux_flash_set('error', 'Could not update notification preferences right now.');
+    }
+  }
+
+  trux_redirect('/settings.php?section=' . urlencode($redirectSection));
 }
 
 $prefs = trux_fetch_notification_preferences((int)$me['id']);
 $privacyPrefs = trux_fetch_profile_privacy_preferences((int)$me['id']);
 $prefLabels = trux_notification_pref_labels();
 $mutedUsers = trux_fetch_muted_users((int)$me['id']);
+$blockedUsers = trux_fetch_blocked_users((int)$me['id']);
 
 require_once __DIR__ . '/_header.php';
 ?>
@@ -245,6 +260,73 @@ require_once __DIR__ . '/_header.php';
           </div>
         </div>
       </section>
+      <?php if ($activeSection === 'blocked'): ?>
+        <section
+          class="card settingsCard settingsSectionCard"
+          id="settings-blocked"
+          data-settings-section="blocked">
+          <div class="card__body">
+            <div class="settingSection">
+              <div class="settingSection__head">
+                <h2 class="h2">Blocked Users</h2>
+                <p class="muted">
+                  Blocked users cannot see your profile, send you messages,
+                  or appear in your feeds.
+                </p>
+              </div>
+
+              <?php if (!$blockedUsers): ?>
+                <div class="settingRow">
+                  <span class="settingRow__label">
+                    <strong>No blocked users</strong>
+                    <small class="muted">
+                      Block a user from their profile to hide them entirely.
+                    </small>
+                  </span>
+                  <strong class="muted">0</strong>
+                </div>
+              <?php else: ?>
+                <?php foreach ($blockedUsers as $blockedUser): ?>
+                  <div class="settingRow">
+                    <span class="settingRow__label">
+                      <strong>
+                        <a href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= urlencode((string)$blockedUser['username']) ?>">
+                          @<?= trux_e((string)$blockedUser['username']) ?>
+                        </a>
+                      </strong>
+                      <small class="muted">
+                        Blocked
+                        <span
+                          data-time-ago="1"
+                          data-time-source="<?= trux_e((string)$blockedUser['created_at']) ?>"
+                          title="<?= trux_e(trux_format_exact_time((string)$blockedUser['created_at'])) ?>">
+                          <?= trux_e(trux_time_ago((string)$blockedUser['created_at'])) ?>
+                        </span>
+                      </small>
+                    </span>
+                    <form
+                      method="post"
+                      action="<?= TRUX_BASE_URL ?>/settings.php"
+                      class="inline">
+                      <?= trux_csrf_field() ?>
+                      <input type="hidden" name="action" value="unblock_user">
+                      <input type="hidden" name="section" value="blocked">
+                      <input
+                        type="hidden"
+                        name="blocked_user_id"
+                        value="<?= (int)$blockedUser['id'] ?>">
+                      <button class="btn btn--small btn--ghost" type="submit">
+                        Unblock
+                      </button>
+                    </form>
+                  </div>
+                <?php endforeach; ?>
+              <?php endif; ?>
+
+            </div>
+          </div>
+        </section>
+      <?php endif; ?>
     <?php else: ?>
       <section class="card settingsCard settingsSectionCard" id="settings-interface" data-settings-section="interface">
         <div class="card__body">

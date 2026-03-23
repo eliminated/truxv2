@@ -169,7 +169,7 @@ function trux_fetch_user_by_username(string $username): ?array {
     $db = trux_db();
     $stmt = $db->prepare(
         'SELECT id, username, email, display_name, bio, about_me, location, website_url, profile_links_json,
-                avatar_path, banner_path, show_likes_public, show_bookmarks_public, created_at
+                avatar_path, banner_path, show_likes_public, show_bookmarks_public, created_at, staff_role
          FROM users
          WHERE username = ?
          LIMIT 1'

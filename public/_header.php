@@ -3,8 +3,13 @@
 declare(strict_types=1);
 
 $user = trux_current_user();
-$error = trux_flash_get('error');
-$success = trux_flash_get('success');
+if (!isset($error)) {
+  $error = trux_flash_get('error');
+}
+if (!isset($success)) {
+  $success = trux_flash_get('success');
+}
+$renderPageFlash = isset($renderPageFlash) ? (bool)$renderPageFlash : true;
 
 $q = trux_str_param('q', '');
 $bodyClasses = ['appearance--classic', 'motion--reduced'];
@@ -15,6 +20,9 @@ $notificationBadgeLabel = $unreadNotificationCount > 99 ? '99+' : (string)$unrea
 $notificationRedirectPath = '/notifications.php';
 $showProfileMenuEditProfile = false;
 $showProfileMenuPremium = false; // Placeholder stays available in code until Premium is ready.
+$showProfileMenuModeration = $user && trux_has_staff_role((string)($user['staff_role'] ?? 'user'), 'developer');
+$moderationBadgeCounts = $showProfileMenuModeration ? trux_moderation_fetch_staff_badge_counts((int)$user['id'], (string)($user['staff_role'] ?? 'user')) : [];
+$moderationBadgeTotal = (int)($moderationBadgeCounts['total'] ?? 0);
 $basePath = (string)(parse_url(TRUX_BASE_URL, PHP_URL_PATH) ?? '');
 $rawRequestUri = $_SERVER['REQUEST_URI'] ?? '';
 if (is_string($rawRequestUri) && $rawRequestUri !== '') {
@@ -221,6 +229,16 @@ if (is_string($rawRequestUri) && $rawRequestUri !== '') {
                 Settings
                 <span class="muted">Account</span>
               </a>
+              <?php if ($showProfileMenuModeration): ?>
+                <a class="menu__item" role="menuitem" href="<?= TRUX_BASE_URL ?>/moderation/">
+                  Moderation
+                  <?php if ($moderationBadgeTotal > 0): ?>
+                    <span class="menuBadge"><?= $moderationBadgeTotal ?></span>
+                  <?php else: ?>
+                    <span class="muted">Staff tools</span>
+                  <?php endif; ?>
+                </a>
+              <?php endif; ?>
 
               <div class="menu__divider"></div>
 
@@ -240,9 +258,9 @@ if (is_string($rawRequestUri) && $rawRequestUri !== '') {
   </header>
 
   <main class="container">
-    <?php if ($error): ?>
+    <?php if ($renderPageFlash && $error): ?>
       <div class="flash flash--error"><?= trux_e($error) ?></div>
     <?php endif; ?>
-    <?php if ($success): ?>
+    <?php if ($renderPageFlash && $success): ?>
       <div class="flash flash--success"><?= trux_e($success) ?></div>
     <?php endif; ?>
