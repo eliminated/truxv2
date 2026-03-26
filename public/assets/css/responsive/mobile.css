@@ -98,20 +98,39 @@
   }
 
   .streamItem {
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-3);
   }
 
   .post__gutter {
-    grid-template-columns: auto 1fr;
-    justify-items: start;
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: var(--space-2);
+  }
+
+  .post__head {
+    gap: var(--space-2);
+  }
+
+  .post__meta,
+  .post__nameRow,
+  .post__subRow {
+    min-width: 0;
+  }
+
+  .post__avatar {
+    width: 2.55rem;
+    height: 2.55rem;
+    flex-basis: 2.55rem;
   }
 
   .post__rail {
-    width: 100%;
-    min-height: 1px;
+    width: 1px;
+    min-height: 2.35rem;
   }
 
   .messagesLayout {
+    grid-template-columns: minmax(0, 1fr);
     gap: var(--space-4);
   }
 
@@ -120,23 +139,19 @@
     min-height: 0;
   }
 
-  .messagesLayout:not(.is-thread-open) .messagesThread {
-    display: none;
+  .messagesLayout:not(.is-thread-open) .messagesThread,
+  .messagesLayout.is-thread-open .messagesSidebar {
+    display: grid;
   }
 
   .messagesLayout.is-thread-open .messagesThread {
-    min-height: calc(100dvh - 10.5rem);
+    min-height: 0;
   }
 
-  .messagesLayout.is-thread-open .messagesSidebar {
+  .messagesThread__back {
     display: none;
   }
 
-  .messagesLayout.is-thread-open .messagesThread__back {
-    display: inline-flex;
-  }
-
-  body.messages-thread-active .mobileDock,
   body.shellSheet-open .mobileDock {
     display: none;
   }
@@ -233,8 +248,8 @@
 
   .commentDock__left {
     overflow: auto;
-    max-height: min(26vh, 13rem);
-    padding-bottom: var(--space-3);
+    max-height: min(22vh, 10.5rem);
+    padding-bottom: var(--space-2);
   }
 
   .commentDock__postPreview {
@@ -273,12 +288,12 @@
 
   .commentDock__right {
     min-height: 0;
-    gap: var(--space-3);
+    gap: var(--space-2);
   }
 
   .commentDock__listWrap {
-    min-height: 10rem;
-    padding-bottom: 0.35rem;
+    min-height: 0;
+    padding-bottom: 0;
   }
 
   .commentDock__list {
@@ -336,16 +351,16 @@
 
   .commentDock__form {
     grid-template-rows: auto;
-    gap: var(--space-3);
+    gap: var(--space-2);
     padding-bottom: 0;
-    padding-top: var(--space-3);
+    padding-top: var(--space-2);
     border-top: 1px solid var(--line-soft);
     background:
       linear-gradient(180deg, rgba(8, 12, 20, 0), rgba(8, 12, 20, 0.94) 1.1rem, rgba(8, 12, 20, 0.98) 100%);
   }
 
   .commentDock__textarea {
-    min-height: 4.5rem;
+    min-height: 3.75rem;
     padding: 0.85rem 0.9rem;
     resize: none;
   }
