@@ -4,18 +4,28 @@ require_once __DIR__ . '/_bootstrap.php';
 
 trux_require_login();
 
+$pageKey = 'premium';
+$pageLayout = 'app';
+
 require_once __DIR__ . '/_header.php';
 ?>
 
-<section class="hero">
-  <h1>Premium</h1>
-  <p class="muted">Premium memberships are not live yet. All plans below are placeholders for planned feature rollout.</p>
-</section>
+<div class="pageFrame pageFrame--studio">
+  <section class="pageBand pageBand--studio">
+    <div class="pageBand__main">
+      <span class="pageBand__eyebrow">Premium roadmap</span>
+      <h2 class="pageBand__title">Planned premium tiers</h2>
+      <p class="pageBand__copy">Premium memberships are not live yet. These remain placeholders for future rollout.</p>
+    </div>
+  </section>
 
-<section class="card settingsCard premiumPlans">
-  <div class="card__body">
-    <h2 class="h2">Planned Premium Tiers</h2>
-    <p class="muted">Higher tiers include all features from lower tiers.</p>
+  <section class="bandSurface">
+    <div class="bandSurface__head">
+      <div>
+        <span class="bandSurface__eyebrow">Roadmap</span>
+        <h3>Tier structure</h3>
+      </div>
+    </div>
 
     <div class="premiumTierGrid">
       <article class="premiumTier premiumTier--basic">
@@ -24,7 +34,7 @@ require_once __DIR__ . '/_header.php';
         <ul class="premiumTier__features">
           <li>Animated profile photo (GIF avatar)</li>
           <li>Extra profile themes and badge styles</li>
-          <li>Higher avatar/banner media limits</li>
+          <li>Higher avatar and banner limits</li>
           <li>Shorter username change cooldown</li>
         </ul>
       </article>
@@ -58,13 +68,13 @@ require_once __DIR__ . '/_header.php';
           <li>Team inbox and moderation helpers</li>
           <li>Priority support queue</li>
           <li>Early access to beta features</li>
-          <li>Higher automation/API limits (future)</li>
+          <li>Higher automation and API limits</li>
         </ul>
       </article>
     </div>
 
     <p class="muted premiumPlans__footnote">No billing or upgrades are available right now.</p>
-  </div>
-</section>
+  </section>
+</div>
 
 <?php require_once __DIR__ . '/_footer.php'; ?>

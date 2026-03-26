@@ -1,0 +1,58 @@
+.flash {
+  padding: 1rem 1.1rem;
+  border-radius: var(--radius-2);
+  border: 1px solid var(--line-soft);
+  font-weight: 600;
+}
+
+.flash--error {
+  color: #ffd6df;
+  border-color: rgba(255, 111, 150, 0.22);
+  background: rgba(255, 111, 150, 0.1);
+}
+
+.flash--success {
+  color: #d8fff5;
+  border-color: rgba(115, 245, 210, 0.22);
+  background: rgba(115, 245, 210, 0.1);
+}
+
+.moderationBadge {
+  min-height: 1.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-main);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.moderationBadgeRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.is-info,
+.moderationBadge.is-info {
+  background: rgba(97, 221, 255, 0.1);
+}
+
+.is-success,
+.moderationBadge.is-success {
+  background: rgba(115, 245, 210, 0.12);
+}
+
+.is-danger,
+.moderationBadge.is-danger {
+  background: rgba(255, 111, 150, 0.12);
+}
+
+.is-muted,
+.moderationBadge.is-muted {
+  background: rgba(255, 255, 255, 0.04);
+}

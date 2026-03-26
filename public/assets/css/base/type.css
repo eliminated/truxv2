@@ -1,0 +1,61 @@
+html {
+  font-size: 16px;
+}
+
+body {
+  font-family: var(--font-body);
+  line-height: 1.6;
+  color: var(--text-main);
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  color: var(--text-strong);
+  font-family: var(--font-display);
+  letter-spacing: -0.03em;
+  line-height: 1.05;
+}
+
+h1 {
+  font-size: clamp(2.35rem, 3.8vw, 4.6rem);
+  font-weight: 600;
+}
+
+h2,
+.h2 {
+  font-size: clamp(1.2rem, 2vw, 1.75rem);
+  font-weight: 600;
+}
+
+h3 {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+p {
+  margin: 0;
+}
+
+small {
+  font-size: 0.85rem;
+}
+
+code,
+pre {
+  font-family: var(--font-mono);
+}
+
+code {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  padding: 0 0.45rem;
+  border-radius: 0.55rem;
+  background: rgba(255, 255, 255, 0.045);
+  color: var(--accent-strong);
+}

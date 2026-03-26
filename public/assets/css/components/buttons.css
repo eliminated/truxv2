@@ -1,0 +1,42 @@
+.btn {
+  min-height: 2.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.62rem 0.9rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(97, 221, 255, 0.16);
+  background: rgba(97, 221, 255, 0.1);
+  color: var(--text-strong);
+  font-weight: 700;
+}
+
+.btn--small {
+  min-height: 2.15rem;
+  padding: 0.48rem 0.72rem;
+  font-size: 0.84rem;
+}
+
+.btn--ghost {
+  border-color: var(--line-soft);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-main);
+}
+
+.btn.is-disabled,
+.btn[disabled] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.iconBtn {
+  width: 2.55rem;
+  height: 2.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.8rem;
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.04);
+}

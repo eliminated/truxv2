@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/_bootstrap.php';
 
+$pageKey = 'moderation-dashboard';
 $moderationActiveKey = 'dashboard';
 $dashboard = trux_moderation_fetch_dashboard_data();
 $metrics = is_array($dashboard['metrics'] ?? null) ? $dashboard['metrics'] : [];

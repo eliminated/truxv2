@@ -1,0 +1,70 @@
+:root {
+  color-scheme: dark;
+
+  --font-display: "Sora", "Segoe UI", sans-serif;
+  --font-body: "Manrope", "Segoe UI", sans-serif;
+  --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+
+  --bg-app: #070b14;
+  --bg-app-alt: #091120;
+  --bg-raised: rgba(12, 18, 31, 0.84);
+  --bg-panel: rgba(14, 22, 38, 0.9);
+  --bg-panel-strong: rgba(18, 29, 48, 0.96);
+  --bg-panel-soft: rgba(255, 255, 255, 0.03);
+  --bg-elevated: rgba(17, 28, 46, 0.98);
+  --bg-overlay: rgba(4, 8, 16, 0.78);
+
+  --text-strong: #f4f8ff;
+  --text-main: #d8e3f3;
+  --text-soft: #9caec7;
+  --text-faint: #73839d;
+
+  --line-soft: rgba(255, 255, 255, 0.08);
+  --line-strong: rgba(126, 150, 191, 0.18);
+  --line-accent: rgba(85, 217, 255, 0.34);
+
+  --accent: #59d9ff;
+  --accent-strong: #86e6ff;
+  --accent-soft: rgba(89, 217, 255, 0.16);
+  --accent-mint: #6ef6cc;
+  --accent-mint-soft: rgba(110, 246, 204, 0.16);
+  --danger: #ff6f98;
+  --danger-soft: rgba(255, 111, 152, 0.16);
+  --warning: #ffcc7c;
+  --warning-soft: rgba(255, 204, 124, 0.16);
+  --success: #6ef6cc;
+  --success-soft: rgba(110, 246, 204, 0.16);
+
+  --shadow-0: 0 10px 30px rgba(1, 5, 13, 0.28);
+  --shadow-1: 0 24px 80px rgba(1, 5, 16, 0.44);
+  --shadow-2: 0 32px 120px rgba(0, 0, 0, 0.52);
+  --shadow-focus: 0 0 0 4px rgba(89, 217, 255, 0.18);
+
+  --radius-xs: 10px;
+  --radius-sm: 14px;
+  --radius-md: 18px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-pill: 999px;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-7: 1.75rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-12: 3rem;
+  --space-16: 4rem;
+
+  --container-max: 1380px;
+  --container-wide: 1500px;
+  --rail-width: 356px;
+
+  --duration-fast: 160ms;
+  --duration-mid: 240ms;
+  --duration-slow: 360ms;
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+}

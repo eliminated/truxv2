@@ -1,0 +1,221 @@
+.feed {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.feedSwitch {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding: 0.4rem;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.feedSwitch__item {
+  min-height: 2.45rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1rem;
+  border-radius: var(--radius-pill);
+  color: var(--text-soft);
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.feedSwitch__item.is-active {
+  background: var(--accent-soft);
+  color: var(--text-strong);
+}
+
+.feedSwitch__item.is-disabled {
+  opacity: 0.5;
+}
+
+.card.post {
+  margin: 0;
+}
+
+.card.post[data-post-click-target="1"] {
+  cursor: pointer;
+}
+
+.card.post[data-post-click-target="1"] a,
+.card.post[data-post-click-target="1"] button,
+.card.post[data-post-click-target="1"] input,
+.card.post[data-post-click-target="1"] textarea,
+.card.post[data-post-click-target="1"] select,
+.card.post[data-post-click-target="1"] .menu__panel,
+.card.post[data-post-click-target="1"] .contentMenu__panel {
+  position: relative;
+  z-index: 1;
+}
+
+.post__head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--space-4);
+  margin-bottom: var(--space-5);
+}
+
+.post__avatar {
+  width: 3rem;
+  height: 3rem;
+  flex: 0 0 3rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 1.1rem;
+  background: linear-gradient(135deg, rgba(89, 217, 255, 0.12), rgba(255, 255, 255, 0.03));
+  color: var(--accent-strong);
+}
+
+.post__avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: inherit;
+}
+
+.post__meta {
+  min-width: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.post__actions {
+  justify-self: end;
+}
+
+.post__nameRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+}
+
+.post__displayName,
+.post__user {
+  color: var(--text-strong);
+  font-weight: 800;
+}
+
+.post__user {
+  color: var(--accent-strong);
+}
+
+.post__subRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.55rem;
+  color: var(--text-faint);
+  font-size: 0.86rem;
+}
+
+.editedMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.editedMeta__label {
+  color: var(--text-faint);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.post__body {
+  color: var(--text-main);
+  font-size: 1rem;
+  line-height: 1.72;
+  overflow-wrap: anywhere;
+}
+
+.post__body a {
+  color: var(--accent-strong);
+  text-decoration: underline;
+  text-decoration-color: rgba(89, 217, 255, 0.25);
+}
+
+.post__body p + p {
+  margin-top: 0.8rem;
+}
+
+.post__image {
+  margin-top: var(--space-5);
+  border: 1px solid var(--line-soft);
+  border-radius: calc(var(--radius-lg) + 2px);
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.post__image img {
+  width: 100%;
+  max-height: min(68vh, 38rem);
+  object-fit: cover;
+}
+
+.post__actionsBar {
+  margin-top: var(--space-5);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.postActForm {
+  display: block;
+}
+
+.postAct {
+  width: 100%;
+  min-height: 2.95rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.7rem 0.95rem;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-soft);
+  font-weight: 700;
+}
+
+.postAct svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.postAct__count {
+  min-width: 1.8rem;
+  display: inline-flex;
+  justify-content: center;
+  padding: 0.16rem 0.5rem;
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-strong);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.postAct.is-active,
+.postAct:hover,
+.postAct:focus-visible {
+  color: var(--text-strong);
+  border-color: var(--line-accent);
+  background: rgba(89, 217, 255, 0.09);
+}
+
+.post__viewerActions {
+  margin-top: var(--space-5);
+}
+
+.postViewerSource {
+  display: none;
+}

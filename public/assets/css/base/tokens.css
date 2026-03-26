@@ -1,0 +1,81 @@
+:root {
+  color-scheme: dark;
+
+  --font-display: "Sora", "Segoe UI", sans-serif;
+  --font-body: "Manrope", "Segoe UI", sans-serif;
+  --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+
+  --ink-0: #02050b;
+  --ink-1: #050913;
+  --ink-2: #09101b;
+  --ink-3: #0d1522;
+  --ink-4: #101a29;
+  --ink-5: #152131;
+
+  --surface-0: rgba(10, 16, 27, 0.9);
+  --surface-1: rgba(12, 19, 31, 0.96);
+  --surface-2: rgba(17, 25, 38, 0.98);
+  --surface-3: rgba(23, 34, 50, 0.98);
+  --surface-band: rgba(255, 255, 255, 0.025);
+  --surface-frost: rgba(255, 255, 255, 0.035);
+  --surface-overlay: rgba(4, 7, 13, 0.82);
+
+  --text-strong: #f3f7ff;
+  --text-main: #d1daea;
+  --text-soft: #93a1b8;
+  --text-faint: #677489;
+
+  --line-soft: rgba(255, 255, 255, 0.06);
+  --line-mid: rgba(255, 255, 255, 0.1);
+  --line-strong: rgba(145, 172, 214, 0.18);
+  --line-accent: rgba(97, 221, 255, 0.32);
+
+  --accent: #61ddff;
+  --accent-strong: #93e9ff;
+  --accent-soft: rgba(97, 221, 255, 0.14);
+  --accent-mint: #73f5d2;
+  --accent-mint-soft: rgba(115, 245, 210, 0.14);
+  --danger: #ff6f96;
+  --danger-soft: rgba(255, 111, 150, 0.14);
+  --warning: #ffc97a;
+  --warning-soft: rgba(255, 201, 122, 0.14);
+  --success: #73f5d2;
+  --success-soft: rgba(115, 245, 210, 0.14);
+
+  --radius-1: 0.65rem;
+  --radius-2: 0.9rem;
+  --radius-3: 1.1rem;
+  --radius-4: 1.45rem;
+  --radius-pill: 999px;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.1rem;
+  --space-6: 1.3rem;
+  --space-7: 1.55rem;
+  --space-8: 1.75rem;
+  --space-10: 2.2rem;
+  --space-12: 2.7rem;
+  --space-16: 3.5rem;
+  --space-20: 5rem;
+
+  --shadow-xs: 0 12px 30px rgba(0, 0, 0, 0.12);
+  --shadow-sm: 0 16px 40px rgba(0, 0, 0, 0.18);
+  --shadow-md: 0 24px 64px rgba(0, 0, 0, 0.28);
+  --shadow-lg: 0 32px 96px rgba(0, 0, 0, 0.34);
+  --focus-ring: 0 0 0 3px rgba(97, 221, 255, 0.18);
+
+  --content-max: 1420px;
+  --app-rail-width: 220px;
+  --ops-rail-width: 260px;
+  --utility-width: 280px;
+  --canvas-max: 960px;
+  --mobile-dock-height: 4.35rem;
+
+  --duration-fast: 140ms;
+  --duration-mid: 220ms;
+  --duration-slow: 360ms;
+  --ease-standard: cubic-bezier(0.2, 0.8, 0.2, 1);
+}

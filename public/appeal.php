@@ -3,9 +3,12 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/_bootstrap.php';
 
+$pageKey = 'appeal';
+$pageLayout = 'app';
+
 $token = trim(trux_str_param('token', ''));
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $token = trim((string)($_POST['token'] ?? $token));
+  $token = trim((string)($_POST['token'] ?? $token));
 }
 
 $enforcement = $token !== '' ? trux_moderation_fetch_user_enforcement_by_token($token) : null;
@@ -16,32 +19,35 @@ $success = null;
 $body = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $body = trim((string)($_POST['reason'] ?? ''));
-    if ($token === '' || !$enforcement) {
-        $error = 'This appeal link is invalid or expired.';
-    } elseif ($existingAppeal) {
-        $success = 'An appeal for this action has already been submitted.';
+  $body = trim((string)($_POST['reason'] ?? ''));
+  if ($token === '' || !$enforcement) {
+    $error = 'This appeal link is invalid or expired.';
+  } elseif ($existingAppeal) {
+    $success = 'An appeal for this action has already been submitted.';
+  } else {
+    $result = trux_moderation_submit_appeal($token, $body, $me ? (int)$me['id'] : null);
+    if (!empty($result['ok'])) {
+      $success = 'Appeal submitted. The moderation team will review it.';
+      $existingAppeal = trux_moderation_fetch_appeal_by_enforcement_id((int)$enforcement['id']);
     } else {
-        $result = trux_moderation_submit_appeal($token, $body, $me ? (int)$me['id'] : null);
-        if (!empty($result['ok'])) {
-            $success = 'Appeal submitted. The moderation team will review it.';
-            $existingAppeal = trux_moderation_fetch_appeal_by_enforcement_id((int)$enforcement['id']);
-        } else {
-            $error = (string)($result['error'] ?? 'Could not submit the appeal right now.');
-        }
+      $error = (string)($result['error'] ?? 'Could not submit the appeal right now.');
     }
+  }
 }
 
 require_once __DIR__ . '/_header.php';
 ?>
 
-<section class="hero">
-  <h1>Appeal Moderation Action</h1>
-  <p class="muted">Use this page to request review of an account-level moderation action.</p>
-</section>
+<div class="pageFrame pageFrame--studio">
+  <section class="pageBand pageBand--studio">
+    <div class="pageBand__main">
+      <span class="pageBand__eyebrow">Appeal form</span>
+      <h2 class="pageBand__title">Appeal moderation action</h2>
+      <p class="pageBand__copy">Use this page to request a review of an account-level moderation action.</p>
+    </div>
+  </section>
 
-<section class="card" style="max-width:760px;margin:0 auto;">
-  <div class="card__body">
+  <section class="bandSurface">
     <?php if ($error !== null): ?>
       <div class="flash flash--error"><?= trux_e($error) ?></div>
     <?php endif; ?>
@@ -50,10 +56,10 @@ require_once __DIR__ . '/_header.php';
     <?php endif; ?>
 
     <?php if (!$enforcement): ?>
-      <div class="moderationEmptyState">
+      <section class="bandSurface bandSurface--empty bandSurface--nested">
         <strong>Invalid appeal link</strong>
         <p class="muted">This moderation appeal link is missing, expired, or no longer available.</p>
-      </div>
+      </section>
     <?php else: ?>
       <div class="reviewModal__metaList">
         <div class="reviewModal__metaRow">
@@ -92,11 +98,11 @@ require_once __DIR__ . '/_header.php';
             <span>Why should this action be reviewed?</span>
             <textarea name="reason" rows="8" maxlength="4000" required placeholder="Describe what happened, why you think the action was incorrect, and any context staff should review."><?= trux_e($body) ?></textarea>
           </label>
-          <button class="btn" type="submit">Submit appeal</button>
+          <button class="shellButton shellButton--accent" type="submit">Submit appeal</button>
         </form>
       <?php endif; ?>
     <?php endif; ?>
-  </div>
-</section>
+  </section>
+</div>
 
 <?php require_once __DIR__ . '/_footer.php'; ?>

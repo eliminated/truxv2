@@ -1,0 +1,64 @@
+.opsTopbar {
+  min-height: 5rem;
+}
+
+.opsQueueStrip {
+  display: grid;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-3);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.opsQueueStrip__head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.opsQueueStrip__eyebrow {
+  color: var(--text-faint);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+.opsQueueStrip__role {
+  display: grid;
+  gap: 0.1rem;
+  text-align: right;
+}
+
+.opsQueueStrip__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--space-3);
+}
+
+.opsQueueStrip__metric {
+  display: grid;
+  gap: 0.2rem;
+  padding: var(--space-4);
+  border-radius: var(--radius-2);
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.opsQueueStrip__metric.is-active {
+  border-color: var(--line-accent);
+  background: rgba(97, 221, 255, 0.08);
+}
+
+.opsQueueStrip__metric strong {
+  color: var(--text-strong);
+  font-family: var(--font-display);
+  font-size: 1.3rem;
+}
+
+.opsQueueStrip__metric span {
+  color: var(--text-soft);
+  font-size: 0.85rem;
+}

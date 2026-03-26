@@ -1,0 +1,130 @@
+.messagesLayout {
+  display: grid;
+  grid-template-columns: minmax(280px, 330px) minmax(0, 1fr);
+  gap: var(--space-5);
+  min-height: 0;
+}
+
+.messagesSidebar,
+.messagesThread {
+  min-height: 34rem;
+  overflow: hidden;
+}
+
+.messagesSidebar {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.messagesList {
+  min-height: 0;
+  display: grid;
+  gap: 0.7rem;
+  align-content: start;
+  overflow: auto;
+  padding-right: 0.2rem;
+}
+
+.messagesList__item {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.82rem 0.9rem;
+  border-radius: var(--radius-2);
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.messagesList__item.is-active {
+  border-color: rgba(97, 221, 255, 0.2);
+  background: rgba(97, 221, 255, 0.09);
+}
+
+.messagesList__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.messagesList__user,
+.messagesThread__stateTitle {
+  color: var(--text-strong);
+  font-weight: 800;
+}
+
+.messagesList__preview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.messagesThread {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: var(--space-4);
+}
+
+.messagesThread__head {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: var(--space-4);
+}
+
+.messagesThread__titleBlock {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.messagesThread__back {
+  display: none;
+}
+
+.messagesThread__messages {
+  display: grid;
+  align-content: start;
+  gap: var(--space-3);
+  min-height: 0;
+  overflow: auto;
+  padding-right: 0.2rem;
+}
+
+.messagesThread__state {
+  padding: var(--space-5);
+  display: grid;
+  gap: var(--space-3);
+}
+
+.messagesThread__state--center {
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+}
+
+.messageBubble {
+  justify-self: start;
+  max-width: min(76%, 36rem);
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.85rem 0.95rem;
+  border-radius: var(--radius-2);
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.messageBubble--mine {
+  justify-self: end;
+  border-color: rgba(97, 221, 255, 0.22);
+  background: rgba(97, 221, 255, 0.1);
+}
+
+.messageBubble__meta {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.messageBubble__metaMain {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem 0.8rem;
+}

@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/_bootstrap.php';
 trux_require_staff_role('admin');
 
+$pageKey = 'moderation-escalations';
 $moderationActiveKey = 'escalations';
 $staffUsers = trux_fetch_staff_users('admin');
 $statuses = trux_moderation_escalation_statuses();

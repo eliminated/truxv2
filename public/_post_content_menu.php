@@ -10,14 +10,16 @@ $bookmarked = !empty($bookmarked);
 $muteLabel = $postUsername !== '' ? 'Mute @' . $postUsername : 'Mute user';
 $muteMessage = $postUsername !== '' ? 'Mute controls for @' . $postUsername . ' are coming soon.' : 'Mute controls are coming soon.';
 ?>
-<div class="contentMenu" data-content-menu="1">
+<div class="contentMenu contentMenu--post" data-content-menu="1">
   <button
     class="contentMenu__trigger"
     type="button"
     aria-label="Open post actions"
     data-content-menu-trigger="1">
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M6.5 12a1.5 1.5 0 1 0 0-.01V12Zm5.5 0a1.5 1.5 0 1 0 0-.01V12Zm5.5 0a1.5 1.5 0 1 0 0-.01V12Z" fill="currentColor" />
+    <svg class="contentMenu__triggerGlyph" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <circle class="contentMenu__triggerDot" cx="6.5" cy="12" r="1.5" />
+      <circle class="contentMenu__triggerDot" cx="12" cy="12" r="1.5" />
+      <circle class="contentMenu__triggerDot" cx="17.5" cy="12" r="1.5" />
     </svg>
   </button>
 

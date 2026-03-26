@@ -1,0 +1,94 @@
+.shellAtmosphere {
+  position: fixed;
+  inset: 0;
+  z-index: -3;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.shellAtmosphere__grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+  background-size: 44px 44px;
+  mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.65), transparent 88%);
+}
+
+.shellAtmosphere__orb {
+  position: absolute;
+  width: 34rem;
+  height: 34rem;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.22;
+}
+
+.shellAtmosphere__orb--one {
+  top: -10rem;
+  left: -6rem;
+  background: rgba(97, 221, 255, 0.22);
+}
+
+.shellAtmosphere__orb--two {
+  top: 24%;
+  right: -9rem;
+  background: rgba(115, 245, 210, 0.18);
+}
+
+.shellAtmosphere__orb--three {
+  bottom: -12rem;
+  left: 30%;
+  background: rgba(255, 111, 150, 0.12);
+}
+
+.appShell,
+.opsShell {
+  display: grid;
+  min-height: 100vh;
+}
+
+.appShell {
+  grid-template-columns: var(--app-rail-width) minmax(0, 1fr);
+}
+
+.opsShell {
+  grid-template-columns: var(--ops-rail-width) minmax(0, 1fr);
+}
+
+.shellViewport,
+.opsViewport {
+  min-width: 0;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.shellContent,
+.opsContent {
+  min-width: 0;
+}
+
+.sceneCanvas,
+.opsCanvas {
+  width: min(calc(100% - 2rem), var(--content-max));
+  margin: 0 auto;
+  padding: var(--space-6) 0 calc(var(--space-12) + var(--mobile-dock-height));
+}
+
+.opsCanvas {
+  width: min(calc(100% - 2rem), 1560px);
+  padding-bottom: var(--space-10);
+}
+
+.pageFrame,
+.profileScene {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.focusStage {
+  display: grid;
+  gap: var(--space-5);
+  max-width: 920px;
+}

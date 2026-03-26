@@ -3,6 +3,9 @@
 declare(strict_types=1);
 require_once __DIR__ . '/_bootstrap.php';
 
+$pageKey = 'messages';
+$pageLayout = 'app';
+
 trux_require_login();
 $me = trux_current_user();
 if (!$me) {
@@ -72,20 +75,34 @@ $activeConversationId = (int)($selectedConversation['id'] ?? 0);
 require_once __DIR__ . '/_header.php';
 ?>
 
-<section class="hero">
-  <h1>Messages</h1>
-  <p class="muted">Private 1-to-1 conversations.</p>
-</section>
+<div class="pageFrame pageFrame--messages">
+  <section class="inlineHeader inlineHeader--messages">
+    <div class="inlineHeader__main">
+      <span class="inlineHeader__eyebrow">Workspace</span>
+      <div class="inlineHeader__titleWrap">
+        <h2 class="inlineHeader__title">Messages</h2>
+        <p class="inlineHeader__copy">Private 1-to-1 conversations in a focused inbox and thread workspace.</p>
+      </div>
+    </div>
+    <div class="inlineHeader__aside">
+      <div class="inlineHeader__meta">
+        <span>@<?= trux_e((string)$me['username']) ?></span>
+        <strong><?= count($conversations) ?> conversation<?= count($conversations) === 1 ? '' : 's' ?></strong>
+      </div>
+    </div>
+  </section>
 
-<section class="messagesLayout" data-messages-active-conversation-id="<?= $activeConversationId ?>">
-  <aside class="card messagesSidebar">
-    <div class="card__body">
-      <div class="messagesSidebar__head">
-        <h2>Inbox</h2>
+  <section class="messagesLayout<?= $activeConversationId > 0 ? ' is-thread-active' : '' ?>" data-messages-active-conversation-id="<?= $activeConversationId ?>">
+    <aside class="messagesSidebar workspacePane">
+      <div class="workspacePane__head">
+        <div>
+          <span class="workspacePane__eyebrow">Inbox</span>
+          <h3>Recent conversations</h3>
+        </div>
       </div>
 
       <?php if (!$conversations): ?>
-        <div class="muted">No conversations yet. Start one from a user profile.</div>
+        <div class="workspacePane__empty muted">No conversations yet. Start one from a user profile.</div>
       <?php else: ?>
         <div class="messagesList">
           <?php foreach ($conversations as $conversation): ?>
@@ -95,18 +112,11 @@ require_once __DIR__ . '/_header.php';
             $unreadCount = (int)($conversation['unread_count'] ?? 0);
             $lastAt = (string)($conversation['last_message_created_at'] ?? $conversation['updated_at'] ?? '');
             ?>
-            <a
-              class="messagesList__item<?= $isActive ? ' is-active' : '' ?>"
-              href="<?= TRUX_BASE_URL ?>/messages.php?id=<?= $conversationId ?>"
-              <?= $isActive ? 'aria-current="page"' : '' ?>>
+            <a class="messagesList__item<?= $isActive ? ' is-active' : '' ?>" href="<?= TRUX_BASE_URL ?>/messages.php?id=<?= $conversationId ?>" <?= $isActive ? 'aria-current="page"' : '' ?>>
               <div class="messagesList__row">
                 <span class="messagesList__user"><?= trux_e(trux_direct_message_actor_label((string)$conversation['other_username'], (string)($conversation['other_display_name'] ?? ''))) ?></span>
                 <?php if ($lastAt !== ''): ?>
-                  <span
-                    class="messagesList__time muted"
-                    data-time-ago="1"
-                    data-time-source="<?= trux_e($lastAt) ?>"
-                    title="<?= trux_e(trux_format_exact_time($lastAt)) ?>">
+                  <span class="messagesList__time muted" data-time-ago="1" data-time-source="<?= trux_e($lastAt) ?>" title="<?= trux_e(trux_format_exact_time($lastAt)) ?>">
                     <?= trux_e(trux_time_ago($lastAt)) ?>
                   </span>
                 <?php endif; ?>
@@ -121,30 +131,29 @@ require_once __DIR__ . '/_header.php';
           <?php endforeach; ?>
         </div>
       <?php endif; ?>
-    </div>
-  </aside>
+    </aside>
 
-  <section class="card messagesThread">
-    <div class="card__body">
+    <section class="messagesThread workspacePane">
       <?php if ($recipientUser && $dmBlockedByThem): ?>
-        <div class="messagesThread__empty muted" style="text-align:center;padding:3rem 1rem;">
-          <p style="font-size:18px;font-weight:900;color:var(--text);margin:0 0 8px;"><?= trux_e($recipientLabel) ?> has blocked you</p>
-          <p style="margin:0;">You are not able to send messages to this user.</p>
+        <div class="messagesThread__state messagesThread__state--center">
+          <p class="messagesThread__stateTitle"><?= trux_e($recipientLabel) ?> has blocked you</p>
+          <p class="muted">You are not able to send messages to this user.</p>
         </div>
       <?php elseif ($recipientUser && $viewerDmRestricted): ?>
-        <div class="messagesThread__empty muted" style="text-align:center;padding:3rem 1rem;">
-          <p style="font-size:18px;font-weight:900;color:var(--text);margin:0 0 8px;">Direct messages are restricted</p>
-          <p style="margin:0;">You can still read messages and receive moderation updates, but you cannot send new direct messages right now.</p>
+        <div class="messagesThread__state messagesThread__state--center">
+          <p class="messagesThread__stateTitle">Direct messages are restricted</p>
+          <p class="muted">You can still read messages and receive moderation updates, but you cannot send new direct messages right now.</p>
         </div>
       <?php elseif ($recipientUser && $dmBlockedByViewer): ?>
-        <div class="messagesThread__empty muted" style="text-align:center;padding:3rem 1rem;">
-          <p style="font-size:18px;font-weight:900;color:var(--text);margin:0 0 8px;">You have blocked <?= trux_e($recipientLabel) ?></p>
-          <p style="margin:0;">Unblock this user from their profile to send messages.</p>
+        <div class="messagesThread__state messagesThread__state--center">
+          <p class="messagesThread__stateTitle">You have blocked <?= trux_e($recipientLabel) ?></p>
+          <p class="muted">Unblock this user from their profile to send messages.</p>
         </div>
       <?php elseif ($recipientUser): ?>
-        <div class="messagesThread__head">
-          <div>
-            <h2><?= trux_e($recipientLabel) ?></h2>
+        <header class="messagesThread__head">
+          <div class="messagesThread__titleBlock">
+            <a class="messagesThread__back shellButton shellButton--ghost" href="<?= TRUX_BASE_URL ?>/messages.php">Back to inbox</a>
+            <h3><?= trux_e($recipientLabel) ?></h3>
             <div class="muted">
               <?php if ($recipientIsReportSystem): ?>
                 Automated moderation updates. Replies are disabled for this inbox.
@@ -155,19 +164,19 @@ require_once __DIR__ . '/_header.php';
               <?php endif; ?>
             </div>
           </div>
-          <div class="row">
+          <div class="row messagesThread__toolbar">
             <?php if ($activeConversationId > 0): ?>
               <form method="post" action="<?= TRUX_BASE_URL ?>/mark_conversation_read.php" class="inline" data-no-fx="1">
                 <?= trux_csrf_field() ?>
                 <input type="hidden" name="id" value="<?= $activeConversationId ?>">
-                <button class="btn btn--small btn--ghost" type="submit">Mark as read</button>
+                <button class="shellButton shellButton--ghost" type="submit">Mark as read</button>
               </form>
             <?php endif; ?>
             <?php if (!$recipientIsReportSystem): ?>
-              <a class="btn btn--small btn--ghost" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$recipientUser['username']) ?>">View profile</a>
+              <a class="shellButton shellButton--ghost" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$recipientUser['username']) ?>">View profile</a>
             <?php endif; ?>
           </div>
-        </div>
+        </header>
 
         <div class="messagesThread__messages">
           <?php if (!$selectedMessages): ?>
@@ -187,21 +196,13 @@ require_once __DIR__ . '/_header.php';
                 <div class="messageBubble__meta">
                   <div class="messageBubble__metaMain">
                     <span class="messageBubble__author"><?= $isMine ? 'You' : trux_e(trux_direct_message_actor_label($messageSenderUsername, (string)($message['sender_display_name'] ?? ''))) ?></span>
-                    <span
-                      class="muted"
-                      data-time-ago="1"
-                      data-time-source="<?= trux_e($messageTime) ?>"
-                      title="<?= trux_e(trux_format_exact_time($messageTime)) ?>">
+                    <span class="muted" data-time-ago="1" data-time-source="<?= trux_e($messageTime) ?>" title="<?= trux_e(trux_format_exact_time($messageTime)) ?>">
                       <?= trux_e(trux_time_ago($messageTime)) ?>
                     </span>
                   </div>
                   <?php if ($canReportMessage): ?>
                     <div class="contentMenu messageBubble__menu" data-content-menu="1">
-                      <button
-                        class="contentMenu__trigger"
-                        type="button"
-                        aria-label="Open message actions"
-                        data-content-menu-trigger="1">
+                      <button class="contentMenu__trigger" type="button" aria-label="Open message actions" data-content-menu-trigger="1">
                         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                           <path d="M6.5 12a1.5 1.5 0 1 0 0-.01V12Zm5.5 0a1.5 1.5 0 1 0 0-.01V12Zm5.5 0a1.5 1.5 0 1 0 0-.01V12Z" fill="currentColor" />
                         </svg>
@@ -232,11 +233,11 @@ require_once __DIR__ . '/_header.php';
         </div>
 
         <?php if ($recipientIsReportSystem): ?>
-          <div class="messagesThread__empty muted">
+          <div class="messagesThread__empty muted messagesThread__state">
             This inbox only sends automated report updates. Replies are not accepted.
           </div>
         <?php elseif ($viewerDmRestricted): ?>
-          <div class="messagesThread__empty muted">
+          <div class="messagesThread__empty muted messagesThread__state">
             Direct messaging is currently disabled on your account. You can still review this thread and receive system updates here.
           </div>
         <?php else: ?>
@@ -251,19 +252,19 @@ require_once __DIR__ . '/_header.php';
               <span>Message</span>
               <textarea name="body" rows="4" maxlength="2000" required placeholder="Write a private message..." data-mention-input="1"></textarea>
             </label>
-            <div class="row row--spaced">
+            <div class="messagesComposer__actions">
               <span class="muted">Only text messages for now.</span>
-              <button class="btn" type="submit">Send message</button>
+              <button class="shellButton shellButton--accent" type="submit">Send message</button>
             </div>
           </form>
         <?php endif; ?>
       <?php else: ?>
-        <div class="messagesThread__empty muted">
+        <div class="messagesThread__empty muted messagesThread__state">
           Select a conversation from the inbox or start one from a user profile.
         </div>
       <?php endif; ?>
-    </div>
+    </section>
   </section>
-</section>
+</div>
 
 <?php require_once __DIR__ . '/_footer.php'; ?>

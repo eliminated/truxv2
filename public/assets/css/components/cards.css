@@ -1,0 +1,67 @@
+.card,
+.profile__masthead,
+.profile__feedHead,
+.settingsNavCard,
+.messagesSidebar,
+.messagesThread,
+.moderationPanel,
+.moderationSidebarCard {
+  position: relative;
+  border: 1px solid rgba(130, 153, 191, 0.15);
+  border-radius: 1.8rem;
+  background:
+    linear-gradient(180deg, rgba(9, 14, 24, 0.96), rgba(7, 11, 18, 0.92)),
+    radial-gradient(circle at top right, rgba(89, 217, 255, 0.08), transparent 32%);
+  box-shadow: 0 18px 48px rgba(1, 5, 12, 0.3);
+  overflow: hidden;
+}
+
+.card::before,
+.profile__masthead::before,
+.profile__feedHead::before,
+.settingsNavCard::before,
+.messagesSidebar::before,
+.messagesThread::before,
+.moderationPanel::before,
+.moderationSidebarCard::before {
+  content: "";
+  position: absolute;
+  inset: 1px;
+  border-radius: calc(1.8rem - 1px);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  pointer-events: none;
+}
+
+.card::after,
+.profile__masthead::after,
+.profile__feedHead::after,
+.settingsNavCard::after,
+.messagesSidebar::after,
+.messagesThread::after,
+.moderationPanel::after,
+.moderationSidebarCard::after {
+  content: "";
+  position: absolute;
+  left: 2rem;
+  right: 2rem;
+  top: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(89, 217, 255, 0.44), transparent);
+  opacity: 0.9;
+  pointer-events: none;
+}
+
+.card__body {
+  padding: var(--space-7);
+}
+
+.card + .card,
+.feed > .card + .card {
+  margin-top: var(--space-5);
+}
+
+.pager {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-6);
+}

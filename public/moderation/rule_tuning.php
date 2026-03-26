@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/_bootstrap.php';
 trux_require_staff_role('admin');
 
+$pageKey = 'moderation-rule-tuning';
 $moderationActiveKey = 'rule_tuning';
 $ruleDefaults = trux_moderation_rule_config_defaults();
 
@@ -61,7 +62,7 @@ require_once dirname(__DIR__) . '/_header.php';
             <form class="form" method="post" action="<?= TRUX_BASE_URL ?>/moderation/rule_tuning.php">
               <?= trux_csrf_field() ?>
               <input type="hidden" name="rule_key" value="<?= trux_e($ruleKey) ?>">
-              <label class="field" style="display:flex;align-items:center;gap:8px;">
+              <label class="field field--inlineToggle">
                 <input type="checkbox" name="enabled" value="1" <?= !empty($config['enabled']) ? 'checked' : '' ?>>
                 <span>Enable this rule</span>
               </label>

@@ -1,0 +1,39 @@
+.authShell {
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.authStage {
+  display: grid;
+  align-items: center;
+  padding: var(--space-10) clamp(1rem, 3vw, 2rem) var(--space-12);
+}
+
+.authCanvas {
+  width: min(100%, 1400px);
+  margin: 0 auto;
+}
+
+.authFooter {
+  padding: 0 1.5rem 1.5rem;
+}
+
+.authFooter__inner {
+  width: min(100%, 1400px);
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--line-soft);
+  color: var(--text-soft);
+  font-size: 0.88rem;
+}
+
+.authFooter__brand {
+  display: flex;
+  gap: var(--space-3);
+  align-items: center;
+  flex-wrap: wrap;
+}

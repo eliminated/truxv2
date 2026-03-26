@@ -1,0 +1,109 @@
+.shellButton,
+.btn,
+.menu__panel,
+.contentMenu__panel,
+.railNav__item,
+.opsRail__link,
+.shellAction,
+.shellSheet__link,
+.bandSurface,
+.workspacePane,
+.postAct,
+.notificationItem,
+.messagesList__item,
+.settingsNav__item,
+.messageBubble,
+.profileLink,
+.tagChip,
+.userBand,
+.iconBtn,
+.contentMenu__trigger {
+  transition:
+    transform var(--duration-mid) var(--ease-standard),
+    border-color var(--duration-mid) ease,
+    background-color var(--duration-mid) ease,
+    box-shadow var(--duration-mid) ease,
+    color var(--duration-fast) ease,
+    opacity var(--duration-fast) ease;
+}
+
+.bandSurface:hover,
+.messagesList__item:hover,
+.notificationItem:hover,
+.profileLink:hover,
+.tagChip:hover,
+.userBand:hover,
+.settingsNav__item:hover,
+.railNav__item:hover,
+.opsRail__link:hover {
+  transform: translateY(-2px);
+  border-color: rgba(97, 221, 255, 0.22);
+}
+
+.pagefx {
+  position: fixed;
+  inset: 0;
+  z-index: 999;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pagefx.is-active {
+  opacity: 1;
+}
+
+.pagefx::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 9, 17, 0.5);
+  backdrop-filter: blur(10px);
+}
+
+.pagefx__bar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, rgba(89, 217, 255, 0), rgba(89, 217, 255, 1), rgba(110, 246, 204, 0));
+  box-shadow: 0 0 28px rgba(89, 217, 255, 0.42);
+}
+
+.page-enter {
+  animation: pageEnter var(--duration-slow) var(--ease-standard);
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-enter {
+    animation: none;
+  }
+}
+
+body.motion--reduced .page-enter,
+body.motion--reduced .pagefx {
+  animation: none;
+  transition: none;
+}
+
+body.motion--reduced .bandSurface:hover,
+body.motion--reduced .messagesList__item:hover,
+body.motion--reduced .notificationItem:hover,
+body.motion--reduced .profileLink:hover,
+body.motion--reduced .tagChip:hover,
+body.motion--reduced .userBand:hover,
+body.motion--reduced .settingsNav__item:hover,
+body.motion--reduced .railNav__item:hover,
+body.motion--reduced .opsRail__link:hover {
+  transform: none;
+}

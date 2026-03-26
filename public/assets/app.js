@@ -2410,6 +2410,94 @@
     });
   };
 
+  const canvasToBlob = (canvas, mimeType, quality) =>
+    new Promise((resolve) => {
+      if (!(canvas instanceof HTMLCanvasElement) || typeof canvas.toBlob !== "function") {
+        resolve(null);
+        return;
+      }
+
+      canvas.toBlob(
+        (blob) => {
+          resolve(blob instanceof Blob ? blob : null);
+        },
+        mimeType,
+        quality
+      );
+    });
+
+  const buildCroppedUploadFile = async (session, crop) => {
+    if (!session || !crop || typeof document === "undefined") {
+      return null;
+    }
+
+    const sourceImage = await new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error("Could not prepare the selected crop."));
+      image.src = session.sourceUrl;
+    });
+
+    if (!(sourceImage instanceof HTMLImageElement)) {
+      return null;
+    }
+
+    const canvas = document.createElement("canvas");
+    const canvasWidth = Math.max(1, Math.round(Number(crop.width || 0)));
+    const canvasHeight = Math.max(1, Math.round(Number(crop.height || 0)));
+    canvas.width = canvasWidth;
+    canvas.height = canvasHeight;
+
+    const context = canvas.getContext("2d");
+    if (!context) {
+      return null;
+    }
+
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
+    context.clearRect(0, 0, canvasWidth, canvasHeight);
+    context.drawImage(
+      sourceImage,
+      Number(crop.x || 0),
+      Number(crop.y || 0),
+      Number(crop.width || 0),
+      Number(crop.height || 0),
+      0,
+      0,
+      canvasWidth,
+      canvasHeight
+    );
+
+    const inputFile =
+      session.state?.input instanceof HTMLInputElement &&
+      session.state.input.files instanceof FileList &&
+      session.state.input.files[0] instanceof File
+        ? session.state.input.files[0]
+        : null;
+    const preferredMime =
+      inputFile && acceptedMimeTypes.has(inputFile.type) && inputFile.type !== "image/gif"
+        ? inputFile.type
+        : "image/png";
+    const blob = await canvasToBlob(
+      canvas,
+      preferredMime,
+      preferredMime === "image/png" ? undefined : 0.92
+    );
+    if (!(blob instanceof Blob)) {
+      return null;
+    }
+
+    const extension = extensionFromSource(
+      inputFile?.name || session.sourceUrl,
+      preferredMime
+    );
+
+    return new File([blob], `${session.state.type}-crop.${extension}`, {
+      type: preferredMime,
+      lastModified: Date.now(),
+    });
+  };
+
   const assignFileToInput = (input, file) => {
     if (!(input instanceof HTMLInputElement) || !(file instanceof File)) {
       return false;
@@ -2700,7 +2788,7 @@
 
     title.textContent = state.config.cropTitle;
     subtitle.textContent = state.config.cropSubtitle;
-    avatarGuide.hidden = state.type !== "avatar";
+    avatarGuide.hidden = true;
     viewport.style.setProperty("--profile-crop-aspect", String(state.config.aspectRatio));
     previewFrame.classList.toggle("profileCropper__previewFrame--avatar", state.type === "avatar");
     previewFrame.classList.toggle("profileCropper__previewFrame--banner", state.type === "banner");
@@ -2747,7 +2835,7 @@
     }
   };
 
-  const commitSessionCrop = () => {
+  const commitSessionCrop = async () => {
     const session = activeSession;
     if (!session) return;
 
@@ -2759,18 +2847,43 @@
 
     const state = session.state;
     const replacingCommittedUrl = state.selectedUrl;
+    let croppedFile = null;
 
-    if (session.mode === "new" && replacingCommittedUrl && replacingCommittedUrl !== session.sourceUrl) {
+    try {
+      croppedFile = await buildCroppedUploadFile(session, crop);
+    } catch (error) {
+      showToast(
+        error instanceof Error ? error.message : "Could not prepare the selected crop.",
+        "error"
+      );
+      return;
+    }
+
+    if (!(croppedFile instanceof File) || !assignFileToInput(state.input, croppedFile)) {
+      showToast("Could not prepare the selected crop.", "error");
+      return;
+    }
+
+    const croppedWidth = Math.max(1, Math.round(Number(crop.width || 0)));
+    const croppedHeight = Math.max(1, Math.round(Number(crop.height || 0)));
+    const croppedUrl = URL.createObjectURL(croppedFile);
+
+    if (replacingCommittedUrl && replacingCommittedUrl !== session.sourceUrl) {
       revokeObjectUrl(replacingCommittedUrl);
     }
 
-    state.selectedUrl = session.sourceUrl;
-    state.selectedNaturalWidth = session.naturalWidth;
-    state.selectedNaturalHeight = session.naturalHeight;
-    state.cropData = crop;
+    state.selectedUrl = croppedUrl;
+    state.selectedNaturalWidth = croppedWidth;
+    state.selectedNaturalHeight = croppedHeight;
+    state.cropData = {
+      x: 0,
+      y: 0,
+      width: croppedWidth,
+      height: croppedHeight,
+    };
 
     if (state.cropField instanceof HTMLInputElement) {
-      state.cropField.value = JSON.stringify(crop);
+      state.cropField.value = "";
     }
     if (state.removeCheckbox instanceof HTMLInputElement) {
       state.removeCheckbox.checked = false;
@@ -2779,7 +2892,6 @@
     setStatus(state, state.config.readyMessage);
     renderMediaPreview(state);
 
-    session.pendingUrl = null;
     closeCropper({ keepInput: true });
   };
 
@@ -2790,7 +2902,7 @@
   });
 
   applyButton.addEventListener("click", () => {
-    commitSessionCrop();
+    void commitSessionCrop();
   });
 
   resetButton.addEventListener("click", () => {
@@ -3708,4 +3820,90 @@
   });
 
   window.truxOpenReportModal = openReportModal;
+})();
+
+(() => {
+  const activeThread = document.querySelector(".messagesLayout.is-thread-active");
+  if (activeThread) {
+    document.body.classList.add("messages-thread-active");
+  }
+})();
+
+(() => {
+  const sheets = Array.from(document.querySelectorAll("[data-shell-sheet]")).filter(
+    (sheet) => sheet instanceof HTMLElement
+  );
+  if (!sheets.length) return;
+
+  let activeSheet = null;
+  let returnFocus = null;
+
+  const closeSheet = (options = {}) => {
+    if (!(activeSheet instanceof HTMLElement)) return;
+
+    const shouldRestoreFocus = options.restoreFocus !== false;
+    activeSheet.setAttribute("hidden", "hidden");
+    document.body.classList.remove("shellSheet-open");
+
+    if (
+      shouldRestoreFocus &&
+      returnFocus instanceof HTMLElement &&
+      typeof returnFocus.focus === "function"
+    ) {
+      returnFocus.focus();
+    }
+
+    activeSheet = null;
+    returnFocus = null;
+  };
+
+  const openSheet = (name, trigger = null) => {
+    const sheet = document.querySelector(`[data-shell-sheet="${String(name || "")}"]`);
+    if (!(sheet instanceof HTMLElement)) return false;
+
+    if (activeSheet && activeSheet !== sheet) {
+      closeSheet({ restoreFocus: false });
+    }
+
+    activeSheet = sheet;
+    returnFocus = trigger instanceof HTMLElement ? trigger : null;
+    sheet.removeAttribute("hidden");
+    document.body.classList.add("shellSheet-open");
+
+    window.setTimeout(() => {
+      const focusTarget = sheet.querySelector(
+        "input:not([type='hidden']), textarea, select, button, a"
+      );
+      if (focusTarget instanceof HTMLElement) {
+        focusTarget.focus();
+      }
+    }, 20);
+
+    return true;
+  };
+
+  document.addEventListener("click", (e) => {
+    if (!(e.target instanceof Element)) return;
+
+    const closeTrigger = e.target.closest("[data-shell-sheet-close='1']");
+    if (closeTrigger instanceof HTMLElement) {
+      e.preventDefault();
+      closeSheet();
+      return;
+    }
+
+    const openTrigger = e.target.closest("[data-shell-sheet-open]");
+    if (openTrigger instanceof HTMLElement) {
+      const sheetName = openTrigger.getAttribute("data-shell-sheet-open") || "";
+      if (!sheetName) return;
+      e.preventDefault();
+      openSheet(sheetName, openTrigger);
+    }
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key !== "Escape") return;
+    if (!(activeSheet instanceof HTMLElement)) return;
+    closeSheet();
+  });
 })();

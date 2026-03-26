@@ -3,6 +3,9 @@
 declare(strict_types=1);
 require_once __DIR__ . '/_bootstrap.php';
 
+$pageKey = 'settings';
+$pageLayout = 'app';
+
 trux_require_login();
 $me = trux_current_user();
 if (!$me) {
@@ -101,18 +104,29 @@ $blockedUsers = trux_fetch_blocked_users((int)$me['id']);
 require_once __DIR__ . '/_header.php';
 ?>
 
-<section class="hero">
-  <h1>Settings</h1>
-  <p class="muted"><?= trux_e((string)$settingsSections[$activeSection]['hero_description']) ?></p>
-</section>
+<div class="pageFrame pageFrame--settings">
+  <section class="inlineHeader inlineHeader--settings">
+    <div class="inlineHeader__main">
+      <span class="inlineHeader__eyebrow">Workspace center</span>
+      <div class="inlineHeader__titleWrap">
+        <h2 class="inlineHeader__title">Settings</h2>
+        <p class="inlineHeader__copy"><?= trux_e((string)$settingsSections[$activeSection]['hero_description']) ?></p>
+      </div>
+    </div>
+    <div class="inlineHeader__aside">
+      <div class="inlineHeader__meta">
+        <span>@<?= trux_e((string)$me['username']) ?></span>
+        <strong><?= trux_e((string)$settingsSections[$activeSection]['title']) ?></strong>
+      </div>
+    </div>
+  </section>
 
-<section class="settingsLayout">
-  <aside class="settingsSidebar">
-    <div class="card settingsNavCard">
-      <div class="card__body">
+  <section class="settingsLayout">
+    <aside class="settingsSidebar">
+      <div class="settingsNavCard">
         <div class="settingsNavCard__head">
-          <h2 class="h2">Sections</h2>
-          <p class="muted">Jump between account settings.</p>
+          <span class="settingsNavCard__eyebrow">Sections</span>
+          <h3>Account controls</h3>
         </div>
         <nav class="settingsNav" aria-label="Settings sections">
           <?php foreach ($settingsSections as $sectionKey => $sectionMeta): ?>
@@ -121,18 +135,16 @@ require_once __DIR__ . '/_header.php';
               href="<?= TRUX_BASE_URL ?>/settings.php?section=<?= urlencode($sectionKey) ?>"
               data-settings-nav="<?= trux_e($sectionKey) ?>">
               <strong><?= trux_e((string)$sectionMeta['title']) ?></strong>
-              <small class="muted"><?= trux_e((string)$sectionMeta['nav_description']) ?></small>
+              <small><?= trux_e((string)$sectionMeta['nav_description']) ?></small>
             </a>
           <?php endforeach; ?>
         </nav>
       </div>
-    </div>
-  </aside>
+    </aside>
 
-  <div class="settingsContent">
-    <?php if ($activeSection === 'notifications'): ?>
-      <section class="card settingsCard settingsSectionCard" id="settings-notifications" data-settings-section="notifications">
-        <div class="card__body">
+    <div class="settingsContent">
+      <?php if ($activeSection === 'notifications'): ?>
+        <section class="settingsSectionCard" id="settings-notifications" data-settings-section="notifications">
           <form class="form settingsForm" method="post" action="<?= TRUX_BASE_URL ?>/settings.php">
             <?= trux_csrf_field() ?>
             <input type="hidden" name="action" value="save_notifications">
@@ -140,7 +152,8 @@ require_once __DIR__ . '/_header.php';
 
             <div class="settingSection">
               <div class="settingSection__head">
-                <h2 class="h2">Notifications</h2>
+                <span class="settingSection__eyebrow">Notifications</span>
+                <h3>Feed alerts and activity</h3>
                 <p class="muted">Choose which activity should appear in your notification feed.</p>
               </div>
 
@@ -150,25 +163,18 @@ require_once __DIR__ . '/_header.php';
                     <strong><?= trux_e((string)$meta['title']) ?></strong>
                     <small class="muted"><?= trux_e((string)$meta['description']) ?></small>
                   </span>
-                  <input
-                    id="<?= trux_e($key) ?>"
-                    type="checkbox"
-                    name="<?= trux_e($key) ?>"
-                    value="1"
-                    <?= !empty($prefs[$key]) ? 'checked' : '' ?>>
+                  <input id="<?= trux_e($key) ?>" type="checkbox" name="<?= trux_e($key) ?>" value="1" <?= !empty($prefs[$key]) ? 'checked' : '' ?>>
                 </label>
               <?php endforeach; ?>
             </div>
 
-            <div class="row">
-              <button class="btn" type="submit">Save notifications</button>
+            <div class="settingsActions">
+              <button class="shellButton shellButton--accent" type="submit">Save notifications</button>
             </div>
           </form>
-        </div>
-      </section>
-    <?php elseif ($activeSection === 'privacy'): ?>
-      <section class="card settingsCard settingsSectionCard" id="settings-privacy" data-settings-section="privacy">
-        <div class="card__body">
+        </section>
+      <?php elseif ($activeSection === 'privacy'): ?>
+        <section class="settingsSectionCard" id="settings-privacy" data-settings-section="privacy">
           <form class="form settingsForm" method="post" action="<?= TRUX_BASE_URL ?>/settings.php">
             <?= trux_csrf_field() ?>
             <input type="hidden" name="action" value="save_privacy">
@@ -176,7 +182,8 @@ require_once __DIR__ . '/_header.php';
 
             <div class="settingSection">
               <div class="settingSection__head">
-                <h2 class="h2">Privacy</h2>
+                <span class="settingSection__eyebrow">Privacy</span>
+                <h3>Profile visibility</h3>
                 <p class="muted">Control who can view the Likes and Bookmarks tabs on your profile. Both are public by default.</p>
               </div>
 
@@ -185,12 +192,7 @@ require_once __DIR__ . '/_header.php';
                   <strong>Show likes publicly</strong>
                   <small class="muted">Allow other people to open your Likes tab and see the posts, comments, and replies you liked.</small>
                 </span>
-                <input
-                  id="show_likes_public"
-                  type="checkbox"
-                  name="show_likes_public"
-                  value="1"
-                  <?= !empty($privacyPrefs['show_likes_public']) ? 'checked' : '' ?>>
+                <input id="show_likes_public" type="checkbox" name="show_likes_public" value="1" <?= !empty($privacyPrefs['show_likes_public']) ? 'checked' : '' ?>>
               </label>
 
               <label class="settingRow" for="show_bookmarks_public">
@@ -198,27 +200,21 @@ require_once __DIR__ . '/_header.php';
                   <strong>Show bookmarks publicly</strong>
                   <small class="muted">Allow other people to open your Bookmarks tab and see the posts, comments, and replies you saved.</small>
                 </span>
-                <input
-                  id="show_bookmarks_public"
-                  type="checkbox"
-                  name="show_bookmarks_public"
-                  value="1"
-                  <?= !empty($privacyPrefs['show_bookmarks_public']) ? 'checked' : '' ?>>
+                <input id="show_bookmarks_public" type="checkbox" name="show_bookmarks_public" value="1" <?= !empty($privacyPrefs['show_bookmarks_public']) ? 'checked' : '' ?>>
               </label>
             </div>
 
-            <div class="row">
-              <button class="btn" type="submit">Save privacy</button>
+            <div class="settingsActions">
+              <button class="shellButton shellButton--accent" type="submit">Save privacy</button>
             </div>
           </form>
-        </div>
-      </section>
-    <?php elseif ($activeSection === 'muted'): ?>
-      <section class="card settingsCard settingsSectionCard" id="settings-muted" data-settings-section="muted">
-        <div class="card__body">
+        </section>
+      <?php elseif ($activeSection === 'muted'): ?>
+        <section class="settingsSectionCard" id="settings-muted" data-settings-section="muted">
           <div class="settingSection">
             <div class="settingSection__head">
-              <h2 class="h2">Muted Users</h2>
+              <span class="settingSection__eyebrow">Muted users</span>
+              <h3>Muted accounts</h3>
               <p class="muted">You will not receive notifications generated by users you mute.</p>
             </div>
 
@@ -234,15 +230,10 @@ require_once __DIR__ . '/_header.php';
               <?php foreach ($mutedUsers as $mutedUser): ?>
                 <div class="settingRow">
                   <span class="settingRow__label">
-                    <strong>
-                      <a href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= urlencode((string)$mutedUser['username']) ?>">@<?= trux_e((string)$mutedUser['username']) ?></a>
-                    </strong>
+                    <strong><a href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= urlencode((string)$mutedUser['username']) ?>">@<?= trux_e((string)$mutedUser['username']) ?></a></strong>
                     <small class="muted">
                       Muted
-                      <span
-                        data-time-ago="1"
-                        data-time-source="<?= trux_e((string)$mutedUser['created_at']) ?>"
-                        title="<?= trux_e(trux_format_exact_time((string)$mutedUser['created_at'])) ?>">
+                      <span data-time-ago="1" data-time-source="<?= trux_e((string)$mutedUser['created_at']) ?>" title="<?= trux_e(trux_format_exact_time((string)$mutedUser['created_at'])) ?>">
                         <?= trux_e(trux_time_ago((string)$mutedUser['created_at'])) ?>
                       </span>
                     </small>
@@ -252,102 +243,75 @@ require_once __DIR__ . '/_header.php';
                     <input type="hidden" name="action" value="unmute_user">
                     <input type="hidden" name="section" value="muted">
                     <input type="hidden" name="muted_user_id" value="<?= (int)$mutedUser['id'] ?>">
-                    <button class="btn btn--small btn--ghost" type="submit">Unmute</button>
+                    <button class="shellButton shellButton--ghost" type="submit">Unmute</button>
                   </form>
                 </div>
               <?php endforeach; ?>
             <?php endif; ?>
           </div>
-        </div>
-      </section>
-      <?php if ($activeSection === 'blocked'): ?>
-        <section
-          class="card settingsCard settingsSectionCard"
-          id="settings-blocked"
-          data-settings-section="blocked">
-          <div class="card__body">
-            <div class="settingSection">
-              <div class="settingSection__head">
-                <h2 class="h2">Blocked Users</h2>
-                <p class="muted">
-                  Blocked users cannot see your profile, send you messages,
-                  or appear in your feeds.
-                </p>
-              </div>
-
-              <?php if (!$blockedUsers): ?>
-                <div class="settingRow">
-                  <span class="settingRow__label">
-                    <strong>No blocked users</strong>
-                    <small class="muted">
-                      Block a user from their profile to hide them entirely.
-                    </small>
-                  </span>
-                  <strong class="muted">0</strong>
-                </div>
-              <?php else: ?>
-                <?php foreach ($blockedUsers as $blockedUser): ?>
-                  <div class="settingRow">
-                    <span class="settingRow__label">
-                      <strong>
-                        <a href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= urlencode((string)$blockedUser['username']) ?>">
-                          @<?= trux_e((string)$blockedUser['username']) ?>
-                        </a>
-                      </strong>
-                      <small class="muted">
-                        Blocked
-                        <span
-                          data-time-ago="1"
-                          data-time-source="<?= trux_e((string)$blockedUser['created_at']) ?>"
-                          title="<?= trux_e(trux_format_exact_time((string)$blockedUser['created_at'])) ?>">
-                          <?= trux_e(trux_time_ago((string)$blockedUser['created_at'])) ?>
-                        </span>
-                      </small>
-                    </span>
-                    <form
-                      method="post"
-                      action="<?= TRUX_BASE_URL ?>/settings.php"
-                      class="inline">
-                      <?= trux_csrf_field() ?>
-                      <input type="hidden" name="action" value="unblock_user">
-                      <input type="hidden" name="section" value="blocked">
-                      <input
-                        type="hidden"
-                        name="blocked_user_id"
-                        value="<?= (int)$blockedUser['id'] ?>">
-                      <button class="btn btn--small btn--ghost" type="submit">
-                        Unblock
-                      </button>
-                    </form>
-                  </div>
-                <?php endforeach; ?>
-              <?php endif; ?>
-
-            </div>
-          </div>
         </section>
-      <?php endif; ?>
-    <?php else: ?>
-      <section class="card settingsCard settingsSectionCard" id="settings-interface" data-settings-section="interface">
-        <div class="card__body">
+      <?php elseif ($activeSection === 'blocked'): ?>
+        <section class="settingsSectionCard" id="settings-blocked" data-settings-section="blocked">
           <div class="settingSection">
             <div class="settingSection__head">
-              <h2 class="h2">Interface</h2>
+              <span class="settingSection__eyebrow">Blocked users</span>
+              <h3>Blocked accounts</h3>
+              <p class="muted">Blocked users cannot see your profile, send you messages, or appear in your feeds.</p>
+            </div>
+
+            <?php if (!$blockedUsers): ?>
+              <div class="settingRow">
+                <span class="settingRow__label">
+                  <strong>No blocked users</strong>
+                  <small class="muted">Block a user from their profile to hide them entirely.</small>
+                </span>
+                <strong class="muted">0</strong>
+              </div>
+            <?php else: ?>
+              <?php foreach ($blockedUsers as $blockedUser): ?>
+                <div class="settingRow">
+                  <span class="settingRow__label">
+                    <strong><a href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= urlencode((string)$blockedUser['username']) ?>">@<?= trux_e((string)$blockedUser['username']) ?></a></strong>
+                    <small class="muted">
+                      Blocked
+                      <span data-time-ago="1" data-time-source="<?= trux_e((string)$blockedUser['created_at']) ?>" title="<?= trux_e(trux_format_exact_time((string)$blockedUser['created_at'])) ?>">
+                        <?= trux_e(trux_time_ago((string)$blockedUser['created_at'])) ?>
+                      </span>
+                    </small>
+                  </span>
+                  <form method="post" action="<?= TRUX_BASE_URL ?>/settings.php" class="inline">
+                    <?= trux_csrf_field() ?>
+                    <input type="hidden" name="action" value="unblock_user">
+                    <input type="hidden" name="section" value="blocked">
+                    <input type="hidden" name="blocked_user_id" value="<?= (int)$blockedUser['id'] ?>">
+                    <button class="shellButton shellButton--ghost" type="submit">Unblock</button>
+                  </form>
+                </div>
+              <?php endforeach; ?>
+            <?php endif; ?>
+          </div>
+        </section>
+      <?php else: ?>
+        <section class="settingsSectionCard" id="settings-interface" data-settings-section="interface">
+          <div class="settingSection">
+            <div class="settingSection__head">
+              <span class="settingSection__eyebrow">Interface</span>
+              <h3>UI status</h3>
               <p class="muted">A quick status check for UI-related options.</p>
             </div>
 
             <div class="settingRow">
               <span class="settingRow__label">
-                <strong>Visual settings</strong>
-                <small class="muted">The interface now uses the fixed classic baseline across the site.</small>
+                <strong>Visual system</strong>
+                <small class="muted">TruX now runs on the command-shell interface foundation across the site.</small>
               </span>
-              <strong class="muted">Removed</strong>
+              <strong class="muted">Unified</strong>
             </div>
           </div>
-        </div>
-      </section>
-    <?php endif; ?>
-  </div>
-</section>
+        </section>
+      <?php endif; ?>
+    </div>
+  </section>
+</div>
 
 <?php require_once __DIR__ . '/_footer.php'; ?>

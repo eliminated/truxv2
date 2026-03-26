@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once __DIR__ . '/_bootstrap.php';
 trux_require_staff_role('admin');
 
+$pageKey = 'moderation-appeals';
 $moderationActiveKey = 'appeals';
 $staffUsers = trux_fetch_staff_users('admin');
 $appealStatuses = trux_moderation_appeal_statuses();

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/_bootstrap.php';
 
+$pageKey = 'moderation-activity';
 $moderationActiveKey = 'activity';
 $suspiciousStatuses = trux_moderation_suspicious_statuses();
 $severities = trux_moderation_severity_options();

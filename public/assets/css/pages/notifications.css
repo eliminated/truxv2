@@ -1,0 +1,4 @@
+.bandSurface--notifications .notificationList {
+  display: grid;
+  gap: var(--space-3);
+}

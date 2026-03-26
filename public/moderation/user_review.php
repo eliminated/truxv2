@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/_bootstrap.php';
 
+$pageKey = 'moderation-user-review';
 $moderationActiveKey = 'user_review';
 $userCaseStatuses = trux_moderation_user_case_statuses();
 $userCasePriorities = trux_moderation_user_case_priorities();

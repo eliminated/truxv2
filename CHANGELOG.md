@@ -1,4 +1,56 @@
-# Omincus Updates
+# Omnicus Updates
+## Omnicus v0.5.5 - Full UI Replacement
+
+**Branch**: Production
+**Date**: 2026-03-24
+
+***
+
+### Added
+
+- New command-shell app foundation with a persistent desktop rail, sticky context topbar, fluid content canvas, and mobile bottom navigation
+- New full-screen account gateway for `login`, `register`, `forgot_password`, and `reset_password`
+- Mobile search sheet and account sheet for the new shell navigation model
+- New modular stylesheet architecture under `public/assets/css/` using base, layout, components, pages, effects, and responsive layers
+- New `v0.5.5` UI release notes documenting the full shell cutover
+
+***
+
+### Changed
+
+- Replaced the old centered-card UI paradigm with layered command-shell surfaces across feed, search, bookmarks, notifications, messages, profile, settings, composer, premium, and appeal pages
+- Rebuilt the shared header and footer templates into shell routers for `app`, `auth`, and `moderation` layouts
+- Rebuilt the shared post renderer so posts read as stream bands with a gutter, content lane, and inline action rail instead of generic cards
+- Reworked the moderation shell into a distinct ops workspace with a dedicated staff rail and queue strip
+- Reorganized mobile behavior so navigation, focused threads, sheets, and overlays behave like a deliberate phone UI rather than compressed desktop chrome
+- Rebalanced shell density toward a leaner center-feed layout with slimmer rails, tighter headers, and less oversized page chrome
+- Moved feed mode controls into the live timeline header and tightened profile, message, and utility surface spacing
+- Standardized the shared post viewer and moderation review overlays into fixed-height popup workspaces with internal scrolling instead of mixed inline/route presentation
+
+***
+
+### Technical
+
+- Replaced the CSS entrypoint with `public/assets/css/main.css` and aligned imports to the new modular file structure
+- Added shell-only client behavior in `public/assets/app.js` for search and account sheets while preserving existing post, modal, AJAX, and moderation flows
+- Preserved backend logic, routes, database behavior, auth/session/CSRF handling, moderation logic, messaging logic, validation rules, and API response shapes
+- Folded active support and utility selectors into the imported modular CSS so premium tiers, notification danger actions, cards, and shared flashes no longer depend on dead legacy files
+
+***
+
+### Fixed
+
+- Restored working cropper apply flow by falling back to client-side image cropping when server-side GD cropping is unavailable
+- Fixed rail account presence to use the uploaded profile photo, truncate long usernames cleanly, and align moderation badges correctly
+- Fixed dropdown hover behavior so the profile menu stays open while moving the cursor from trigger to panel, and added SVG icons to profile menu items
+- Tightened post, comment, and profile action menus so they size to their content and no longer overlap nearby controls
+- Restored missing comment-viewer avatar, vote, score, and action styles after the UI cutover
+- Fixed profile facts/sidebar stretching, profile-action clipping, false `No posts yet` append behavior on paged profiles, and oversized custom banner rendering
+- Removed the visible standalone post-viewer page composition while keeping the shared popup viewer route working as the direct entry point
+- Restored moderation report/user-review popup presentation so review workspaces no longer render like broken inline pages
+
+***
+
 ## Omnicus v0.5.0
 
 **Branch**: Production

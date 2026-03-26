@@ -1,0 +1,30 @@
+.profileTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  padding: 0.4rem;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-pill);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.profileTabs__item {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  min-height: 2.55rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 1rem;
+  border-radius: var(--radius-pill);
+  color: var(--text-soft);
+  font-weight: 700;
+  font: inherit;
+  cursor: pointer;
+}
+
+.profileTabs__item.is-active {
+  color: var(--text-strong);
+  background: rgba(97, 221, 255, 0.1);
+}

@@ -1,0 +1,108 @@
+.form,
+.settingsForm,
+.reviewModal__section,
+.reportModal__form,
+.entityEditModal__form,
+.commentDock__form,
+.messagesComposer {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.field {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.field > span,
+.field > strong {
+  color: var(--text-soft);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+input,
+textarea,
+select {
+  width: 100%;
+  min-height: 3.25rem;
+  padding: 0.95rem 1rem;
+  border-radius: var(--radius-2);
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-strong);
+  outline: none;
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-faint);
+}
+
+input:focus,
+textarea:focus,
+select:focus {
+  border-color: var(--line-accent);
+  box-shadow: var(--focus-ring);
+}
+
+textarea {
+  min-height: 8rem;
+  resize: vertical;
+}
+
+input[type="checkbox"] {
+  width: 1.1rem;
+  min-height: 1.1rem;
+  height: 1.1rem;
+  accent-color: var(--accent);
+}
+
+.settingSection {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.field--inlineToggle {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+}
+
+.field--inlineToggle > span {
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.settingRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  border-top: 1px solid var(--line-soft);
+}
+
+.settingRow:first-of-type {
+  border-top: 0;
+}
+
+.settingRow__label {
+  display: grid;
+  gap: 0.25rem;
+  max-width: 42rem;
+}
+
+.settingsActions,
+.editorStage__actions,
+.messagesComposer__actions,
+.authSlab__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}

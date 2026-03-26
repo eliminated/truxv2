@@ -1,0 +1,130 @@
+.moderationLayout {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.moderationContent,
+.moderationPanelGrid,
+.moderationMetricGrid,
+.moderationList,
+.moderationCards {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.moderationPanelGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.moderationMetricGrid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.moderationMetricCard,
+.moderationPanel,
+.moderationRecordCard {
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-3);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.moderationMetricCard .card__body,
+.moderationPanel .card__body,
+.moderationRecordCard {
+  padding: var(--space-5);
+}
+
+.moderationPanel__head,
+.moderationFilters,
+.moderationActions,
+.moderationPagination,
+.moderationListItem__top,
+.moderationListItem__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.moderationFilters {
+  align-items: end;
+}
+
+.moderationFilters__search {
+  flex: 1 1 260px;
+}
+
+.moderationFilters__actions {
+  display: flex;
+  gap: var(--space-3);
+}
+
+.moderationListItem,
+.moderationRecordCard {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border-radius: var(--radius-2);
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.moderationTableWrap {
+  overflow: auto;
+}
+
+.moderationTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.moderationTable th,
+.moderationTable td {
+  padding: var(--space-4);
+  border-top: 1px solid var(--line-soft);
+  text-align: left;
+  vertical-align: top;
+}
+
+.moderationTable thead th {
+  color: var(--text-faint);
+  font-size: 0.75rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  border-top: 0;
+}
+
+.moderationCards {
+  display: none;
+}
+
+.moderationInlineForm {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.reviewModal__metaList,
+.reviewModal__section,
+.reviewModalWorkspace,
+.reviewModalDiscussion,
+.reviewModalVoteList,
+.moderationKeyValueList {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.reviewModal__metaRow,
+.moderationKeyValue {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.reviewModal__note {
+  padding: var(--space-4);
+  border-radius: var(--radius-2);
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.03);
+}

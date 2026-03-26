@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/_bootstrap.php';
 
+$pageKey = 'moderation-audit-logs';
 $moderationActiveKey = 'audit_logs';
 $auditActions = trux_moderation_audit_action_labels();
 $subjectTypes = trux_moderation_subject_type_labels();

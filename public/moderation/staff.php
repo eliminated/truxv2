@@ -5,6 +5,7 @@ require_once __DIR__ . '/_bootstrap.php';
 
 trux_require_staff_role('admin');
 
+$pageKey = 'moderation-staff';
 $moderationActiveKey = 'staff_access';
 $manageableRoles = trux_manageable_staff_roles();
 $roleFilterOptions = array_merge($manageableRoles, [

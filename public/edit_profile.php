@@ -2,6 +2,9 @@
 declare(strict_types=1);
 require_once __DIR__ . '/_bootstrap.php';
 
+$pageKey = 'edit-profile';
+$pageLayout = 'app';
+
 trux_require_login();
 $me = trux_current_user();
 if (!$me) {
@@ -26,6 +29,9 @@ $form = [
     'profile_links' => trux_profile_fill_link_slots(trux_profile_decode_links((string)($me['profile_links_json'] ?? ''))),
 ];
 $errors = [];
+$allowedEditorTabs = ['banner-profile', 'about-me', 'profile-media'];
+$requestedEditorTab = trim((string)($_POST['editor_tab'] ?? trux_str_param('editor_tab', 'banner-profile')));
+$editorTab = in_array($requestedEditorTab, $allowedEditorTabs, true) ? $requestedEditorTab : 'banner-profile';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $linkLabels = is_array($_POST['profile_link_label'] ?? null) ? $_POST['profile_link_label'] : [];
@@ -181,24 +187,57 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 require_once __DIR__ . '/_header.php';
 ?>
 
-<section class="hero">
-  <h1>Edit Profile</h1>
-  <p class="muted">Update your public profile details, About Me section, links, and media.</p>
-</section>
+<div class="pageFrame pageFrame--studio">
+  <section class="pageBand pageBand--studio">
+    <div class="pageBand__main">
+      <span class="pageBand__eyebrow">Profile studio</span>
+      <h2 class="pageBand__title">Edit profile</h2>
+      <p class="pageBand__copy">Update your public profile details, About Me section, links, and media.</p>
+    </div>
+    <div class="pageBand__aside">
+      <div class="pageBand__meta">
+        <span>@<?= trux_e($username) ?></span>
+        <strong>Live identity editor</strong>
+      </div>
+    </div>
+  </section>
 
-<section class="card settingsCard">
-  <div class="card__body">
-    <?php if ($errors): ?>
+  <?php if ($errors): ?>
+    <section class="settingsSectionCard settingsSectionCard--studio">
       <div class="flash flash--error">
         <?php foreach ($errors as $error): ?>
           <div><?= trux_e((string)$error) ?></div>
         <?php endforeach; ?>
       </div>
-    <?php endif; ?>
+    </section>
+  <?php endif; ?>
 
-    <form class="form settingsForm" method="post" action="<?= TRUX_BASE_URL ?>/edit_profile.php" enctype="multipart/form-data">
-      <?= trux_csrf_field() ?>
+  <form class="form settingsForm" method="post" action="<?= TRUX_BASE_URL ?>/edit_profile.php?editor_tab=<?= urlencode($editorTab) ?>" enctype="multipart/form-data">
+    <?= trux_csrf_field() ?>
+    <input type="hidden" name="editor_tab" value="<?= trux_e($editorTab) ?>">
 
+    <nav class="profileTabs" id="profile-editor-tabs" aria-label="Edit profile sections">
+      <a
+        class="profileTabs__item<?= $editorTab === 'banner-profile' ? ' is-active' : '' ?>"
+        href="<?= TRUX_BASE_URL ?>/edit_profile.php?editor_tab=banner-profile#profile-editor-tabs"
+        <?= $editorTab === 'banner-profile' ? 'aria-current="page"' : '' ?>>
+        Banner Profile
+      </a>
+      <a
+        class="profileTabs__item<?= $editorTab === 'about-me' ? ' is-active' : '' ?>"
+        href="<?= TRUX_BASE_URL ?>/edit_profile.php?editor_tab=about-me#profile-editor-tabs"
+        <?= $editorTab === 'about-me' ? 'aria-current="page"' : '' ?>>
+        About Me
+      </a>
+      <a
+        class="profileTabs__item<?= $editorTab === 'profile-media' ? ' is-active' : '' ?>"
+        href="<?= TRUX_BASE_URL ?>/edit_profile.php?editor_tab=profile-media#profile-editor-tabs"
+        <?= $editorTab === 'profile-media' ? 'aria-current="page"' : '' ?>>
+        Profile Media
+      </a>
+    </nav>
+
+    <section class="settingsSectionCard settingsSectionCard--studio" id="edit-profile-banner-section"<?= $editorTab !== 'banner-profile' ? ' hidden' : '' ?>>
       <div class="settingSection">
         <div class="settingSection__head">
           <h2 class="h2">Banner Profile</h2>
@@ -225,8 +264,11 @@ require_once __DIR__ . '/_header.php';
           <span>Website</span>
           <input type="text" name="website_url" maxlength="255" value="<?= trux_e($form['website_url']) ?>" placeholder="https://example.com">
         </label>
+        
       </div>
+    </section>
 
+    <section class="settingsSectionCard settingsSectionCard--studio" id="edit-profile-about-section"<?= $editorTab !== 'about-me' ? ' hidden' : '' ?>>
       <div class="settingSection">
         <div class="settingSection__head">
           <h2 class="h2">About Me</h2>
@@ -286,11 +328,13 @@ require_once __DIR__ . '/_header.php';
           <?php endforeach; ?>
         </div>
       </div>
+    </section>
 
+    <section class="settingsSectionCard settingsSectionCard--studio" id="edit-profile-media-section"<?= $editorTab !== 'profile-media' ? ' hidden' : '' ?>>
       <div class="settingSection">
         <div class="settingSection__head">
           <h2 class="h2">Profile Media</h2>
-          <p class="muted">Upload a banner and avatar for your public profile.</p>
+          <p class="muted">Upload and crop your profile photo and banner independently.</p>
         </div>
 
         <div class="profileMediaGrid">
@@ -355,14 +399,16 @@ require_once __DIR__ . '/_header.php';
           </div>
         </div>
       </div>
+    </section>
 
+    <section class="settingsSectionCard settingsSectionCard--studio">
       <div class="row">
-        <button class="btn" type="submit">Save profile</button>
-        <a class="muted" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= urlencode($username) ?>">Cancel</a>
+        <button class="shellButton shellButton--accent" type="submit">Save profile</button>
+        <a class="shellButton shellButton--ghost" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= urlencode($username) ?>">Cancel</a>
       </div>
-    </form>
-  </div>
-</section>
+    </section>
+  </form>
+</div>
 
 <div id="profileCropperModal" class="profileCropperModal" hidden>
   <div class="profileCropperModal__backdrop" data-profile-crop-close="1"></div>

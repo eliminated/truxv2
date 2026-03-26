@@ -1,0 +1,44 @@
+.feedScene,
+.searchScene,
+.editorStage {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(248px, var(--utility-width));
+  gap: var(--space-5);
+  align-items: start;
+}
+
+.libraryScene {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.feedScene__main,
+.searchScene__main,
+.editorStage__main {
+  min-width: 0;
+  max-width: var(--canvas-max);
+}
+
+.feedScene__rail,
+.searchScene__rail,
+.editorStage__rail {
+  min-width: 0;
+}
+
+.pageFrame--focus {
+  justify-items: start;
+}
+
+.pageFrame--notifications .bandSurface,
+.pageFrame--library .bandSurface,
+.pageFrame--studio .bandSurface {
+  max-width: 100%;
+}
+
+.focusStage .timeline {
+  width: min(100%, 900px);
+}
+
+.premiumPlans__footnote {
+  padding-top: var(--space-3);
+}

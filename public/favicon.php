@@ -24,13 +24,33 @@ if ($lastModified > 0) {
     header('Last-Modified: ' . gmdate('D, d M Y H:i:s', $lastModified) . ' GMT');
 }
 
-$source = @imagecreatefrompng($faviconPath);
-if (!$source instanceof GdImage) {
+$streamOriginalPng = static function () use ($faviconPath): void {
     header('Content-Type: image/png');
     header('Content-Length: ' . (string) filesize($faviconPath));
     header('Cache-Control: public, max-age=86400');
     readfile($faviconPath);
     exit;
+};
+
+$gdAvailable =
+    function_exists('imagecreatefrompng') &&
+    function_exists('imagesx') &&
+    function_exists('imagesy') &&
+    function_exists('imagecreatetruecolor') &&
+    function_exists('imagealphablending') &&
+    function_exists('imagesavealpha') &&
+    function_exists('imagecolorallocatealpha') &&
+    function_exists('imagefilledrectangle') &&
+    function_exists('imagecopyresampled') &&
+    function_exists('imagepng');
+
+if (!$gdAvailable) {
+    $streamOriginalPng();
+}
+
+$source = @imagecreatefrompng($faviconPath);
+if (!$source instanceof GdImage) {
+    $streamOriginalPng();
 }
 
 $srcWidth = imagesx($source);
@@ -59,11 +79,7 @@ $drawSize = $outputSize - ($outputPadding * 2);
 
 if ($maxX < $minX || $maxY < $minY || $drawSize <= 0) {
     imagedestroy($source);
-    header('Content-Type: image/png');
-    header('Content-Length: ' . (string) filesize($faviconPath));
-    header('Cache-Control: public, max-age=86400');
-    readfile($faviconPath);
-    exit;
+    $streamOriginalPng();
 }
 
 $contentWidth = $maxX - $minX + 1;

@@ -1,0 +1,180 @@
+.shellTopbar,
+.opsTopbar,
+.authTopbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  min-height: 4.4rem;
+  padding: 0.9rem 1.2rem;
+  border-bottom: 1px solid var(--line-soft);
+  background: rgba(4, 8, 14, 0.72);
+  backdrop-filter: blur(24px);
+}
+
+.shellTopbar__title,
+.opsTopbar__title {
+  min-width: 0;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.shellTopbar__eyebrow,
+.opsTopbar__eyebrow {
+  color: var(--text-faint);
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.shellTopbar__title h1,
+.opsTopbar__title h1 {
+  font-size: clamp(1.08rem, 1.6vw, 1.55rem);
+}
+
+.shellTopbar__actions,
+.opsTopbar__actions,
+.authTopbar__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.topSearch {
+  display: grid;
+  min-width: min(29rem, 29vw);
+}
+
+.topSearch--compact {
+  min-width: min(24rem, 24vw);
+}
+
+.topSearch__field {
+  min-height: 2.8rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0 0.9rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.topSearch__icon svg {
+  width: 1rem;
+  height: 1rem;
+  color: var(--text-faint);
+}
+
+.topSearch__input {
+  border: 0;
+  background: transparent;
+  color: var(--text-main);
+  outline: none;
+}
+
+.shellButton {
+  min-height: 2.65rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.65rem 0.95rem;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  color: var(--text-strong);
+  font-weight: 700;
+  font-size: 0.94rem;
+  transition:
+    transform var(--duration-fast) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard);
+}
+
+.shellButton:hover {
+  transform: translateY(-1px);
+}
+
+.shellButton--accent {
+  border-color: rgba(97, 221, 255, 0.22);
+  background:
+    linear-gradient(180deg, rgba(97, 221, 255, 0.2), rgba(97, 221, 255, 0.08)),
+    rgba(255, 255, 255, 0.03);
+}
+
+.shellButton--ghost {
+  border-color: var(--line-soft);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text-main);
+}
+
+.shellButton--danger {
+  border-color: rgba(255, 111, 150, 0.18);
+  color: #ffd7e2;
+}
+
+.shellAction {
+  width: 2.7rem;
+  height: 2.7rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.82rem;
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.035);
+  position: relative;
+}
+
+.shellAction svg {
+  width: 0.92rem;
+  height: 0.92rem;
+}
+
+.shellAction--search,
+.shellAction--account {
+  display: none;
+}
+
+.shellAction__badge {
+  position: absolute;
+  top: -0.25rem;
+  right: -0.2rem;
+  min-width: 1.3rem;
+  height: 1.3rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.3rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent);
+  color: #041018;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+
+.shellAction__profileMark {
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  border-radius: inherit;
+  background: rgba(97, 221, 255, 0.12);
+  color: var(--text-strong);
+  font-weight: 800;
+  font-size: 0.92rem;
+}
+
+.authTopbar__link {
+  color: var(--text-soft);
+  font-weight: 700;
+}
+
+.authTopbar__link--strong,
+.authTopbar__link.is-active {
+  color: var(--text-strong);
+}

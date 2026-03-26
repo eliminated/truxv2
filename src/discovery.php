@@ -202,6 +202,7 @@ function trux_fetch_discovery_suggestions(?int $viewerId, int $limit = 6): array
     $limit  = max(1, min(20, $limit));
     $viewer = (int)($viewerId ?? 0);
     $recentCutoff = trux_discovery_cutoff_datetime(24 * 14);
+    $hiddenUsername = trux_report_system_username();
 
     try {
         $db = trux_db();
@@ -249,6 +250,7 @@ function trux_fetch_discovery_suggestions(?int $viewerId, int $limit = 6): array
                      ON  bl_in.user_id          = u.id
                      AND bl_in.blocked_user_id  = :viewer_blk_in
                  WHERE  u.id <> :viewer_self
+                   AND  u.username <> :hidden_username
                    AND  existing.following_id    IS NULL
                    AND  mu.muted_user_id         IS NULL
                    AND  bl_out.blocked_user_id   IS NULL
@@ -262,6 +264,7 @@ function trux_fetch_discovery_suggestions(?int $viewerId, int $limit = 6): array
             $stmt->bindValue(':viewer_blk_out',   $viewer,       PDO::PARAM_INT);
             $stmt->bindValue(':viewer_blk_in',    $viewer,       PDO::PARAM_INT);
             $stmt->bindValue(':viewer_self',      $viewer,       PDO::PARAM_INT);
+            $stmt->bindValue(':hidden_username',  $hiddenUsername, PDO::PARAM_STR);
             $stmt->bindValue(':recent_cutoff',    $recentCutoff, PDO::PARAM_STR);
             $stmt->bindValue(':limit_rows',       $limit,        PDO::PARAM_INT);
             $stmt->execute();
@@ -289,11 +292,14 @@ function trux_fetch_discovery_suggestions(?int $viewerId, int $limit = 6): array
                  WHERE  created_at >= :recent_cutoff
                  GROUP  BY user_id
              ) rp ON rp.user_id = u.id
-             WHERE  COALESCE(fc.follower_count, 0) > 0
+             WHERE  u.username <> :hidden_username
+               AND (COALESCE(fc.follower_count, 0) > 0
                 OR  COALESCE(rp.recent_posts, 0)   > 0
+               )
              ORDER  BY discovery_score DESC, recent_posts DESC, u.id DESC
              LIMIT  :limit_rows'
         );
+        $stmt->bindValue(':hidden_username', $hiddenUsername, PDO::PARAM_STR);
         $stmt->bindValue(':recent_cutoff', $recentCutoff, PDO::PARAM_STR);
         $stmt->bindValue(':limit_rows',    $limit,        PDO::PARAM_INT);
         $stmt->execute();

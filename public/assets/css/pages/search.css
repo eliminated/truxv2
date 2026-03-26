@@ -1,0 +1,9 @@
+.searchScene__main {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.searchScene__rail .utilityPanel {
+  position: sticky;
+  top: 5rem;
+}

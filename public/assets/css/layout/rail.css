@@ -1,0 +1,318 @@
+.appRail,
+.opsRail {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: var(--space-5);
+  padding: var(--space-5);
+  border-right: 1px solid var(--line-soft);
+  background: linear-gradient(180deg, rgba(6, 10, 17, 0.95), rgba(6, 10, 17, 0.84));
+  backdrop-filter: blur(22px);
+}
+
+.appRail__head,
+.opsRail__head {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.appRail__brandRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.shellBrand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--text-strong);
+}
+
+.shellBrand--static {
+  pointer-events: none;
+  user-select: none;
+}
+
+.shellBrand__mark {
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  border-radius: 0.82rem;
+  border: 1px solid var(--line-mid);
+  background: rgba(255, 255, 255, 0.04);
+  box-shadow: var(--shadow-xs);
+}
+
+.shellBrand__mark img {
+  width: 1.45rem;
+  height: 1.45rem;
+}
+
+.shellBrand__copy {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.shellBrand__copy strong {
+  font-size: 0.92rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.shellBrand__copy span {
+  color: var(--text-faint);
+  font-size: 0.72rem;
+}
+
+.railCompose {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: center;
+  padding: 0.95rem;
+  border-radius: var(--radius-3);
+  border: 1px solid rgba(97, 221, 255, 0.16);
+  background:
+    linear-gradient(180deg, rgba(97, 221, 255, 0.12), rgba(97, 221, 255, 0.04)),
+    rgba(255, 255, 255, 0.02);
+}
+
+.railCompose__plus {
+  width: 2.15rem;
+  height: 2.15rem;
+  display: grid;
+  place-items: center;
+  border-radius: 0.75rem;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-strong);
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.railCompose__copy {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.railCompose__copy strong {
+  color: var(--text-strong);
+}
+
+.railCompose__copy small {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+}
+
+.railHomeButton {
+  width: 2.75rem;
+  height: 2.75rem;
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 0.82rem;
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--text-soft);
+}
+
+.railHomeButton svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.railHomeButton:hover,
+.railHomeButton.is-active {
+  color: var(--text-strong);
+  border-color: var(--line-mid);
+  background: rgba(255, 255, 255, 0.055);
+}
+
+.railNav,
+.opsRail__nav {
+  display: grid;
+  min-height: 0;
+  grid-auto-rows: max-content;
+  align-content: start;
+  gap: 0.3rem;
+  overflow: auto;
+  padding-right: 0.15rem;
+}
+
+.railNav__item,
+.opsRail__link {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: start;
+  padding: 0.72rem 0.78rem;
+  border-radius: var(--radius-2);
+  color: var(--text-soft);
+  border: 1px solid transparent;
+}
+
+.railNav__item:hover,
+.opsRail__link:hover,
+.railNav__item.is-active,
+.opsRail__link.is-active {
+  color: var(--text-strong);
+  border-color: var(--line-soft);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.railNav__icon {
+  width: 2.1rem;
+  height: 2.1rem;
+  display: grid;
+  place-items: center;
+  align-self: center;
+  border-radius: 0.72rem;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.railNav__icon svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.railNav__copy,
+.opsRail__linkMain {
+  display: grid;
+  gap: 0.12rem;
+  min-width: 0;
+}
+
+.railNav__copy strong,
+.opsRail__linkMain strong {
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.railNav__copy small,
+.opsRail__linkMain small {
+  color: var(--text-faint);
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
+.railNav__badge,
+.opsRail__badge {
+  min-width: 1.58rem;
+  height: 1.58rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: start;
+  margin-top: 0.1rem;
+  padding: 0 0.42rem;
+  border-radius: var(--radius-pill);
+  background: var(--accent-soft);
+  color: var(--text-strong);
+  font-size: 0.74rem;
+  font-weight: 700;
+}
+
+.railPresence {
+  align-self: end;
+  display: grid;
+  margin-top: var(--space-3);
+  position: relative;
+  z-index: 1;
+}
+
+.railPresence__card,
+.railPresence__guest,
+.opsRail__staff {
+  display: grid;
+  gap: var(--space-2);
+  padding: 0.78rem 0.82rem;
+  border-radius: var(--radius-3);
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.railPresence__card {
+  grid-template-columns: 2.55rem minmax(0, 1fr);
+  align-items: center;
+  column-gap: 0.72rem;
+}
+
+.railPresence__avatar {
+  width: 2.55rem;
+  height: 2.55rem;
+  display: grid;
+  place-items: center;
+  border-radius: 0.8rem;
+  overflow: hidden;
+  background: var(--accent-soft);
+  color: var(--text-strong);
+  font-weight: 800;
+}
+
+.railPresence__avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.railPresence__copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.1rem;
+  overflow: hidden;
+}
+
+.opsRail__staff {
+  min-width: 0;
+}
+
+.railPresence__copy strong,
+.railPresence__guest strong,
+.opsRail__staff strong {
+  color: var(--text-strong);
+}
+
+.railPresence__copy strong {
+  display: block;
+  line-height: 1.15;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.railPresence__copy small,
+.railPresence__guest span,
+.opsRail__staff span,
+.opsRail__staff small {
+  color: var(--text-soft);
+}
+
+.railPresence__copy small {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.opsRail__eyebrow {
+  color: var(--text-faint);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.opsRail__footer {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.opsRail__miniLink {
+  color: var(--text-soft);
+  font-size: 0.9rem;
+}

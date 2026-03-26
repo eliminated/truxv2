@@ -1,0 +1,8 @@
+.shellButton--accent,
+.railCompose,
+.mobileDock__item--accent,
+.segmented__item.is-active,
+.profileTabs__item.is-active,
+.postAct.is-active {
+  box-shadow: 0 0 0 1px rgba(97, 221, 255, 0.08), 0 12px 32px rgba(97, 221, 255, 0.08);
+}

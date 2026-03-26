@@ -1,0 +1,237 @@
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 14% 18%, rgba(97, 221, 255, 0.12), transparent 20%),
+    radial-gradient(circle at 86% 12%, rgba(115, 245, 210, 0.1), transparent 18%),
+    linear-gradient(180deg, #02050b 0%, #060c16 42%, #03060b 100%);
+  position: relative;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0)),
+    radial-gradient(circle at 50% 0%, rgba(255, 255, 255, 0.03), transparent 38%);
+  z-index: -2;
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(135deg, transparent 0%, rgba(97, 221, 255, 0.05) 28%, transparent 55%);
+  opacity: 0.5;
+  z-index: -1;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img,
+svg {
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(97, 221, 255, 0.26);
+  color: #ffffff;
+}
+
+.muted,
+small.muted {
+  color: var(--text-soft);
+}
+
+.eyebrow {
+  color: var(--accent-strong);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.row--spaced {
+  justify-content: space-between;
+}
+
+.inline {
+  display: inline;
+}
+
+.list {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.pageStack {
+  display: grid;
+  gap: var(--space-6);
+}
+
+.pageHeader,
+.hero {
+  display: grid;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.pageHeader__actions,
+.hero__aside {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.pageLead {
+  max-width: 64ch;
+  color: var(--text-soft);
+}
+
+.emptyState,
+.profileEmptyState,
+.moderationEmptyState,
+.messagesThread__state,
+.messagesThread__empty {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-6) 0;
+  color: var(--text-soft);
+}
+
+.clean {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pagefx {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  pointer-events: none;
+  opacity: 0;
+}
+
+.pagefx__bar {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(97, 221, 255, 0.18), transparent);
+  transform: translateX(-100%);
+}
+
+.notificationList {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.notificationItem {
+  display: block;
+  padding: 0.85rem 0.9rem;
+  border-radius: var(--radius-2);
+  border: 1px solid var(--line-soft);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.notificationItem.is-unread {
+  border-color: rgba(97, 221, 255, 0.18);
+}
+
+.notificationItem__body {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.notificationItem__text {
+  color: var(--text-main);
+}
+
+.toastStack {
+  position: fixed;
+  right: 1rem;
+  bottom: calc(var(--mobile-dock-height) + 1.5rem);
+  z-index: 90;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.toast {
+  min-width: 220px;
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius-2);
+  border: 1px solid var(--line-soft);
+  background: rgba(7, 11, 18, 0.96);
+  box-shadow: var(--shadow-md);
+  transform: translateY(8px);
+  opacity: 0;
+}
+
+.toast--error {
+  border-color: rgba(255, 111, 150, 0.22);
+}
+
+.toast.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.mentionSuggest {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.45rem;
+  border-radius: var(--radius-2);
+  border: 1px solid var(--line-soft);
+  background: rgba(9, 14, 23, 0.98);
+  box-shadow: var(--shadow-sm);
+}
+
+.mentionSuggest__list {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.mentionSuggest__item {
+  padding: 0.75rem 0.85rem;
+  border-radius: 0.9rem;
+  text-align: left;
+}
+
+.mentionSuggest__item.is-active,
+.mentionSuggest__item:hover {
+  background: rgba(255, 255, 255, 0.05);
+}

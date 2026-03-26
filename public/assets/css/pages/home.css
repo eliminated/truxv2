@@ -1,0 +1,94 @@
+.homePage {
+  display: grid;
+  gap: var(--space-8);
+}
+
+.hero--home {
+  min-height: 240px;
+}
+
+.homeLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, var(--rail-width));
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.homePrimary,
+.homeRail {
+  min-width: 0;
+}
+
+.homeRail {
+  position: sticky;
+  top: 118px;
+}
+
+.discoveryBlock__body,
+.discoveryPane {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.discoveryGrid {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.discoveryPane {
+  padding: var(--space-5);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.discoveryPane__desc {
+  font-size: 0.94rem;
+}
+
+.discoveryList,
+.discoveryUserList {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.discoveryTag,
+.discoveryUser {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-4);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.discoveryTag {
+  flex-direction: column;
+  align-items: start;
+}
+
+.discoveryTag__name,
+.discoveryUser__name {
+  color: var(--text-strong);
+  font-weight: 800;
+}
+
+.discoveryTag__meta,
+.discoveryUser__meta {
+  color: var(--text-soft);
+  font-size: 0.88rem;
+}
+
+.discoveryUser__info {
+  min-width: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.discoveryUser__line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/_bootstrap.php';
 
+$pageKey = 'moderation-reports';
 $moderationActiveKey = 'reports';
 $reportStatuses = trux_moderation_report_statuses();
 $reportPriorities = trux_moderation_report_priorities();
@@ -1029,7 +1030,7 @@ require_once dirname(__DIR__) . '/_header.php';
                         <?php endif; ?>
 
                         <?php if ($supportsUserCase): ?>
-                          <label class="field" style="display:flex;align-items:center;gap:8px;">
+                          <label class="field field--inlineToggle">
                             <input type="checkbox" name="open_case" value="1" checked>
                             <span>Open or update the linked user case</span>
                           </label>

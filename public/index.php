@@ -2,6 +2,9 @@
 declare(strict_types=1);
 require_once __DIR__ . '/_bootstrap.php';
 
+$pageKey = 'home';
+$pageLayout = 'app';
+
 $before = trux_int_param('before', 0);
 $discoveryPage = max(1, trux_int_param('page', 1));
 $limit = 20;
@@ -63,263 +66,205 @@ $interactionMap = trux_fetch_post_interactions(
 require_once __DIR__ . '/_header.php';
 ?>
 
-<section class="hero">
-  <h1>TruX Feed</h1>
-  <p class="muted">
-    <?php if ($feedMode === 'following' && $me): ?>
-      Latest posts from people you follow, plus your own posts.
-    <?php elseif (trux_is_logged_in()): ?>
-      Discovery 1.0 ranks posts using freshness, engagement, and your social graph.
-    <?php else: ?>
-      Explore trending content. Log in for personalized discovery.
-    <?php endif; ?>
-  </p>
-
-  <div class="feedSwitch" aria-label="Feed mode">
-    <a class="feedSwitch__item<?= $feedMode === 'all' ? ' is-active' : '' ?>" href="<?= TRUX_BASE_URL ?>/"
-      <?= $feedMode === 'all' ? 'aria-current="page"' : '' ?>>
-      For You
-    </a>
-
-    <?php if ($me): ?>
-      <a class="feedSwitch__item<?= $feedMode === 'following' ? ' is-active' : '' ?>"
-        href="<?= TRUX_BASE_URL ?>/?feed=following" <?= $feedMode === 'following' ? 'aria-current="page"' : '' ?>>
-        Following
-      </a>
-    <?php else: ?>
-      <a class="feedSwitch__item is-disabled" href="<?= TRUX_BASE_URL ?>/login.php">
-        Following
-      </a>
-    <?php endif; ?>
-  </div>
-</section>
-
-<?php if ($feedMode === 'all'): ?>
-  <section class="card discoveryBlock" aria-label="Discovery modules">
-    <div class="card__body discoveryBlock__body">
-      <div class="discoveryBlock__head">
-        <h2 class="h2">Discovery 1.0</h2>
-        <p class="muted discoveryBlock__sub">Signals: freshness, engagement, and social proximity</p>
+<div class="pageFrame pageFrame--feed">
+  <section class="inlineHeader inlineHeader--feed">
+    <div class="inlineHeader__main">
+      <span class="inlineHeader__eyebrow">Command feed</span>
+      <div class="inlineHeader__titleWrap">
+        <h2 class="inlineHeader__title"><?= $feedMode === 'following' ? 'Following stream' : 'Discovery stream' ?></h2>
+        <p class="inlineHeader__copy">
+        <?php if ($feedMode === 'following' && $me): ?>
+          Latest posts from people you follow, plus your own posts.
+        <?php elseif (trux_is_logged_in()): ?>
+          Fresh discovery ordered by recency, engagement, and social proximity.
+        <?php else: ?>
+          Explore the public network. Sign in to personalize the stream.
+        <?php endif; ?>
+        </p>
       </div>
+    </div>
 
-      <div class="discoveryGrid">
-        <article class="discoveryPane">
-          <div class="discoveryPane__head">
-            <h3 class="h2">Trending hashtags</h3>
-            <p class="muted discoveryPane__desc">Based on recent post activity.</p>
-          </div>
-
-          <?php if (!$trendingHashtags): ?>
-            <div class="muted discoveryEmpty">No trending hashtags yet.</div>
-          <?php else: ?>
-            <div class="discoveryList">
-              <?php foreach ($trendingHashtags as $tag): ?>
-                <?php
-                $hashtag = (string) ($tag['hashtag'] ?? '');
-                $usageCount = (int) ($tag['usage_count'] ?? 0);
-                $recentHits = (int) ($tag['recent_hits'] ?? 0);
-                if ($hashtag === '') {
-                  continue;
-                }
-                ?>
-                <a class="discoveryTag"
-                  href="<?= TRUX_BASE_URL ?>/search.php?q=<?= urlencode('#' . $hashtag) ?>&filter=hashtags">
-                  <span class="discoveryTag__name">#<?= trux_e($hashtag) ?></span>
-                  <span class="discoveryTag__meta">
-                    <?= number_format($usageCount) ?> post<?= $usageCount === 1 ? '' : 's' ?>
-                    <?php if ($recentHits > 0): ?>
-                      &middot; <?= number_format($recentHits) ?> in last 24h
-                    <?php endif; ?>
-                  </span>
-                </a>
-              <?php endforeach; ?>
-            </div>
-          <?php endif; ?>
-        </article>
-
-        <article class="discoveryPane">
-          <div class="discoveryPane__head">
-            <h3 class="h2"><?= $me ? 'Who to follow' : 'Suggested creators' ?></h3>
-            <p class="muted discoveryPane__desc">
-              <?= $me
-                ? 'Picked from mutual connections, follower momentum, and posting activity.'
-                : 'Picked from follower momentum and posting activity.' ?>
-            </p>
-          </div>
-
-          <?php if (!$suggestedUsers): ?>
-            <div class="muted discoveryEmpty">
-              <?= $me ? 'No suggestions yet. Check back as the network grows.' : 'No suggestions yet.' ?>
-            </div>
-          <?php else: ?>
-            <div class="discoveryUserList">
-              <?php foreach ($suggestedUsers as $suggestion): ?>
-                <?php
-                $suggestedId = (int) ($suggestion['id'] ?? 0);
-                $suggestedUsername = (string) ($suggestion['username'] ?? '');
-                if ($suggestedId <= 0 || $suggestedUsername === '') {
-                  continue;
-                }
-
-                $mutualCount = (int) ($suggestion['mutual_count'] ?? 0);
-                $followerCount = (int) ($suggestion['follower_count'] ?? 0);
-                $recentPosts = (int) ($suggestion['recent_posts'] ?? 0);
-                $displayName = trim((string) ($suggestion['display_name'] ?? ''));
-                ?>
-                <div class="discoveryUser">
-                  <div class="discoveryUser__info">
-                    <div class="discoveryUser__line">
-                      <a class="discoveryUser__name"
-                        href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= urlencode($suggestedUsername) ?>">@<?= trux_e($suggestedUsername) ?></a>
-                      <?php if ($displayName !== ''): ?>
-                        <span class="muted"><?= trux_e($displayName) ?></span>
-                      <?php endif; ?>
-                    </div>
-                    <div class="muted discoveryUser__meta">
-                      <?php if ($me && $mutualCount > 0): ?>
-                        <?= number_format($mutualCount) ?> mutual connection<?= $mutualCount === 1 ? '' : 's' ?> &middot;
-                      <?php endif; ?>
-                      <?= number_format($followerCount) ?> follower<?= $followerCount === 1 ? '' : 's' ?> &middot;
-                      <?= number_format($recentPosts) ?> recent post<?= $recentPosts === 1 ? '' : 's' ?>
-                    </div>
-                  </div>
-
-                  <?php if ($me): ?>
-                    <form method="post" action="<?= TRUX_BASE_URL ?>/follow.php" class="inline" data-no-fx="1">
-                      <?= trux_csrf_field() ?>
-                      <input type="hidden" name="action" value="follow">
-                      <input type="hidden" name="user_id" value="<?= $suggestedId ?>">
-                      <input type="hidden" name="user" value="<?= trux_e($suggestedUsername) ?>">
-                      <input type="hidden" name="redirect" value="<?= trux_e($feedReturnPath) ?>">
-                      <button class="btn btn--small" type="submit">Follow</button>
-                    </form>
-                  <?php else: ?>
-                    <a class="btn btn--small btn--ghost"
-                      href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= urlencode($suggestedUsername) ?>">View</a>
-                  <?php endif; ?>
-                </div>
-              <?php endforeach; ?>
-            </div>
-          <?php endif; ?>
-        </article>
+    <div class="inlineHeader__aside">
+      <div class="inlineHeader__meta">
+        <span><?= $me ? 'Signed in as @' . trux_e((string)$me['username']) : 'Guest browsing' ?></span>
+        <strong><?= $feedMode === 'following' ? 'Following mode' : 'Discovery mode' ?></strong>
       </div>
     </div>
   </section>
-<?php endif; ?>
 
-<section class="feed">
-  <div data-auto-pager-list="home-posts">
-    <?php if (!$posts): ?>
-      <div class="card">
-        <div class="card__body">
-          <?php if ($feedMode === 'following' && $me && $followingCount === 0): ?>
-            You are not following anyone yet. Find people to follow from search or browse the global feed first.
-          <?php elseif ($feedMode === 'following' && $me): ?>
-            No posts from people you follow yet. Check back later or switch to the global feed.
-          <?php else: ?>
-            Discovery does not have enough posts yet. Be the first to post.
-          <?php endif; ?>
-        </div>
-      </div>
-    <?php endif; ?>
-
-    <?php foreach ($posts as $p): ?>
-      <?php
-      $postId = (int) $p['id'];
-      $postUrl = trux_post_viewer_url($postId);
-      $postStats = $interactionMap[$postId] ?? ['likes' => 0, 'comments' => 0, 'shares' => 0, 'liked' => false, 'shared' => false, 'bookmarked' => false];
-      $postBookmarked = (bool) ($postStats['bookmarked'] ?? false);
-      $postIsOwner = $me && (int) $p['user_id'] === (int) $me['id'];
-      $editedAt = isset($p['edited_at']) && $p['edited_at'] !== null ? (string) $p['edited_at'] : '';
-      ?>
-      <article class="card post" data-post-id="<?= $postId ?>" data-post-click-target="1" data-post-url="<?= trux_e($postUrl) ?>">
-        <div class="card__body">
-          <div class="post__head">
-            <?php
-            $postAvatarPath = trim((string) ($p['avatar_path'] ?? ''));
-            $postAvatarUrl = $postAvatarPath !== '' ? trux_public_url($postAvatarPath) : '';
-            ?>
-            <a class="post__avatar<?= $postAvatarUrl !== '' ? ' post__avatar--image' : '' ?>"
-              href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string) $p['username']) ?>"
-              aria-label="View @<?= trux_e((string) $p['username']) ?> profile">
-              <?php if ($postAvatarUrl !== ''): ?>
-                <img class="post__avatarImage" src="<?= trux_e($postAvatarUrl) ?>" alt="" loading="lazy" decoding="async">
+  <div class="feedScene">
+    <div class="feedScene__main">
+      <section class="timelineFrame">
+        <div class="timelineFrame__head">
+          <div>
+            <span class="timelineFrame__eyebrow"><?= $feedMode === 'following' ? 'Following' : 'Discovery' ?></span>
+            <h3><?= $feedMode === 'following' ? 'Recent posts from your network' : 'Live timeline' ?></h3>
+          </div>
+          <div class="timelineFrame__actions">
+            <nav class="segmented" aria-label="Feed mode">
+              <a class="segmented__item<?= $feedMode === 'all' ? ' is-active' : '' ?>" href="<?= TRUX_BASE_URL ?>/" <?= $feedMode === 'all' ? 'aria-current="page"' : '' ?>>
+                For you
+              </a>
+              <?php if ($me): ?>
+                <a class="segmented__item<?= $feedMode === 'following' ? ' is-active' : '' ?>" href="<?= TRUX_BASE_URL ?>/?feed=following" <?= $feedMode === 'following' ? 'aria-current="page"' : '' ?>>
+                  Following
+                </a>
+              <?php else: ?>
+                <a class="segmented__item is-disabled" href="<?= TRUX_BASE_URL ?>/login.php">
+                  Following
+                </a>
               <?php endif; ?>
-            </a>
+            </nav>
+            <span class="muted"><?= count($posts) ?> loaded</span>
+          </div>
+        </div>
 
-            <div class="post__meta">
-              <div class="post__nameRow">
-                <a class="post__user"
-                  href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string) $p['username']) ?>">@<?= trux_e((string) $p['username']) ?></a>
-              </div>
-              <div class="post__subRow">
-                <span class="post__time" title="<?= trux_e(trux_format_exact_time((string) $p['created_at'])) ?>"
-                  data-time-ago="1" data-time-source="<?= trux_e((string) $p['created_at']) ?>">
-                  <?= trux_e(trux_time_ago((string) $p['created_at'])) ?>
-                </span>
-                <?php if ($editedAt !== ''): ?>
-                  <span class="editedMeta" data-post-edited-for="<?= (int) $p['id'] ?>">
-                    <span class="editedMeta__label">EDITED AT</span>
-                    <span class="editedMeta__time" title="<?= trux_e(trux_format_exact_time($editedAt)) ?>" data-time-ago="1"
-                      data-time-source="<?= trux_e($editedAt) ?>">
-                      <?= trux_e(trux_time_ago($editedAt)) ?>
-                    </span>
-                  </span>
+        <div class="timeline" data-auto-pager-list="home-posts">
+          <?php if (!$posts): ?>
+            <section class="bandSurface bandSurface--empty">
+              <strong>No posts yet</strong>
+              <p class="muted">
+                <?php if ($feedMode === 'following' && $me && $followingCount === 0): ?>
+                  You are not following anyone yet. Explore the network first, then come back to your following stream.
+                <?php elseif ($feedMode === 'following' && $me): ?>
+                  Nobody in your following stream has posted yet. Switch back to discovery or check again later.
+                <?php else: ?>
+                  Discovery does not have enough posts yet. Be the first to publish.
                 <?php endif; ?>
-                <span class="post__dot" aria-hidden="true">&bull;</span>
-                <a class="post__id" href="<?= trux_e(trux_post_viewer_url((int) $p['id'])) ?>">#<?= (int) $p['id'] ?></a>
-              </div>
-            </div>
+              </p>
+            </section>
+          <?php endif; ?>
 
-            <div class="post__actions">
-              <?php
-              $isOwner = $postIsOwner;
-              $isLoggedIn = (bool) $me;
-              $bookmarked = $postBookmarked;
-              $postUsername = (string) $p['username'];
-              require __DIR__ . '/_post_content_menu.php';
-              ?>
-            </div>
+          <?php foreach ($posts as $p): ?>
+            <?php
+            $postRecord = $p;
+            $postViewer = $me;
+            $postInteractionStats = $interactionMap[(int)$p['id']] ?? ['likes' => 0, 'comments' => 0, 'shares' => 0, 'liked' => false, 'shared' => false, 'bookmarked' => false];
+            require __DIR__ . '/_post_card.php';
+            ?>
+          <?php endforeach; ?>
+        </div>
+
+        <?php if ($nextBefore || $nextDiscoveryPage): ?>
+          <div class="pager" data-auto-pager="home-posts">
+            <a
+              class="shellButton shellButton--ghost"
+              data-no-fx="1"
+              href="<?php
+              if ($feedMode === 'following') {
+                echo TRUX_BASE_URL . '/?feed=following&before=' . (int)$nextBefore;
+              } else {
+                echo TRUX_BASE_URL . '/?page=' . (int)$nextDiscoveryPage;
+              }
+              ?>">
+              Load more
+            </a>
+          </div>
+        <?php endif; ?>
+      </section>
+    </div>
+
+    <?php if ($feedMode === 'all'): ?>
+      <aside class="feedScene__rail">
+        <section class="utilityPanel">
+          <div class="utilityPanel__head">
+            <span class="utilityPanel__eyebrow">Signals</span>
+            <h3>Discovery radar</h3>
+            <p class="muted">Trending topics and people worth opening next.</p>
           </div>
 
-          <div class="post__body"><?= trux_render_post_body((string) $p['body']) ?></div>
+          <div class="utilityPanel__stack">
+            <section class="utilityBand">
+              <div class="utilityBand__head">
+                <h4>Trending hashtags</h4>
+                <span><?= count($trendingHashtags) ?> live</span>
+              </div>
 
-          <?php
-          $postImagePath = trim((string) ($p['image_path'] ?? ''));
-          $postImageUrl = $postImagePath !== '' ? trux_public_url($postImagePath) : '';
-          ?>
-          <?php if ($postImageUrl !== ''): ?>
-            <div class="post__image">
-              <img src="<?= trux_e($postImageUrl) ?>" alt="Post image" loading="lazy" decoding="async">
-            </div>
-          <?php endif; ?>
+              <?php if (!$trendingHashtags): ?>
+                <div class="utilityBand__empty muted">No trending hashtags yet.</div>
+              <?php else: ?>
+                <div class="tagStack">
+                  <?php foreach ($trendingHashtags as $tag): ?>
+                    <?php
+                    $hashtag = (string)($tag['hashtag'] ?? '');
+                    $usageCount = (int)($tag['usage_count'] ?? 0);
+                    $recentHits = (int)($tag['recent_hits'] ?? 0);
+                    if ($hashtag === '') {
+                      continue;
+                    }
+                    ?>
+                    <a class="tagChip" href="<?= TRUX_BASE_URL ?>/search.php?q=<?= urlencode('#' . $hashtag) ?>&filter=hashtags">
+                      <strong>#<?= trux_e($hashtag) ?></strong>
+                      <span><?= number_format($usageCount) ?> post<?= $usageCount === 1 ? '' : 's' ?><?= $recentHits > 0 ? ' · ' . number_format($recentHits) . ' recent' : '' ?></span>
+                    </a>
+                  <?php endforeach; ?>
+                </div>
+              <?php endif; ?>
+            </section>
 
-          <?php
-          $stats = $postStats;
-          $isLoggedIn = (bool) $me;
-          require __DIR__ . '/_post_actions_bar.php';
-          ?>
-        </div>
-      </article>
-    <?php endforeach; ?>
+            <section class="utilityBand">
+              <div class="utilityBand__head">
+                <h4><?= $me ? 'Who to follow' : 'Suggested creators' ?></h4>
+                <span><?= count($suggestedUsers) ?> suggestions</span>
+              </div>
+
+              <?php if (!$suggestedUsers): ?>
+                <div class="utilityBand__empty muted">
+                  <?= $me ? 'No suggestions yet. Check back as the network grows.' : 'No suggestions yet.' ?>
+                </div>
+              <?php else: ?>
+                <div class="userStack">
+                  <?php foreach ($suggestedUsers as $suggestion): ?>
+                    <?php
+                    $suggestedId = (int)($suggestion['id'] ?? 0);
+                    $suggestedUsername = (string)($suggestion['username'] ?? '');
+                    if ($suggestedId <= 0 || $suggestedUsername === '') {
+                      continue;
+                    }
+
+                    $mutualCount = (int)($suggestion['mutual_count'] ?? 0);
+                    $followerCount = (int)($suggestion['follower_count'] ?? 0);
+                    $recentPosts = (int)($suggestion['recent_posts'] ?? 0);
+                    $displayName = trim((string)($suggestion['display_name'] ?? ''));
+                    ?>
+                    <div class="userBand">
+                      <div class="userBand__copy">
+                        <div class="userBand__title">
+                          <a href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= urlencode($suggestedUsername) ?>">@<?= trux_e($suggestedUsername) ?></a>
+                          <?php if ($displayName !== ''): ?>
+                            <span class="muted"><?= trux_e($displayName) ?></span>
+                          <?php endif; ?>
+                        </div>
+                        <div class="userBand__meta muted">
+                          <?php if ($me && $mutualCount > 0): ?>
+                            <?= number_format($mutualCount) ?> mutual ·
+                          <?php endif; ?>
+                          <?= number_format($followerCount) ?> followers · <?= number_format($recentPosts) ?> recent post<?= $recentPosts === 1 ? '' : 's' ?>
+                        </div>
+                      </div>
+
+                      <?php if ($me): ?>
+                        <form method="post" action="<?= TRUX_BASE_URL ?>/follow.php" data-no-fx="1">
+                          <?= trux_csrf_field() ?>
+                          <input type="hidden" name="action" value="follow">
+                          <input type="hidden" name="user_id" value="<?= $suggestedId ?>">
+                          <input type="hidden" name="user" value="<?= trux_e($suggestedUsername) ?>">
+                          <input type="hidden" name="redirect" value="<?= trux_e($feedReturnPath) ?>">
+                          <button class="shellButton shellButton--ghost" type="submit">Follow</button>
+                        </form>
+                      <?php else: ?>
+                        <a class="shellButton shellButton--ghost" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= urlencode($suggestedUsername) ?>">View</a>
+                      <?php endif; ?>
+                    </div>
+                  <?php endforeach; ?>
+                </div>
+              <?php endif; ?>
+            </section>
+          </div>
+        </section>
+      </aside>
+    <?php endif; ?>
   </div>
-
-  <?php if ($nextBefore || $nextDiscoveryPage): ?>
-    <div class="pager" data-auto-pager="home-posts">
-      <a
-        class="btn"
-        data-no-fx="1"
-        href="<?php
-        if ($feedMode === 'following') {
-          echo TRUX_BASE_URL . '/?feed=following&before=' . (int) $nextBefore;
-        } else {
-          echo TRUX_BASE_URL . '/?page=' . (int) $nextDiscoveryPage;
-        }
-        ?>">
-        Load more
-      </a>
-    </div>
-  <?php endif; ?>
-</section>
+</div>
 
 <?php require_once __DIR__ . '/_footer.php'; ?>

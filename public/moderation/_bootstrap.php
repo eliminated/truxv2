@@ -11,3 +11,4 @@ if (!$moderationMe) {
 }
 
 $moderationStaffRole = trux_staff_role((string)($moderationMe['staff_role'] ?? 'user'));
+$pageLayout = isset($pageLayout) && is_string($pageLayout) && trim($pageLayout) !== '' ? $pageLayout : 'moderation';
