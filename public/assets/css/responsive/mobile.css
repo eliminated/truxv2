@@ -222,7 +222,7 @@
   }
 
   .commentDock__split {
-    grid-template-rows: auto minmax(0, 1fr);
+    grid-template-rows: minmax(0, auto) minmax(0, 1fr);
     min-height: 0;
   }
 
@@ -232,25 +232,58 @@
   }
 
   .commentDock__left {
-    max-height: min(35vh, 18rem);
+    overflow: auto;
+    max-height: min(26vh, 13rem);
+    padding-bottom: var(--space-3);
+  }
+
+  .commentDock__postPreview {
+    gap: var(--space-2);
+    padding: var(--space-3);
+  }
+
+  .commentDock__postPreview .post__head {
+    margin-bottom: var(--space-4);
+    gap: var(--space-3);
+  }
+
+  .commentDock__postPreview .post__avatar {
+    width: 2.55rem;
+    height: 2.55rem;
+    flex-basis: 2.55rem;
+    border-radius: 0.9rem;
+  }
+
+  .commentDock__postPreview .post__body {
+    font-size: 0.94rem;
+    line-height: 1.5;
+  }
+
+  .commentDock__postPreview .post__image {
+    margin-top: var(--space-3);
+  }
+
+  .commentDock__postPreview .post__image img {
+    max-height: 7.5rem;
+  }
+
+  .commentDock__postPreview .post__actionsBar {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .commentDock__right {
     min-height: 0;
-    gap: var(--space-4);
+    gap: var(--space-3);
   }
 
   .commentDock__listWrap {
     min-height: 10rem;
+    padding-bottom: 0.35rem;
   }
 
   .commentDock__list {
     gap: var(--space-2);
     padding-right: 0;
-  }
-
-  .commentDock__postPreview .post__head {
-    margin-bottom: var(--space-4);
   }
 
   .commentDock__postPreview .post__actionsBar {
@@ -259,8 +292,10 @@
   }
 
   .commentDock__postPreview .postAct {
-    min-height: 2.6rem;
-    padding: 0.6rem 0.75rem;
+    min-height: 2.45rem;
+    padding: 0.5rem 0.65rem;
+    gap: 0.4rem;
+    font-size: 0.84rem;
   }
 
   .commentDock__item {
@@ -270,32 +305,49 @@
   }
 
   .commentDock__actions {
+    display: grid;
     align-items: stretch;
     justify-content: flex-start;
     gap: var(--space-2);
   }
 
+  .commentDock__voteGroup {
+    width: fit-content;
+  }
+
   .commentDock__actionButtons {
     width: 100%;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     justify-content: flex-start;
+    gap: 0.45rem;
   }
 
   .commentDock__replyBtn,
   .commentDock__bookmarkBtn,
   .commentDock__reportBtn {
+    width: 100%;
+    min-width: 0;
     min-height: 2.05rem;
     padding: 0.35rem 0.7rem;
+    justify-content: center;
+    font-size: 0.82rem;
   }
 
   .commentDock__form {
     grid-template-rows: auto;
     gap: var(--space-3);
     padding-bottom: 0;
+    padding-top: var(--space-3);
+    border-top: 1px solid var(--line-soft);
+    background:
+      linear-gradient(180deg, rgba(8, 12, 20, 0), rgba(8, 12, 20, 0.94) 1.1rem, rgba(8, 12, 20, 0.98) 100%);
   }
 
   .commentDock__textarea {
-    min-height: 5.25rem;
+    min-height: 4.5rem;
     padding: 0.85rem 0.9rem;
+    resize: none;
   }
 
   .commentDock__formActions {
