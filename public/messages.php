@@ -71,6 +71,13 @@ $recipientLabel = $recipientUser
   : '';
 
 $activeConversationId = (int)($selectedConversation['id'] ?? 0);
+$messagesLayoutClasses = [];
+if ($recipientUser) {
+  $messagesLayoutClasses[] = 'is-thread-open';
+}
+if ($activeConversationId > 0) {
+  $messagesLayoutClasses[] = 'is-thread-active';
+}
 
 require_once __DIR__ . '/_header.php';
 ?>
@@ -92,7 +99,7 @@ require_once __DIR__ . '/_header.php';
     </div>
   </section>
 
-  <section class="messagesLayout<?= $activeConversationId > 0 ? ' is-thread-active' : '' ?>" data-messages-active-conversation-id="<?= $activeConversationId ?>">
+  <section class="messagesLayout<?= $messagesLayoutClasses ? ' ' . trux_e(implode(' ', $messagesLayoutClasses)) : '' ?>" data-messages-active-conversation-id="<?= $activeConversationId ?>">
     <aside class="messagesSidebar workspacePane">
       <div class="workspacePane__head">
         <div>

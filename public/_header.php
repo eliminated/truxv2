@@ -72,6 +72,25 @@ if (is_string($rawRequestUri) && $rawRequestUri !== '') {
   }
 }
 $mainCssPath = __DIR__ . '/assets/css/main.css';
+$mainCssDir = dirname($mainCssPath);
+$styleSheetManifest = [];
+if (is_file($mainCssPath)) {
+  $mainCssContents = (string)(file_get_contents($mainCssPath) ?: '');
+  if ($mainCssContents !== '' && preg_match_all('/@import\s+url\("([^"]+)"\);/', $mainCssContents, $matches)) {
+    foreach ($matches[1] as $importPath) {
+      $relativeImport = ltrim((string)$importPath, './');
+      $absoluteImportPath = $mainCssDir . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativeImport);
+      if (!is_file($absoluteImportPath)) {
+        continue;
+      }
+
+      $styleSheetManifest[] = [
+        'href' => TRUX_BASE_URL . '/assets/css/' . str_replace(DIRECTORY_SEPARATOR, '/', $relativeImport),
+        'version' => (int)(filemtime($absoluteImportPath) ?: 0),
+      ];
+    }
+  }
+}
 
 $isPage = static function (array $slugs) use ($pageSlug): bool {
   return in_array($pageSlug, $slugs, true);
@@ -204,7 +223,13 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
   );
   ?>
   <link rel="icon" type="image/png" sizes="32x32" href="<?= TRUX_BASE_URL ?>/favicon.php?v=<?= $faviconVersion ?>">
-  <link rel="stylesheet" href="<?= TRUX_BASE_URL ?>/assets/css/main.css?v=<?= (int)(filemtime($mainCssPath) ?: 0) ?>">
+  <?php if ($styleSheetManifest): ?>
+    <?php foreach ($styleSheetManifest as $styleSheet): ?>
+      <link rel="stylesheet" href="<?= trux_e((string)$styleSheet['href']) ?>?v=<?= (int)$styleSheet['version'] ?>">
+    <?php endforeach; ?>
+  <?php else: ?>
+    <link rel="stylesheet" href="<?= TRUX_BASE_URL ?>/assets/css/main.css?v=<?= (int)(filemtime($mainCssPath) ?: 0) ?>">
+  <?php endif; ?>
   <script defer src="<?= TRUX_BASE_URL ?>/assets/app.js?v=<?= filemtime(__DIR__ . '/assets/app.js') ?>"></script>
   <script>window.TRUX_BASE_URL = "<?= TRUX_BASE_URL ?>";</script>
 </head>

@@ -3823,7 +3823,7 @@
 })();
 
 (() => {
-  const activeThread = document.querySelector(".messagesLayout.is-thread-active");
+  const activeThread = document.querySelector(".messagesLayout.is-thread-open");
   if (activeThread) {
     document.body.classList.add("messages-thread-active");
   }

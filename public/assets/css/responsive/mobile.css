@@ -120,15 +120,19 @@
     min-height: 0;
   }
 
-  .messagesLayout.is-thread-active .messagesThread {
-    min-height: calc(100dvh - 10.5rem);
-  }
-
-  .messagesLayout.is-thread-active .messagesSidebar {
+  .messagesLayout:not(.is-thread-open) .messagesThread {
     display: none;
   }
 
-  .messagesLayout.is-thread-active .messagesThread__back {
+  .messagesLayout.is-thread-open .messagesThread {
+    min-height: calc(100dvh - 10.5rem);
+  }
+
+  .messagesLayout.is-thread-open .messagesSidebar {
+    display: none;
+  }
+
+  .messagesLayout.is-thread-open .messagesThread__back {
     display: inline-flex;
   }
 
