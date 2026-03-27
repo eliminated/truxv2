@@ -450,22 +450,24 @@ require_once __DIR__ . '/_header.php';
       </header>
 
       <div class="messagesRecipientSheet__form">
-        <label class="field">
-          <span>Username</span>
-          <input
-            type="text"
-            maxlength="32"
-            autocomplete="off"
-            spellcheck="false"
-            placeholder="Search @username"
-            data-message-recipient-input="1">
-        </label>
+        <div class="messagesRecipientSheet__lookup">
+          <label class="field">
+            <span>Username</span>
+            <input
+              type="text"
+              maxlength="32"
+              autocomplete="off"
+              spellcheck="false"
+              placeholder="Search @username"
+              data-message-recipient-input="1">
+          </label>
+
+          <div class="messagesRecipientSheet__results" data-message-recipient-results="1"></div>
+        </div>
 
         <div class="messagesRecipientSheet__status muted" data-message-recipient-status="1">
           Search for a username to open an existing conversation or start a new one.
         </div>
-
-        <div class="messagesRecipientSheet__results" data-message-recipient-results="1"></div>
       </div>
     </section>
   </div>

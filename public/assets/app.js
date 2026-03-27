@@ -294,9 +294,15 @@
     });
   };
 
-  document.querySelectorAll(INPUT_SELECTOR).forEach((textarea) => {
-    initMentionInput(textarea);
-  });
+  window.truxInitMentionInputs = (root = document) => {
+    const scope =
+      root instanceof Document || root instanceof Element ? root : document;
+    scope.querySelectorAll(INPUT_SELECTOR).forEach((textarea) => {
+      initMentionInput(textarea);
+    });
+  };
+
+  window.truxInitMentionInputs(document);
 })();
 
 (() => {
@@ -1996,13 +2002,6 @@
   const body = document.body;
   const searchInput = layout.querySelector("[data-conversation-search='1']");
   const emptyState = layout.querySelector("[data-conversation-empty='1']");
-  const conversationItems = Array.from(
-    layout.querySelectorAll("[data-conversation-item='1']")
-  ).filter((item) => item instanceof HTMLElement);
-  const backButtons = Array.from(
-    layout.querySelectorAll("[data-thread-back='1']")
-  ).filter((button) => button instanceof HTMLElement);
-  const composerInput = layout.querySelector("[data-messages-input='1']");
   const recipientInput = document.querySelector("[data-message-recipient-input='1']");
   const recipientStatus = document.querySelector("[data-message-recipient-status='1']");
   const recipientResults = document.querySelector("[data-message-recipient-results='1']");
@@ -2016,6 +2015,8 @@
 
   let recipientTimer = 0;
   let recipientAbort = null;
+  let threadAbort = null;
+  let threadRequestId = 0;
   const defaultRecipientStatus =
     recipientStatus instanceof HTMLElement
       ? String(recipientStatus.textContent || "").trim()
@@ -2026,15 +2027,97 @@
       ? mobileQuery.matches
       : window.innerWidth <= 760;
 
+  const isPlainPrimaryClick = (event) =>
+    event.button === 0 &&
+    !event.defaultPrevented &&
+    !event.metaKey &&
+    !event.ctrlKey &&
+    !event.shiftKey &&
+    !event.altKey;
+
+  const toMessagesUrl = (value) => {
+    try {
+      const nextUrl = new URL(String(value || window.location.href), window.location.origin);
+      return /\/messages\.php$/i.test(nextUrl.pathname) ? nextUrl : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const getConversationItems = () =>
+    Array.from(layout.querySelectorAll("[data-conversation-item='1']")).filter(
+      (item) => item instanceof HTMLAnchorElement
+    );
+
+  const getThreadPanel = () => {
+    const panel = layout.querySelector("[data-messages-thread='1']");
+    return panel instanceof HTMLElement ? panel : null;
+  };
+
+  const getMobileThreadState = () => {
+    const state = layout.querySelector(".messagesMobileBar__state--thread");
+    return state instanceof HTMLElement ? state : null;
+  };
+
+  const getComposerInput = () => {
+    const input = layout.querySelector("[data-messages-input='1']");
+    return input instanceof HTMLTextAreaElement ? input : null;
+  };
+
+  const getMessageActionsSheet = () => {
+    const sheet = document.querySelector("[data-shell-sheet='message-actions']");
+    return sheet instanceof HTMLElement ? sheet : null;
+  };
+
+  const getInboxUrl = () => {
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.delete("id");
+    nextUrl.searchParams.delete("with");
+    nextUrl.hash = "";
+    return nextUrl.toString();
+  };
+
   const setThreadOpen = (open) => {
     layout.classList.toggle("is-thread-open", open);
     body.classList.toggle("messages-thread-active", open);
+  };
+
+  const setThreadBusy = (busy) => {
+    const threadPanel = getThreadPanel();
+    if (threadPanel instanceof HTMLElement) {
+      threadPanel.setAttribute("aria-busy", busy ? "true" : "false");
+    }
+    layout.classList.toggle("is-thread-loading", busy);
+  };
+
+  const getCsrfToken = () => {
+    const input = document.querySelector("input[name='_csrf']");
+    return input instanceof HTMLInputElement ? String(input.value || "").trim() : "";
+  };
+
+  const markConversationRead = (conversationId) => {
+    if (!conversationId) return;
+
+    const csrf = getCsrfToken();
+    if (!csrf) return;
+
+    fetch(`${window.TRUX_BASE_URL || ""}/mark_conversation_read.php?format=json`, {
+      method: "POST",
+      headers: { Accept: "application/json" },
+      body: new URLSearchParams({
+        _csrf: csrf,
+        id: String(conversationId),
+      }),
+    }).catch(() => {
+      // Ignore failures; thread rendering should continue.
+    });
   };
 
   const updateConversationFilter = () => {
     if (!(searchInput instanceof HTMLInputElement)) return;
 
     const query = searchInput.value.trim().toLowerCase();
+    const conversationItems = getConversationItems();
     let visibleCount = 0;
 
     conversationItems.forEach((item) => {
@@ -2052,22 +2135,27 @@
     }
   };
 
-  const syncComposerHeight = () => {
-    if (!(composerInput instanceof HTMLTextAreaElement)) return;
+  const syncComposerHeight = (input = getComposerInput()) => {
+    if (!(input instanceof HTMLTextAreaElement)) return;
 
-    composerInput.style.height = "auto";
-    const computed = window.getComputedStyle(composerInput);
+    input.style.height = "auto";
+    const computed = window.getComputedStyle(input);
+    const minHeight = Number.parseFloat(computed.minHeight || "0");
     const maxHeight = Number.parseFloat(computed.maxHeight || "0");
-    const nextHeight =
-      Number.isFinite(maxHeight) && maxHeight > 0
-        ? Math.min(composerInput.scrollHeight, maxHeight)
-        : composerInput.scrollHeight;
+    let nextHeight = input.scrollHeight;
+
+    if (Number.isFinite(minHeight) && minHeight > 0) {
+      nextHeight = Math.max(minHeight, nextHeight);
+    }
+    if (Number.isFinite(maxHeight) && maxHeight > 0) {
+      nextHeight = Math.min(nextHeight, maxHeight);
+    }
 
     if (nextHeight > 0) {
-      composerInput.style.height = `${nextHeight}px`;
+      input.style.height = `${nextHeight}px`;
     }
-    composerInput.style.overflowY =
-      Number.isFinite(maxHeight) && maxHeight > 0 && composerInput.scrollHeight > maxHeight
+    input.style.overflowY =
+      Number.isFinite(maxHeight) && maxHeight > 0 && input.scrollHeight > maxHeight
         ? "auto"
         : "hidden";
   };
@@ -2079,6 +2167,176 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#39;");
+
+  const closeRecipientSheet = () => {
+    const sheet = document.querySelector("[data-shell-sheet='message-recipient']");
+    if (sheet instanceof HTMLElement) {
+      sheet.setAttribute("hidden", "hidden");
+    }
+    document.body.classList.remove("shellSheet-open");
+  };
+
+  const urlHasThreadState = (value) => {
+    const nextUrl = toMessagesUrl(value);
+    if (!(nextUrl instanceof URL)) return false;
+    return nextUrl.searchParams.has("id") || nextUrl.searchParams.has("with");
+  };
+
+  const setActiveConversationState = (conversationId) => {
+    layout.setAttribute("data-messages-active-conversation-id", String(conversationId || 0));
+    layout.classList.toggle("is-thread-active", conversationId > 0);
+
+    getConversationItems().forEach((item) => {
+      const itemUrl = toMessagesUrl(item.href);
+      const itemConversationId =
+        itemUrl instanceof URL ? Number(itemUrl.searchParams.get("id") || "0") : 0;
+      const isActive = conversationId > 0 && itemConversationId === conversationId;
+
+      item.classList.toggle("is-active", isActive);
+      if (isActive) {
+        item.setAttribute("aria-current", "page");
+        const unreadDot = item.querySelector(".messagesList__unread");
+        if (unreadDot instanceof HTMLElement) {
+          unreadDot.classList.remove("is-visible");
+        }
+      } else {
+        item.removeAttribute("aria-current");
+      }
+    });
+  };
+
+  const refreshThreadUi = (options = {}) => {
+    syncComposerHeight();
+    if (typeof window.truxInitMentionInputs === "function") {
+      window.truxInitMentionInputs(layout);
+    }
+    if (typeof window.truxRefreshTimeAgo === "function") {
+      window.truxRefreshTimeAgo();
+    }
+    updateConversationFilter();
+
+    if (options.focusComposer) {
+      const input = getComposerInput();
+      if (input instanceof HTMLTextAreaElement) {
+        window.setTimeout(() => {
+          input.focus();
+        }, 20);
+      }
+    }
+  };
+
+  const applyFetchedConversation = (doc, options = {}) => {
+    const nextLayout = doc.querySelector("[data-messages-layout='1']");
+    if (!(nextLayout instanceof HTMLElement)) return false;
+
+    const nextThread = nextLayout.querySelector("[data-messages-thread='1']");
+    const currentThread = getThreadPanel();
+    if (!(nextThread instanceof HTMLElement) || !(currentThread instanceof HTMLElement)) {
+      return false;
+    }
+    currentThread.replaceWith(nextThread);
+
+    const nextMobileState = nextLayout.querySelector(".messagesMobileBar__state--thread");
+    const currentMobileState = getMobileThreadState();
+    if (nextMobileState instanceof HTMLElement && currentMobileState instanceof HTMLElement) {
+      currentMobileState.replaceWith(nextMobileState);
+    }
+
+    const nextActionsSheet = doc.querySelector("[data-shell-sheet='message-actions']");
+    const currentActionsSheet = getMessageActionsSheet();
+    if (nextActionsSheet instanceof HTMLElement && currentActionsSheet instanceof HTMLElement) {
+      currentActionsSheet.replaceWith(nextActionsSheet);
+    }
+
+    const nextConversationId = Number(
+      nextLayout.getAttribute("data-messages-active-conversation-id") || "0"
+    );
+    setActiveConversationState(nextConversationId);
+    setThreadOpen(
+      options.forceThreadOpen != null
+        ? !!options.forceThreadOpen
+        : nextLayout.classList.contains("is-thread-open")
+    );
+
+    if (doc.title) {
+      document.title = doc.title;
+    }
+
+    refreshThreadUi({ focusComposer: !!options.focusComposer });
+    markConversationRead(nextConversationId);
+    return true;
+  };
+
+  const updateHistory = (url, mode = "push") => {
+    if (mode === "none") return;
+    if (mode === "replace") {
+      window.history.replaceState({}, "", url);
+      return;
+    }
+    if (window.location.href !== url) {
+      window.history.pushState({}, "", url);
+    }
+  };
+
+  const loadConversation = async (url, options = {}) => {
+    const nextUrl = toMessagesUrl(url);
+    if (!(nextUrl instanceof URL)) {
+      window.location.assign(String(url || window.location.href));
+      return;
+    }
+
+    if (threadAbort instanceof AbortController) {
+      threadAbort.abort();
+    }
+
+    threadAbort = new AbortController();
+    threadRequestId += 1;
+    const requestId = threadRequestId;
+    const nextUrlString = nextUrl.toString();
+
+    setThreadBusy(true);
+
+    try {
+      const res = await fetch(nextUrlString, {
+        method: "GET",
+        headers: {
+          Accept: "text/html",
+          "X-Requested-With": "XMLHttpRequest",
+        },
+        signal: threadAbort.signal,
+      });
+
+      const html = await res.text();
+      if (!res.ok) {
+        throw new Error("Could not load conversation.");
+      }
+
+      const doc = new DOMParser().parseFromString(html, "text/html");
+      const applied = applyFetchedConversation(doc, {
+        forceThreadOpen:
+          options.forceThreadOpen != null
+            ? options.forceThreadOpen
+            : urlHasThreadState(nextUrlString),
+        focusComposer: !!options.focusComposer,
+      });
+
+      if (!applied) {
+        window.location.assign(nextUrlString);
+        return;
+      }
+
+      updateHistory(nextUrlString, options.historyMode || "push");
+    } catch (err) {
+      if (err?.name === "AbortError") {
+        return;
+      }
+      window.location.assign(nextUrlString);
+    } finally {
+      if (requestId === threadRequestId) {
+        setThreadBusy(false);
+      }
+    }
+  };
 
   const avatarThemeFor = (seed) => {
     const themes = ["accent", "mint", "warning", "danger"];
@@ -2165,11 +2423,9 @@
   };
 
   const normalizeToInboxUrl = () => {
-    const nextUrl = new URL(window.location.href);
-    nextUrl.searchParams.delete("id");
-    nextUrl.searchParams.delete("with");
-    nextUrl.hash = "";
-    window.history.replaceState({}, "", nextUrl.toString());
+    const nextUrl = getInboxUrl();
+    window.history.replaceState({}, "", nextUrl);
+    return nextUrl;
   };
 
   const loadRecipients = async (query) => {
@@ -2229,38 +2485,64 @@
   };
 
   setThreadOpen(layout.classList.contains("is-thread-open"));
+  refreshThreadUi();
 
   if (searchInput instanceof HTMLInputElement) {
     searchInput.addEventListener("input", updateConversationFilter);
   }
 
-  if (composerInput instanceof HTMLTextAreaElement) {
-    syncComposerHeight();
-    composerInput.addEventListener("input", syncComposerHeight);
-  }
+  document.addEventListener("click", (event) => {
+    if (!(event.target instanceof Element)) return;
 
-  conversationItems.forEach((item) => {
-    item.addEventListener("click", (event) => {
-      if (!isMobile()) return;
-      if (!(item instanceof HTMLAnchorElement)) return;
-      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-        return;
-      }
-      setThreadOpen(true);
-    });
-  });
-
-  backButtons.forEach((button) => {
-    button.addEventListener("click", (event) => {
+    const conversationLink = event.target.closest("[data-conversation-item='1']");
+    if (conversationLink instanceof HTMLAnchorElement) {
+      if (!isPlainPrimaryClick(event)) return;
+      const nextUrl = toMessagesUrl(conversationLink.href);
+      if (!(nextUrl instanceof URL)) return;
       event.preventDefault();
+      setThreadOpen(true);
+      void loadConversation(nextUrl.toString(), {
+        historyMode: "push",
+        forceThreadOpen: true,
+      });
+      return;
+    }
+
+    const recipientLink = event.target.closest(
+      "[data-message-recipient-results='1'] a.messagesRecipientResult"
+    );
+    if (recipientLink instanceof HTMLAnchorElement) {
+      if (!isPlainPrimaryClick(event)) return;
+      const nextUrl = toMessagesUrl(recipientLink.href);
+      if (!(nextUrl instanceof URL)) return;
+      event.preventDefault();
+      closeRecipientSheet();
+      setThreadOpen(true);
+      void loadConversation(nextUrl.toString(), {
+        historyMode: "push",
+        forceThreadOpen: true,
+        focusComposer: true,
+      });
+      return;
+    }
+
+    const backButton = event.target.closest("[data-thread-back='1']");
+    if (backButton instanceof HTMLElement) {
+      event.preventDefault();
+      const inboxUrl = normalizeToInboxUrl();
       setThreadOpen(false);
-      normalizeToInboxUrl();
-      if (searchInput instanceof HTMLInputElement) {
-        window.setTimeout(() => {
-          searchInput.focus();
-        }, 20);
-      }
-    });
+      void loadConversation(inboxUrl, {
+        historyMode: "replace",
+        forceThreadOpen: false,
+      }).finally(() => {
+        if (searchInput instanceof HTMLInputElement) {
+          window.setTimeout(() => {
+            searchInput.focus();
+          }, 20);
+        }
+      });
+      return;
+    }
   });
 
   recipientOpenButtons.forEach((button) => {
@@ -2297,15 +2579,22 @@
     });
   }
 
-  if (recipientResults instanceof HTMLElement) {
-    recipientResults.addEventListener("click", (event) => {
-      if (!isMobile()) return;
-      const link = event.target instanceof Element ? event.target.closest("a") : null;
-      if (link instanceof HTMLAnchorElement) {
-        setThreadOpen(true);
-      }
+  const composerInput = getComposerInput();
+  if (composerInput instanceof HTMLTextAreaElement) {
+    composerInput.addEventListener("input", () => {
+      syncComposerHeight(composerInput);
     });
   }
+
+  window.addEventListener("popstate", () => {
+    const nextUrl = toMessagesUrl(window.location.href);
+    if (!(nextUrl instanceof URL)) return;
+
+    void loadConversation(nextUrl.toString(), {
+      historyMode: "none",
+      forceThreadOpen: urlHasThreadState(nextUrl.toString()),
+    });
+  });
 
   if (mobileQuery instanceof MediaQueryList) {
     mobileQuery.addEventListener("change", () => {
