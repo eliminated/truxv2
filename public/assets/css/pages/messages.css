@@ -1,7 +1,9 @@
 .pageFrame--messages {
+  --messages-desktop-panel-height: calc(100dvh - 4.4rem - var(--space-6) - var(--space-12));
   width: 100%;
-  min-height: calc(100dvh - 4.4rem - var(--space-6) - var(--space-12));
-  grid-template-rows: auto minmax(0, 1fr);
+  min-height: var(--messages-desktop-panel-height);
+  grid-template-rows: minmax(0, 1fr);
+  gap: 0;
   overflow-x: clip;
 }
 
@@ -243,6 +245,7 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: var(--space-5) 0;
+  scroll-behavior: smooth;
 }
 
 .messagesThread__stateCard,
@@ -346,6 +349,8 @@
 .messageBubble__body {
   color: var(--text-strong);
   line-height: 1.55;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .messageBubble__body > :first-child {
@@ -357,6 +362,7 @@
 }
 
 .messagesComposer {
+  display: grid;
   flex: 0 0 auto;
   gap: var(--space-3);
   padding-top: var(--space-4);
@@ -368,6 +374,26 @@
   grid-template-columns: minmax(0, 1fr) auto;
   gap: var(--space-3);
   align-items: end;
+}
+
+.messagesComposer__submit[disabled] {
+  opacity: 0.7;
+  cursor: wait;
+}
+
+.messagesComposer__submit.is-loading svg {
+  transform-origin: center;
+  animation: messageComposerSpin 0.9s linear infinite;
+}
+
+@keyframes messageComposerSpin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .messagesComposer textarea {
@@ -547,6 +573,10 @@
     width: min(calc(100% - 1rem), 1600px);
   }
 
+  .page--messages .pageFrame--messages {
+    height: var(--messages-desktop-panel-height);
+  }
+
   .shellSheet[data-shell-sheet="message-recipient"] .shellSheet__panel {
     top: 50%;
     bottom: auto;
@@ -558,13 +588,15 @@
 
   .messagesLayout {
     width: 100%;
+    height: var(--messages-desktop-panel-height);
     grid-template-columns: minmax(310px, 360px) minmax(0, 1fr);
     gap: var(--space-4);
   }
 
   .messagesSidebar,
   .messagesThread {
-    min-height: calc(100dvh - 4.4rem - var(--space-6) - var(--space-12));
+    height: 100%;
+    min-height: 0;
   }
 
   .messagesRecipientSheet__form {

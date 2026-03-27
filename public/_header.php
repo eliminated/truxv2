@@ -3,13 +3,37 @@
 declare(strict_types=1);
 
 $user = trux_current_user();
-if (!isset($error)) {
-  $error = trux_flash_get('error');
+$pageFlashMessages = isset($pageFlashMessages) && is_array($pageFlashMessages)
+  ? $pageFlashMessages
+  : trux_flash_pull_all();
+if (!isset($error) && isset($pageFlashMessages['error'][0])) {
+  $error = (string)$pageFlashMessages['error'][0];
 }
-if (!isset($success)) {
-  $success = trux_flash_get('success');
+if (!isset($success) && isset($pageFlashMessages['success'][0])) {
+  $success = (string)$pageFlashMessages['success'][0];
 }
 $renderPageFlash = isset($renderPageFlash) ? (bool)$renderPageFlash : true;
+$pageToastMessages = [];
+if ($renderPageFlash) {
+  foreach (['success', 'error', 'info'] as $flashType) {
+    $messages = $pageFlashMessages[$flashType] ?? [];
+    if (!is_array($messages)) {
+      continue;
+    }
+
+    foreach ($messages as $message) {
+      $text = trim((string)$message);
+      if ($text === '') {
+        continue;
+      }
+
+      $pageToastMessages[] = [
+        'type' => $flashType,
+        'message' => $text,
+      ];
+    }
+  }
+}
 
 $q = trux_str_param('q', '');
 $pageKey = isset($pageKey) && is_string($pageKey) && trim($pageKey) !== ''
@@ -246,6 +270,17 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
     <div class="shellAtmosphere__orb shellAtmosphere__orb--three"></div>
   </div>
 
+  <?php if ($pageToastMessages): ?>
+    <div class="toastPayloads" data-page-toasts="1" hidden>
+      <?php foreach ($pageToastMessages as $toastMessage): ?>
+        <div
+          data-page-toast="1"
+          data-toast-type="<?= trux_e((string)$toastMessage['type']) ?>"
+          data-toast-message="<?= trux_e((string)$toastMessage['message']) ?>"></div>
+      <?php endforeach; ?>
+    </div>
+  <?php endif; ?>
+
   <?php if ($pageLayout === 'auth'): ?>
     <div class="authShell">
       <header class="authTopbar">
@@ -266,13 +301,6 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
 
       <main class="authStage">
         <div class="authCanvas">
-          <?php if ($renderPageFlash && $error): ?>
-            <div class="flash flash--error"><?= trux_e($error) ?></div>
-          <?php endif; ?>
-          <?php if ($renderPageFlash && $success): ?>
-            <div class="flash flash--success"><?= trux_e($success) ?></div>
-          <?php endif; ?>
-
   <?php elseif ($pageLayout === 'moderation'): ?>
     <div class="opsShell">
       <aside class="opsRail" aria-label="Moderation navigation">
@@ -341,13 +369,6 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
 
         <main class="opsContent">
           <div class="opsCanvas">
-            <?php if ($renderPageFlash && $error): ?>
-              <div class="flash flash--error"><?= trux_e($error) ?></div>
-            <?php endif; ?>
-            <?php if ($renderPageFlash && $success): ?>
-              <div class="flash flash--success"><?= trux_e($success) ?></div>
-            <?php endif; ?>
-
   <?php else: ?>
     <div class="appShell">
       <aside class="appRail" aria-label="Primary navigation">
@@ -616,10 +637,4 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
 
         <main class="shellContent">
           <div class="sceneCanvas">
-            <?php if ($renderPageFlash && $error): ?>
-              <div class="flash flash--error"><?= trux_e($error) ?></div>
-            <?php endif; ?>
-            <?php if ($renderPageFlash && $success): ?>
-              <div class="flash flash--success"><?= trux_e($success) ?></div>
-            <?php endif; ?>
   <?php endif; ?>

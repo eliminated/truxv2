@@ -23,37 +23,141 @@
 
 (() => {
   let stack = null;
+  const removalTimers = new WeakMap();
+
+  const normalizeType = (value) => {
+    const nextType = String(value || "success").trim().toLowerCase();
+    return ["success", "error", "info"].includes(nextType) ? nextType : "success";
+  };
 
   const ensureStack = () => {
-    if (stack instanceof HTMLElement) return stack;
-    stack = document.createElement("div");
+    if (stack instanceof HTMLElement && document.body.contains(stack)) return stack;
+
+    const existingStack = document.querySelector("[data-toast-stack='1']");
+    stack =
+      existingStack instanceof HTMLElement ? existingStack : document.createElement("div");
     stack.className = "toastStack";
+    stack.setAttribute("data-toast-stack", "1");
     stack.setAttribute("aria-live", "polite");
-    stack.setAttribute("aria-atomic", "true");
-    document.body.appendChild(stack);
+    stack.setAttribute("aria-atomic", "false");
+    if (!(existingStack instanceof HTMLElement)) {
+      document.body.appendChild(stack);
+    }
     return stack;
   };
 
-  window.truxToast = (message, type = "success") => {
-    if (!message) return;
+  const clearRemovalTimer = (toast) => {
+    const timer = removalTimers.get(toast);
+    if (timer) {
+      window.clearTimeout(timer);
+      removalTimers.delete(toast);
+    }
+  };
 
+  const dismissToast = (toast) => {
+    if (!(toast instanceof HTMLElement) || toast.dataset.state === "closing") return;
+    toast.dataset.state = "closing";
+    clearRemovalTimer(toast);
+    toast.classList.remove("is-visible");
+    toast.classList.add("is-leaving");
+
+    const timer = window.setTimeout(() => {
+      toast.remove();
+      removalTimers.delete(toast);
+    }, 260);
+    removalTimers.set(toast, timer);
+  };
+
+  const scheduleToastRemoval = (toast, duration) => {
+    clearRemovalTimer(toast);
+    if (!Number.isFinite(duration) || duration <= 0) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      dismissToast(toast);
+    }, duration);
+    removalTimers.set(toast, timer);
+  };
+
+  const toToastOptions = (type, options) => {
+    if (type && typeof type === "object") {
+      return {
+        type: "success",
+        ...type,
+      };
+    }
+
+    if (typeof options === "number") {
+      return {
+        type,
+        duration: options,
+      };
+    }
+
+    return {
+      type,
+      ...(options && typeof options === "object" ? options : {}),
+    };
+  };
+
+  window.truxToast = (message, type = "success", options = {}) => {
+    const text = String(message || "").trim();
+    if (!text) return;
+
+    const settings = toToastOptions(type, options);
+    const tone = normalizeType(settings.type);
+    const duration = Number(settings.duration ?? 5000);
+    const dismissible = settings.dismissible !== false;
     const host = ensureStack();
     const toast = document.createElement("div");
-    toast.className = `toast toast--${type}`;
-    toast.textContent = String(message);
+    toast.className = `toast toast--${tone}`;
+    toast.setAttribute("role", tone === "error" ? "alert" : "status");
+    toast.setAttribute("aria-live", tone === "error" ? "assertive" : "polite");
+
+    const body = document.createElement("div");
+    body.className = "toast__body";
+    body.textContent = text;
+    toast.appendChild(body);
+
+    if (dismissible) {
+      const dismissButton = document.createElement("button");
+      dismissButton.type = "button";
+      dismissButton.className = "toast__dismiss";
+      dismissButton.setAttribute("aria-label", "Dismiss notification");
+      dismissButton.innerHTML =
+        '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+      dismissButton.addEventListener("click", () => {
+        dismissToast(toast);
+      });
+      toast.appendChild(dismissButton);
+    }
+
     host.appendChild(toast);
 
     window.requestAnimationFrame(() => {
       toast.classList.add("is-visible");
     });
 
-    window.setTimeout(() => {
-      toast.classList.remove("is-visible");
-      window.setTimeout(() => {
-        toast.remove();
-      }, 220);
-    }, 2200);
+    scheduleToastRemoval(toast, duration);
+    return toast;
   };
+
+  const hydratePageToasts = () => {
+    document.querySelectorAll("[data-page-toast='1']").forEach((node) => {
+      if (!(node instanceof HTMLElement)) return;
+      const message = node.getAttribute("data-toast-message") || "";
+      const type = node.getAttribute("data-toast-type") || "success";
+      window.truxToast(message, type);
+      node.remove();
+    });
+  };
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", hydratePageToasts, { once: true });
+  } else {
+    hydratePageToasts();
+  }
 })();
 
 (() => {
@@ -1735,8 +1839,18 @@
           setCommentCount(currentPostId, data.comments_count);
         }
         renderedComments = await loadComments(currentPostId, { scrollToEnd: true });
+        if (typeof window.truxToast === "function") {
+          window.truxToast("Comment added");
+        }
       } catch (err) {
-        window.alert(err instanceof Error ? err.message : "Could not add comment.");
+        if (typeof window.truxToast === "function") {
+          window.truxToast(
+            err instanceof Error ? err.message : "Could not add comment.",
+            "error"
+          );
+        } else {
+          window.alert(err instanceof Error ? err.message : "Could not add comment.");
+        }
       } finally {
         if (submitBtn instanceof HTMLButtonElement) submitBtn.disabled = false;
       }
@@ -2012,6 +2126,10 @@
     typeof window.matchMedia === "function"
       ? window.matchMedia("(max-width: 760px)")
       : null;
+  const finePointerQuery =
+    typeof window.matchMedia === "function"
+      ? window.matchMedia("(pointer: fine)")
+      : null;
 
   let recipientTimer = 0;
   let recipientAbort = null;
@@ -2026,6 +2144,32 @@
     mobileQuery instanceof MediaQueryList
       ? mobileQuery.matches
       : window.innerWidth <= 760;
+
+  const readJson = async (res) => {
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { ok: false, error: text || "Request failed." };
+    }
+  };
+
+  const showToast = (message, type = "success") => {
+    if (!message) return;
+    if (typeof window.truxToast === "function") {
+      window.truxToast(message, type);
+      return;
+    }
+    if (type === "error") {
+      window.alert(message);
+    }
+  };
+
+  const canUseDesktopEnterToSend = () => {
+    const finePointer =
+      finePointerQuery instanceof MediaQueryList ? finePointerQuery.matches : true;
+    return finePointer && !isMobile();
+  };
 
   const isPlainPrimaryClick = (event) =>
     event.button === 0 &&
@@ -2049,6 +2193,16 @@
       (item) => item instanceof HTMLAnchorElement
     );
 
+  const getConversationList = () => {
+    const list = layout.querySelector("[data-conversation-list='1']");
+    return list instanceof HTMLElement ? list : null;
+  };
+
+  const getConversationListEmptyState = () => {
+    const node = layout.querySelector("[data-conversation-list-empty='1']");
+    return node instanceof HTMLElement ? node : null;
+  };
+
   const getThreadPanel = () => {
     const panel = layout.querySelector("[data-messages-thread='1']");
     return panel instanceof HTMLElement ? panel : null;
@@ -2064,6 +2218,27 @@
     return input instanceof HTMLTextAreaElement ? input : null;
   };
 
+  const getComposerForm = () => {
+    const form = layout.querySelector("[data-messages-composer='1']");
+    return form instanceof HTMLFormElement ? form : null;
+  };
+
+  const getComposerSubmit = (form = getComposerForm()) => {
+    if (!(form instanceof HTMLFormElement)) return null;
+    const button = form.querySelector("[data-messages-submit='1']");
+    return button instanceof HTMLButtonElement ? button : null;
+  };
+
+  const getMessageList = () => {
+    const list = layout.querySelector("[data-message-list='1']");
+    return list instanceof HTMLElement ? list : null;
+  };
+
+  const getMessageEmptyState = () => {
+    const node = layout.querySelector("[data-message-empty-state='1']");
+    return node instanceof HTMLElement ? node : null;
+  };
+
   const getMessageActionsSheet = () => {
     const sheet = document.querySelector("[data-shell-sheet='message-actions']");
     return sheet instanceof HTMLElement ? sheet : null;
@@ -2075,6 +2250,74 @@
     nextUrl.searchParams.delete("with");
     nextUrl.hash = "";
     return nextUrl.toString();
+  };
+
+  const removeConversationListEmptyState = () => {
+    const node = getConversationListEmptyState();
+    if (node instanceof HTMLElement) {
+      node.remove();
+    }
+  };
+
+  const removeMessageEmptyState = () => {
+    const node = getMessageEmptyState();
+    if (node instanceof HTMLElement) {
+      node.remove();
+    }
+  };
+
+  const isComposerBusy = (form = getComposerForm()) =>
+    form instanceof HTMLFormElement && form.dataset.sending === "1";
+
+  const setComposerBusy = (form, busy) => {
+    if (!(form instanceof HTMLFormElement)) return;
+    form.dataset.sending = busy ? "1" : "0";
+    form.classList.toggle("is-sending", busy);
+
+    const submitButton = getComposerSubmit(form);
+    if (submitButton instanceof HTMLButtonElement) {
+      submitButton.disabled = busy;
+      submitButton.classList.toggle("is-loading", busy);
+      submitButton.setAttribute("aria-disabled", busy ? "true" : "false");
+    }
+  };
+
+  const setComposerConversationId = (conversationId) => {
+    const form = getComposerForm();
+    if (!(form instanceof HTMLFormElement) || !conversationId) return;
+
+    form.querySelectorAll("input[name='recipient_id']").forEach((node) => node.remove());
+
+    let conversationInput = form.querySelector("input[name='conversation_id']");
+    if (!(conversationInput instanceof HTMLInputElement)) {
+      conversationInput = document.createElement("input");
+      conversationInput.type = "hidden";
+      conversationInput.name = "conversation_id";
+
+      const csrfInput = form.querySelector("input[name='_csrf']");
+      if (csrfInput instanceof HTMLInputElement && csrfInput.parentNode === form) {
+        csrfInput.insertAdjacentElement("afterend", conversationInput);
+      } else {
+        form.insertBefore(conversationInput, form.firstChild);
+      }
+    }
+
+    conversationInput.value = String(conversationId);
+  };
+
+  const updateThreadStatusCopy = (label) => {
+    if (!label) return;
+
+    layout
+      .querySelectorAll(".messagesThread__status, .messagesMobileBar__threadStatus")
+      .forEach((node) => {
+        if (!(node instanceof HTMLElement)) return;
+        const spans = Array.from(node.querySelectorAll("span"));
+        const textNode = spans.at(-1);
+        if (textNode instanceof HTMLElement) {
+          textNode.textContent = label;
+        }
+      });
   };
 
   const setThreadOpen = (open) => {
@@ -2110,6 +2353,15 @@
       }),
     }).catch(() => {
       // Ignore failures; thread rendering should continue.
+    });
+  };
+
+  const scrollMessageListToLatest = (behavior = "smooth") => {
+    const list = getMessageList();
+    if (!(list instanceof HTMLElement)) return;
+    list.scrollTo({
+      top: list.scrollHeight,
+      behavior,
     });
   };
 
@@ -2158,6 +2410,76 @@
       Number.isFinite(maxHeight) && maxHeight > 0 && input.scrollHeight > maxHeight
         ? "auto"
         : "hidden";
+  };
+
+  const createNodeFromHtml = (html, selector) => {
+    const markup = String(html || "").trim();
+    if (!markup) return null;
+
+    const template = document.createElement("template");
+    template.innerHTML = markup;
+
+    if (!selector) {
+      const firstNode = template.content.firstElementChild;
+      return firstNode instanceof HTMLElement ? firstNode : null;
+    }
+
+    const match = template.content.querySelector(selector);
+    return match instanceof HTMLElement ? match : null;
+  };
+
+  const upsertConversationItem = (html, conversationId) => {
+    const list = getConversationList();
+    const nextItem = createNodeFromHtml(html, "[data-conversation-item='1']");
+    if (!(list instanceof HTMLElement) || !(nextItem instanceof HTMLAnchorElement)) {
+      return false;
+    }
+
+    removeConversationListEmptyState();
+
+    const existingItem = list.querySelector(
+      `[data-conversation-item='1'][data-conversation-id='${conversationId}']`
+    );
+
+    if (existingItem instanceof HTMLElement) {
+      existingItem.replaceWith(nextItem);
+    } else {
+      const firstConversationItem = getConversationItems()[0];
+      const searchEmpty = layout.querySelector("[data-conversation-empty='1']");
+      if (firstConversationItem instanceof HTMLAnchorElement) {
+        list.insertBefore(nextItem, firstConversationItem);
+      } else if (searchEmpty instanceof HTMLElement) {
+        list.insertBefore(nextItem, searchEmpty);
+      } else {
+        list.appendChild(nextItem);
+      }
+    }
+
+    const liveItem = list.querySelector(
+      `[data-conversation-item='1'][data-conversation-id='${conversationId}']`
+    );
+    const firstConversationItem = getConversationItems()[0];
+    if (
+      liveItem instanceof HTMLElement &&
+      firstConversationItem instanceof HTMLAnchorElement &&
+      liveItem !== firstConversationItem
+    ) {
+      list.insertBefore(liveItem, firstConversationItem);
+    }
+
+    return true;
+  };
+
+  const appendMessageBubble = (html) => {
+    const list = getMessageList();
+    const bubble = createNodeFromHtml(html, "[data-message-bubble='1']");
+    if (!(list instanceof HTMLElement) || !(bubble instanceof HTMLElement)) {
+      return false;
+    }
+
+    removeMessageEmptyState();
+    list.appendChild(bubble);
+    return true;
   };
 
   const escapeHtml = (value) =>
@@ -2275,6 +2597,85 @@
     }
     if (window.location.href !== url) {
       window.history.pushState({}, "", url);
+    }
+  };
+
+  const submitComposer = async (form) => {
+    if (!(form instanceof HTMLFormElement) || isComposerBusy(form)) {
+      return;
+    }
+
+    const textarea = form.querySelector("[data-messages-input='1']");
+    if (!(textarea instanceof HTMLTextAreaElement)) return;
+
+    const trimmedBody = textarea.value.trim();
+    if (!trimmedBody) {
+      showToast("Message must be 1-2000 characters.", "error");
+      return;
+    }
+
+    setComposerBusy(form, true);
+
+    try {
+      const requestUrl = new URL(form.action, window.location.origin);
+      requestUrl.searchParams.set("format", "json");
+
+      const formData = new FormData(form);
+      const res = await fetch(requestUrl.toString(), {
+        method: "POST",
+        body: formData,
+        headers: { Accept: "application/json" },
+      });
+      const data = await readJson(res);
+
+      if (res.status === 401 && data?.login_url) {
+        window.location.assign(String(data.login_url));
+        return;
+      }
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || "Could not send message.");
+      }
+
+      const nextConversationId = Number(data.conversation_id || 0);
+      const conversationUrl = String(
+        data.conversation_url || `${window.TRUX_BASE_URL || ""}/messages.php`
+      ).trim();
+      if (!nextConversationId || !conversationUrl) {
+        throw new Error("Could not load the new conversation.");
+      }
+
+      const appended = appendMessageBubble(String(data.message_html || ""));
+      const updatedSidebar = upsertConversationItem(
+        String(data.conversation_item_html || ""),
+        nextConversationId
+      );
+      if (!appended || !updatedSidebar) {
+        window.location.assign(conversationUrl);
+        return;
+      }
+
+      setActiveConversationState(nextConversationId);
+      setComposerConversationId(nextConversationId);
+      updateThreadStatusCopy("Private thread");
+      updateHistory(conversationUrl, "replace");
+
+      textarea.value = "";
+      delete textarea.dataset.imeComposing;
+      syncComposerHeight(textarea);
+      textarea.focus();
+
+      if (typeof window.truxRefreshTimeAgo === "function") {
+        window.truxRefreshTimeAgo();
+      }
+      updateConversationFilter();
+      markConversationRead(nextConversationId);
+      window.requestAnimationFrame(() => {
+        scrollMessageListToLatest("smooth");
+      });
+    } catch (err) {
+      showToast(err instanceof Error ? err.message : "Could not send message.", "error");
+    } finally {
+      setComposerBusy(form, false);
     }
   };
 
@@ -2486,6 +2887,9 @@
 
   setThreadOpen(layout.classList.contains("is-thread-open"));
   refreshThreadUi();
+  window.requestAnimationFrame(() => {
+    scrollMessageListToLatest("auto");
+  });
 
   if (searchInput instanceof HTMLInputElement) {
     searchInput.addEventListener("input", updateConversationFilter);
@@ -2545,6 +2949,98 @@
     }
   });
 
+  document.addEventListener("submit", (event) => {
+    const form = event.target;
+    if (!(form instanceof HTMLFormElement) || form.dataset.messagesComposer !== "1") {
+      return;
+    }
+
+    event.preventDefault();
+    void submitComposer(form);
+  });
+
+  document.addEventListener("input", (event) => {
+    const input = event.target;
+    if (
+      input instanceof HTMLTextAreaElement &&
+      input.matches("[data-messages-input='1']")
+    ) {
+      syncComposerHeight(input);
+    }
+  });
+
+  document.addEventListener("compositionstart", (event) => {
+    const input = event.target;
+    if (
+      input instanceof HTMLTextAreaElement &&
+      input.matches("[data-messages-input='1']")
+    ) {
+      input.dataset.imeComposing = "1";
+    }
+  });
+
+  document.addEventListener("compositionend", (event) => {
+    const input = event.target;
+    if (
+      input instanceof HTMLTextAreaElement &&
+      input.matches("[data-messages-input='1']")
+    ) {
+      delete input.dataset.imeComposing;
+    }
+  });
+
+  document.addEventListener("keydown", (event) => {
+    const input = event.target;
+    if (
+      !(input instanceof HTMLTextAreaElement) ||
+      !input.matches("[data-messages-input='1']")
+    ) {
+      return;
+    }
+    if (event.defaultPrevented || event.key !== "Enter" || event.shiftKey) {
+      return;
+    }
+    if (!canUseDesktopEnterToSend()) {
+      return;
+    }
+    if (event.isComposing || input.dataset.imeComposing === "1") {
+      return;
+    }
+
+    const mentionHost = input.closest(".field") || input.parentElement;
+    const mentionPanel =
+      mentionHost instanceof HTMLElement
+        ? mentionHost.querySelector("[data-mention-panel='1']")
+        : null;
+    const mentionPanelOpen =
+      mentionPanel instanceof HTMLElement &&
+      !mentionPanel.hidden &&
+      mentionPanel.querySelector("[data-mention-option='1']");
+    if (mentionPanelOpen) {
+      return;
+    }
+
+    const form = input.closest("[data-messages-composer='1']");
+    if (!(form instanceof HTMLFormElement) || isComposerBusy(form)) {
+      return;
+    }
+
+    const trimmedBody = input.value.trim();
+    event.preventDefault();
+
+    if (!trimmedBody) {
+      showToast("Message must be 1-2000 characters.", "error");
+      return;
+    }
+
+    if (typeof form.requestSubmit === "function") {
+      form.requestSubmit();
+      return;
+    }
+
+    form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+  });
+
   recipientOpenButtons.forEach((button) => {
     button.addEventListener("click", () => {
       if (recipientAbort instanceof AbortController) {
@@ -2576,13 +3072,6 @@
       recipientTimer = window.setTimeout(() => {
         void loadRecipients(query);
       }, 140);
-    });
-  }
-
-  const composerInput = getComposerInput();
-  if (composerInput instanceof HTMLTextAreaElement) {
-    composerInput.addEventListener("input", () => {
-      syncComposerHeight(composerInput);
     });
   }
 

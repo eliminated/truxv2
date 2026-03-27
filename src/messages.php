@@ -104,15 +104,18 @@ function trux_get_or_create_direct_conversation(int $viewerId, int $otherUserId)
     }
 }
 
-function trux_send_direct_message(int $senderUserId, int $recipientUserId, string $body): int {
+function trux_send_direct_message_record(int $senderUserId, int $recipientUserId, string $body): ?array {
     $body = trim($body);
     if ($senderUserId <= 0 || $recipientUserId <= 0 || $senderUserId === $recipientUserId || $body === '' || mb_strlen($body) > 2000) {
-        return 0;
+        return null;
     }
 
-    $conversationId = trux_get_or_create_direct_conversation($senderUserId, $recipientUserId);
+    $existingConversation = trux_fetch_direct_conversation_between($senderUserId, $recipientUserId);
+    $conversationId = $existingConversation
+        ? (int)($existingConversation['id'] ?? 0)
+        : trux_get_or_create_direct_conversation($senderUserId, $recipientUserId);
     if ($conversationId <= 0) {
-        return 0;
+        return null;
     }
 
     $db = trux_db();
@@ -125,6 +128,7 @@ function trux_send_direct_message(int $senderUserId, int $recipientUserId, strin
              VALUES (?, ?, ?)'
         );
         $insert->execute([$conversationId, $senderUserId, $body]);
+        $messageId = (int)$db->lastInsertId();
 
         $update = $db->prepare(
             'UPDATE direct_conversations
@@ -135,14 +139,45 @@ function trux_send_direct_message(int $senderUserId, int $recipientUserId, strin
 
         $db->commit();
 
-        return $conversationId;
+        return [
+            'conversation_id' => $conversationId,
+            'message_id' => $messageId,
+            'created_conversation' => $existingConversation === null,
+        ];
     } catch (PDOException) {
         if ($db->inTransaction()) {
             $db->rollBack();
         }
 
-        return 0;
+        return null;
     }
+}
+
+function trux_send_direct_message(int $senderUserId, int $recipientUserId, string $body): int {
+    $result = trux_send_direct_message_record($senderUserId, $recipientUserId, $body);
+    return (int)($result['conversation_id'] ?? 0);
+}
+
+function trux_fetch_direct_message_for_user(int $messageId, int $viewerId): ?array {
+    if ($messageId <= 0 || $viewerId <= 0) {
+        return null;
+    }
+
+    $db = trux_db();
+    $stmt = $db->prepare(
+        'SELECT m.id, m.conversation_id, m.sender_user_id, m.body, m.created_at, m.read_at,
+                u.username AS sender_username, u.display_name AS sender_display_name
+         FROM direct_messages m
+         JOIN direct_conversations c ON c.id = m.conversation_id
+         JOIN users u ON u.id = m.sender_user_id
+         WHERE m.id = ?
+           AND (c.user_one_id = ? OR c.user_two_id = ?)
+         LIMIT 1'
+    );
+    $stmt->execute([$messageId, $viewerId, $viewerId]);
+    $message = $stmt->fetch();
+
+    return $message ?: null;
 }
 
 function trux_fetch_direct_messages(int $conversationId, int $viewerId, int $limit = 100): array {
@@ -272,6 +307,87 @@ function trux_fetch_direct_conversations(int $viewerId, int $limit = 50): array 
     }
 }
 
+function trux_fetch_direct_conversation_summary(int $conversationId, int $viewerId): ?array {
+    if ($conversationId <= 0 || $viewerId <= 0) {
+        return null;
+    }
+
+    $db = trux_db();
+
+    try {
+        $stmt = $db->prepare(
+            'SELECT c.id, c.user_one_id, c.user_two_id, c.created_at, c.updated_at,
+                    u.id AS other_user_id, u.username AS other_username, u.display_name AS other_display_name,
+                    u.avatar_path AS other_avatar_path,
+                    (
+                        SELECT dm.body
+                        FROM direct_messages dm
+                        WHERE dm.conversation_id = c.id
+                        ORDER BY dm.id DESC
+                        LIMIT 1
+                    ) AS last_message_body,
+                    (
+                        SELECT dm.created_at
+                        FROM direct_messages dm
+                        WHERE dm.conversation_id = c.id
+                        ORDER BY dm.id DESC
+                        LIMIT 1
+                    ) AS last_message_created_at,
+                    (
+                        SELECT COUNT(*)
+                        FROM direct_messages dm
+                        WHERE dm.conversation_id = c.id
+                          AND dm.sender_user_id <> :viewer_unread
+                          AND dm.read_at IS NULL
+                    ) AS unread_count
+             FROM direct_conversations c
+             JOIN users u ON u.id = CASE
+                 WHEN c.user_one_id = :viewer_other THEN c.user_two_id
+                 ELSE c.user_one_id
+             END
+             WHERE c.id = :conversation_id
+               AND (c.user_one_id = :viewer_one OR c.user_two_id = :viewer_two)
+             LIMIT 1'
+        );
+        $stmt->bindValue(':viewer_unread', $viewerId, PDO::PARAM_INT);
+        $stmt->bindValue(':viewer_other', $viewerId, PDO::PARAM_INT);
+        $stmt->bindValue(':conversation_id', $conversationId, PDO::PARAM_INT);
+        $stmt->bindValue(':viewer_one', $viewerId, PDO::PARAM_INT);
+        $stmt->bindValue(':viewer_two', $viewerId, PDO::PARAM_INT);
+        $stmt->execute();
+        $conversation = $stmt->fetch();
+
+        return $conversation ?: null;
+    } catch (PDOException) {
+        return null;
+    }
+}
+
+function trux_render_direct_message_avatar(
+    string $username,
+    string $avatarUrl = '',
+    string $className = 'dmAvatar',
+    string $fallbackLabel = ''
+): string {
+    $seed = $username !== '' ? $username : $fallbackLabel;
+    $initialSeed = $username !== '' ? $username : ($fallbackLabel !== '' ? $fallbackLabel : 'T');
+    $initial = strtoupper(mb_substr($initialSeed, 0, 1));
+    $theme = trux_direct_message_avatar_theme($seed);
+
+    ob_start();
+    ?>
+    <span class="<?= trux_e($className) ?> dmAvatar dmAvatar--<?= trux_e($theme) ?><?= $avatarUrl !== '' ? ' ' . trux_e($className) . '--image dmAvatar--image' : '' ?>" aria-hidden="true">
+        <?php if ($avatarUrl !== ''): ?>
+            <img class="<?= trux_e($className) ?>__image dmAvatar__image" src="<?= trux_e($avatarUrl) ?>" alt="" loading="lazy" decoding="async">
+        <?php else: ?>
+            <span class="<?= trux_e($className) ?>__fallback dmAvatar__fallback"><?= trux_e($initial) ?></span>
+        <?php endif; ?>
+    </span>
+    <?php
+
+    return trim((string)ob_get_clean());
+}
+
 function trux_direct_message_avatar_theme(?string $seed): string {
     $seed = trim((string)$seed);
     if ($seed === '') {
@@ -311,6 +427,30 @@ function trux_direct_message_preview(?string $body, int $limit = 90): string {
     }
 
     return mb_substr($body, 0, max(1, $limit - 3)) . '...';
+}
+
+function trux_render_direct_message_bubble(array $message, int $viewerId, int $conversationId): string {
+    $templatePath = dirname(__DIR__) . '/public/_dm_message_bubble.php';
+    if (!is_file($templatePath)) {
+        return '';
+    }
+
+    ob_start();
+    require $templatePath;
+
+    return trim((string)ob_get_clean());
+}
+
+function trux_render_direct_conversation_item(array $conversation, int $activeConversationId = 0): string {
+    $templatePath = dirname(__DIR__) . '/public/_dm_conversation_item.php';
+    if (!is_file($templatePath)) {
+        return '';
+    }
+
+    ob_start();
+    require $templatePath;
+
+    return trim((string)ob_get_clean());
 }
 
 function trux_search_direct_message_recipients(int $viewerId, string $term, int $limit = 8): array {

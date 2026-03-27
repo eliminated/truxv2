@@ -382,6 +382,17 @@
     max-height: calc(100dvh - 18rem);
   }
 
+  .toastStack {
+    top: calc(env(safe-area-inset-top) + 4.75rem);
+    right: 0.75rem;
+    left: 0.75rem;
+    width: auto;
+  }
+
+  .toast {
+    padding: 0.9rem 0.95rem;
+  }
+
   body.shellSheet-open .mobileDock {
     display: none;
   }

@@ -97,31 +97,6 @@ $canCompose = $recipientUser
   && !$dmBlockedByViewer
   && !$dmBlockedByThem;
 
-$renderDmAvatar = static function (
-  string $username,
-  string $avatarUrl = '',
-  string $className = 'dmAvatar',
-  string $fallbackLabel = ''
-): string {
-  $seed = $username !== '' ? $username : $fallbackLabel;
-  $initialSeed = $username !== '' ? $username : ($fallbackLabel !== '' ? $fallbackLabel : 'T');
-  $initial = strtoupper(mb_substr($initialSeed, 0, 1));
-  $theme = trux_direct_message_avatar_theme($seed);
-
-  ob_start();
-  ?>
-  <span class="<?= trux_e($className) ?> dmAvatar dmAvatar--<?= trux_e($theme) ?><?= $avatarUrl !== '' ? ' ' . trux_e($className) . '--image dmAvatar--image' : '' ?>" aria-hidden="true">
-    <?php if ($avatarUrl !== ''): ?>
-      <img class="<?= trux_e($className) ?>__image dmAvatar__image" src="<?= trux_e($avatarUrl) ?>" alt="" loading="lazy" decoding="async">
-    <?php else: ?>
-      <span class="<?= trux_e($className) ?>__fallback dmAvatar__fallback"><?= trux_e($initial) ?></span>
-    <?php endif; ?>
-  </span>
-  <?php
-
-  return trim((string)ob_get_clean());
-};
-
 $renderDmEmptyIcon = static function (): string {
   return '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4.75 6.75h14.5a1.5 1.5 0 0 1 1.5 1.5v7.5a1.5 1.5 0 0 1-1.5 1.5H8.75l-4 2.55V8.25a1.5 1.5 0 0 1 1.5-1.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M8 11.25h8M8 14.25h5.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>';
 };
@@ -151,7 +126,7 @@ require_once __DIR__ . '/_header.php';
               <path d="m13.75 7.25 3 3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
             </svg>
           </button>
-          <?= $renderDmAvatar($viewerUsername, $viewerAvatarUrl, 'messagesMobileBar__avatar', '@' . $viewerUsername) ?>
+          <?= trux_render_direct_message_avatar($viewerUsername, $viewerAvatarUrl, 'messagesMobileBar__avatar', '@' . $viewerUsername) ?>
         </div>
       </div>
 
@@ -165,7 +140,7 @@ require_once __DIR__ . '/_header.php';
 
         <?php if ($recipientUser): ?>
           <div class="messagesMobileBar__threadIdentity">
-            <?= $renderDmAvatar($recipientUsername, $recipientAvatarUrl, 'messagesMobileBar__threadAvatar', $recipientLabel) ?>
+            <?= trux_render_direct_message_avatar($recipientUsername, $recipientAvatarUrl, 'messagesMobileBar__threadAvatar', $recipientLabel) ?>
             <div class="messagesMobileBar__threadCopy">
               <strong><?= trux_e($recipientLabel) ?></strong>
               <span class="messagesMobileBar__threadStatus">
@@ -216,47 +191,13 @@ require_once __DIR__ . '/_header.php';
       <div class="messagesSidebar__listWrap">
         <div class="messagesList" data-conversation-list="1">
           <?php if (!$conversations): ?>
-            <div class="messagesList__empty">
+            <div class="messagesList__empty" data-conversation-list-empty="1">
               <strong>No conversations yet</strong>
               <p class="muted">Start a new one from a user profile or the new message button.</p>
             </div>
           <?php else: ?>
             <?php foreach ($conversations as $conversation): ?>
-              <?php
-              $conversationId = (int)$conversation['id'];
-              $isActive = $conversationId === $activeConversationId;
-              $unreadCount = (int)($conversation['unread_count'] ?? 0);
-              $lastAt = (string)($conversation['last_message_created_at'] ?? $conversation['updated_at'] ?? '');
-              $otherUsername = (string)($conversation['other_username'] ?? '');
-              $otherDisplayName = (string)($conversation['other_display_name'] ?? '');
-              $conversationLabel = trux_direct_message_actor_label($otherUsername, $otherDisplayName);
-              $preview = trux_direct_message_preview((string)($conversation['last_message_body'] ?? ''));
-              $conversationAvatarUrl = trux_public_url((string)($conversation['other_avatar_path'] ?? ''));
-              ?>
-              <a
-                class="messagesList__item<?= $isActive ? ' is-active' : '' ?>"
-                href="<?= TRUX_BASE_URL ?>/messages.php?id=<?= $conversationId ?>"
-                <?= $isActive ? 'aria-current="page"' : '' ?>
-                data-conversation-item="1"
-                data-search-handle="<?= trux_e(strtolower($conversationLabel . ' ' . $otherUsername)) ?>"
-                data-search-preview="<?= trux_e(strtolower($preview)) ?>">
-                <?= $renderDmAvatar($otherUsername, $conversationAvatarUrl, 'messagesList__avatar', $conversationLabel) ?>
-
-                <div class="messagesList__content">
-                  <div class="messagesList__row messagesList__row--top">
-                    <span class="messagesList__user"><?= trux_e($conversationLabel) ?></span>
-                    <?php if ($lastAt !== ''): ?>
-                      <span class="messagesList__time muted" data-time-ago="1" data-time-source="<?= trux_e($lastAt) ?>" title="<?= trux_e(trux_format_exact_time($lastAt)) ?>">
-                        <?= trux_e(trux_time_ago($lastAt)) ?>
-                      </span>
-                    <?php endif; ?>
-                  </div>
-                  <div class="messagesList__row messagesList__row--bottom">
-                    <span class="messagesList__preview muted"><?= trux_e($preview) ?></span>
-                    <span class="messagesList__unread<?= $unreadCount > 0 ? ' is-visible' : '' ?>" aria-hidden="true"></span>
-                  </div>
-                </div>
-              </a>
+              <?= trux_render_direct_conversation_item($conversation, $activeConversationId) ?>
             <?php endforeach; ?>
           <?php endif; ?>
 
@@ -282,7 +223,7 @@ require_once __DIR__ . '/_header.php';
       <?php if ($recipientUser): ?>
         <header class="messagesThread__head">
           <div class="messagesThread__identity">
-            <?= $renderDmAvatar($recipientUsername, $recipientAvatarUrl, 'messagesThread__avatar', $recipientLabel) ?>
+            <?= trux_render_direct_message_avatar($recipientUsername, $recipientAvatarUrl, 'messagesThread__avatar', $recipientLabel) ?>
             <div class="messagesThread__identityCopy">
               <h3><?= trux_e($recipientLabel) ?></h3>
               <div class="messagesThread__status">
@@ -307,7 +248,7 @@ require_once __DIR__ . '/_header.php';
           </div>
         </header>
 
-        <div class="messagesThread__messages">
+        <div class="messagesThread__messages" data-message-list="1">
           <?php if ($dmBlockedByThem): ?>
             <div class="messagesThread__stateCard messagesThread__stateCard--center">
               <div class="messagesThread__stateIcon" aria-hidden="true"><?= $renderDmEmptyIcon() ?></div>
@@ -333,7 +274,7 @@ require_once __DIR__ . '/_header.php';
               </div>
             </div>
           <?php elseif (!$selectedMessages): ?>
-            <div class="messagesThread__stateCard messagesThread__stateCard--center">
+            <div class="messagesThread__stateCard messagesThread__stateCard--center" data-message-empty-state="1">
               <div class="messagesThread__stateIcon" aria-hidden="true"><?= $renderDmEmptyIcon() ?></div>
               <div class="messagesThread__stateBody">
                 <strong><?= $recipientIsReportSystem ? 'No updates yet' : 'No messages yet' ?></strong>
@@ -342,57 +283,13 @@ require_once __DIR__ . '/_header.php';
             </div>
           <?php else: ?>
             <?php foreach ($selectedMessages as $message): ?>
-              <?php
-              $isMine = (int)$message['sender_user_id'] === $viewerId;
-              $messageTime = (string)$message['created_at'];
-              $messageId = (int)$message['id'];
-              $messageSenderUsername = (string)($message['sender_username'] ?? '');
-              $canReportMessage = !$isMine && !trux_is_report_system_user($messageSenderUsername);
-              $messageReportLabel = 'Message #' . $messageId . ' from @' . $messageSenderUsername;
-              $messageReportUrl = TRUX_BASE_URL . '/messages.php?id=' . $activeConversationId . '#message-' . $messageId;
-              ?>
-              <article id="message-<?= $messageId ?>" class="messageBubble<?= $isMine ? ' messageBubble--mine' : '' ?>">
-                <div class="messageBubble__meta">
-                  <div class="messageBubble__metaMain">
-                    <span class="messageBubble__author"><?= $isMine ? 'You' : trux_e(trux_direct_message_actor_label($messageSenderUsername, (string)($message['sender_display_name'] ?? ''))) ?></span>
-                    <span class="muted" data-time-ago="1" data-time-source="<?= trux_e($messageTime) ?>" title="<?= trux_e(trux_format_exact_time($messageTime)) ?>">
-                      <?= trux_e(trux_time_ago($messageTime)) ?>
-                    </span>
-                  </div>
-                  <?php if ($canReportMessage): ?>
-                    <div class="contentMenu messageBubble__menu" data-content-menu="1">
-                      <button class="contentMenu__trigger" type="button" aria-label="Open message actions" data-content-menu-trigger="1">
-                        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                          <path d="M6.5 12a1.5 1.5 0 1 0 0-.01V12Zm5.5 0a1.5 1.5 0 1 0 0-.01V12Zm5.5 0a1.5 1.5 0 1 0 0-.01V12Z" fill="currentColor" />
-                        </svg>
-                      </button>
-                      <div class="contentMenu__panel" role="menu" aria-label="Message actions">
-                        <button
-                          class="contentMenu__item contentMenu__item--danger"
-                          type="button"
-                          role="menuitem"
-                          data-report-action="1"
-                          data-report-target-type="message"
-                          data-report-target-id="<?= $messageId ?>"
-                          data-report-open-url="<?= trux_e($messageReportUrl) ?>"
-                          data-report-target-label="<?= trux_e($messageReportLabel) ?>">
-                          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-                            <path d="M6 20V5m0 0h9l-1.5 3L15 11H6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
-                          </svg>
-                          <span>Report message</span>
-                        </button>
-                      </div>
-                    </div>
-                  <?php endif; ?>
-                </div>
-                <div class="messageBubble__body"><?= trux_render_comment_body((string)$message['body']) ?></div>
-              </article>
+              <?= trux_render_direct_message_bubble($message, $viewerId, $activeConversationId) ?>
             <?php endforeach; ?>
           <?php endif; ?>
         </div>
 
         <?php if ($canCompose): ?>
-          <form class="messagesComposer" method="post" action="<?= TRUX_BASE_URL ?>/send_message.php" data-messages-composer="1">
+          <form class="messagesComposer" method="post" action="<?= TRUX_BASE_URL ?>/send_message.php" data-messages-composer="1" data-no-fx="1">
             <?= trux_csrf_field() ?>
             <?php if ($activeConversationId > 0): ?>
               <input type="hidden" name="conversation_id" value="<?= $activeConversationId ?>">
@@ -409,7 +306,7 @@ require_once __DIR__ . '/_header.php';
                 placeholder="Write a message to <?= trux_e($recipientLabel) ?>..."
                 data-mention-input="1"
                 data-messages-input="1"></textarea>
-              <button class="shellButton shellButton--accent messagesComposer__submit" type="submit">
+              <button class="shellButton shellButton--accent messagesComposer__submit" type="submit" data-messages-submit="1">
                 <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
                   <path d="M4.75 12h12.5M12.5 5.75 19 12l-6.5 6.25" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
                 </svg>

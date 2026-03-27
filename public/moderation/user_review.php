@@ -175,14 +175,6 @@ $workspaceActionPath = $buildUserReviewPath([
     'user_id' => $selectedUserId,
 ]);
 
-$error = trux_flash_get('error');
-$success = trux_flash_get('success');
-$errorMessage = is_string($error) ? trim($error) : '';
-$successMessage = is_string($success) ? trim($success) : '';
-$renderPageFlash = false;
-$workspaceFlashType = $errorMessage !== '' ? 'error' : ($successMessage !== '' ? 'success' : '');
-$workspaceFlashMessage = $errorMessage !== '' ? $errorMessage : $successMessage;
-
 require_once dirname(__DIR__) . '/_header.php';
 ?>
 
@@ -195,10 +187,6 @@ require_once dirname(__DIR__) . '/_header.php';
   <?php require __DIR__ . '/_nav.php'; ?>
 
   <div class="moderationContent">
-    <?php if ($workspaceFlashMessage !== '' && !$selectedUser): ?>
-      <div class="flash flash--<?= $workspaceFlashType === 'error' ? 'error' : 'success' ?>"><?= trux_e($workspaceFlashMessage) ?></div>
-    <?php endif; ?>
-
     <section class="moderationPanelGrid">
       <article class="card moderationPanel">
         <div class="card__body">
@@ -342,10 +330,6 @@ require_once dirname(__DIR__) . '/_header.php';
         </header>
 
         <div class="reviewModal__body">
-          <?php if ($workspaceFlashMessage !== ''): ?>
-            <div class="flash flash--<?= $workspaceFlashType === 'error' ? 'error' : 'success' ?> reviewModal__flash"><?= trux_e($workspaceFlashMessage) ?></div>
-          <?php endif; ?>
-
           <div class="reviewModal__grid reviewModal__grid--userReviewWorkspace">
             <section class="reviewModal__card reviewModal__card--compact">
               <div class="reviewModal__sectionHead">

@@ -73,6 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           ],
         ]);
 
+        trux_flash_set('success', 'Posted!');
         if ($isJson) {
           $post = trux_fetch_post_by_id($postId);
           header('Content-Type: application/json; charset=utf-8');
@@ -93,7 +94,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           ]);
           exit;
         }
-        trux_flash_set('success', 'Posted!');
         trux_redirect(trux_post_viewer_path($postId));
       }
     }

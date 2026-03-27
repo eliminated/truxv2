@@ -77,6 +77,30 @@ function trux_flash_get(string $key): ?string {
     return $msg;
 }
 
+function trux_flash_pull_all(): array {
+    if (!isset($_SESSION['_flash']) || !is_array($_SESSION['_flash']) || $_SESSION['_flash'] === []) {
+        return [];
+    }
+
+    $payload = [];
+    foreach ($_SESSION['_flash'] as $key => $message) {
+        if (!is_string($key) || $key === '') {
+            continue;
+        }
+
+        $text = trim((string)$message);
+        if ($text === '') {
+            continue;
+        }
+
+        $payload[$key] = [$text];
+    }
+
+    $_SESSION['_flash'] = [];
+
+    return $payload;
+}
+
 function trux_int_param(string $name, int $default = 0): int {
     $v = $_GET[$name] ?? null;
     if (!is_string($v) || $v === '') return $default;
