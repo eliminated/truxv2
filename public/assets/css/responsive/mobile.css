@@ -24,6 +24,16 @@
     display: grid;
   }
 
+  .page--messages .shellTopbar {
+    display: none;
+  }
+
+  .page--messages .sceneCanvas {
+    width: 100%;
+    padding-top: 0;
+    padding-bottom: calc(var(--mobile-dock-height) + var(--space-4));
+  }
+
   .pageBand,
   .inlineHeader,
   .bandSurface,
@@ -129,65 +139,257 @@
     min-height: 2.35rem;
   }
 
+  .page--messages .pageFrame--messages {
+    min-height: calc(100dvh - var(--mobile-dock-height));
+    gap: 0;
+  }
+
   .messagesLayout {
-    grid-template-columns: minmax(18rem, 19rem) minmax(20rem, 1fr);
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto minmax(0, 1fr);
     gap: var(--space-3);
-    align-items: start;
-    overflow-x: auto;
-    padding-bottom: 0.15rem;
-    scrollbar-width: thin;
+    min-height: calc(100dvh - var(--mobile-dock-height));
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  .messagesMobileBar {
+    display: grid;
+    gap: var(--space-2);
+    padding: 0.8rem 0.5rem 0.75rem;
+    border-bottom: 1px solid var(--line-soft);
+    background: rgba(5, 9, 15, 0.92);
+    backdrop-filter: blur(24px);
+    position: sticky;
+    top: 0;
+    z-index: 25;
+  }
+
+  .messagesMobileBar__state {
+    display: none;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .messagesLayout:not(.is-thread-open) .messagesMobileBar__state--inbox,
+  .messagesLayout.is-thread-open .messagesMobileBar__state--thread {
+    display: flex;
+  }
+
+  .messagesMobileBar__title {
+    font-size: 0.94rem;
+    font-weight: 700;
+  }
+
+  .messagesMobileBar__actions {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+  }
+
+  .messagesMobileBar__iconButton,
+  .messagesMobileBar__back {
+    min-height: 2.75rem;
+  }
+
+  .messagesMobileBar__iconButton {
+    width: 2.75rem;
+    height: 2.75rem;
+  }
+
+  .messagesMobileBar__back {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    padding: 0.5rem 0.7rem;
+    border-radius: var(--radius-pill);
+    color: var(--text-strong);
+  }
+
+  .messagesMobileBar__back svg {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .messagesMobileBar__threadIdentity {
+    min-width: 0;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-2);
+    align-items: center;
+    flex: 1 1 auto;
+  }
+
+  .messagesMobileBar__threadCopy {
+    min-width: 0;
+    display: grid;
+    gap: 0.1rem;
+  }
+
+  .messagesMobileBar__threadCopy strong {
+    min-width: 0;
+    font-size: 0.84rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .messagesMobileBar__threadStatus {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: var(--text-soft);
+    font-size: 0.72rem;
   }
 
   .messagesSidebar,
   .messagesThread {
+    min-width: 0;
+    max-width: 100%;
     min-height: 0;
-    scroll-snap-align: start;
+    height: 100%;
+  }
+
+  .messagesLayout:not(.is-thread-open) .messagesThread {
+    display: none;
+  }
+
+  .messagesLayout.is-thread-open .messagesSidebar {
+    display: none;
   }
 
   .messagesSidebar {
-    min-width: 18rem;
+    gap: var(--space-3);
+  }
+
+  .messagesSidebar__search {
+    padding-top: 0.1rem;
+  }
+
+  .messagesList__item {
+    min-height: 3.75rem;
+    padding: 0.9rem;
+  }
+
+  .messagesList__avatar {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .messagesList__avatar .dmAvatar__fallback {
+    font-size: 0.94rem;
+  }
+
+  .messagesList__user {
+    font-size: 0.94rem;
+  }
+
+  .messagesList__preview {
+    font-size: 0.78rem;
+  }
+
+  .messagesList__time {
+    font-size: 0.72rem;
+  }
+
+  .messagesList__unread {
+    width: 0.5rem;
+    height: 0.5rem;
+  }
+
+  .messagesSidebar__footer {
+    position: sticky;
+    bottom: 0;
+    padding-top: var(--space-3);
+    background:
+      linear-gradient(180deg, rgba(7, 11, 20, 0), rgba(7, 11, 20, 0.94) 1rem, rgba(7, 11, 20, 0.98) 100%);
+  }
+
+  .messagesSidebar__new {
+    width: 100%;
+    justify-content: center;
+    border-color: rgba(97, 221, 255, 0.22);
+    background:
+      linear-gradient(180deg, rgba(97, 221, 255, 0.2), rgba(97, 221, 255, 0.08)),
+      rgba(255, 255, 255, 0.03);
   }
 
   .messagesThread {
-    min-width: min(22rem, calc(100vw - 1.25rem));
+    display: flex;
+    padding-bottom: 0;
   }
 
-  .messagesLayout:not(.is-thread-open) .messagesThread,
-  .messagesLayout.is-thread-open .messagesSidebar,
-  .messagesLayout.is-thread-open .messagesThread {
-    display: grid;
-  }
-
-  .messagesLayout.is-thread-open .messagesThread {
-    min-height: 0;
-  }
-
-  .messagesThread__back {
+  .messagesThread__head {
     display: none;
+  }
+
+  .messagesThread__messages {
+    gap: var(--space-2);
+    padding: var(--space-4) 0 calc(var(--space-4) + 4.9rem);
+  }
+
+  .messagesThread__stateCard,
+  .messagesThread__empty {
+    width: 100%;
+    padding-inline: var(--space-2);
+  }
+
+  .messageBubble {
+    max-width: 82%;
+    padding: 0.78rem 0.82rem;
+  }
+
+  .messagesComposer {
+    position: sticky;
+    bottom: 0;
+    margin-top: auto;
+    padding: var(--space-3) 0 calc(var(--space-2) + 0.1rem);
+    background: rgba(5, 9, 15, 0.92);
+    backdrop-filter: blur(24px);
+  }
+
+  .messagesComposer__row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: var(--space-2);
+    align-items: center;
+  }
+
+  .messagesComposer textarea {
+    min-height: 2.9rem;
+    max-height: 6.5rem;
+    padding: 0.78rem 1rem;
+    border-radius: 1.25rem;
+    resize: none;
+  }
+
+  .messagesComposer__submit {
+    width: 2.75rem;
+    min-width: 2.75rem;
+    height: 2.75rem;
+    min-height: 2.75rem;
+    padding: 0;
+    border-radius: 50%;
+    justify-content: center;
+  }
+
+  .messagesComposer__submit span,
+  .messagesComposer__hint {
+    display: none;
+  }
+
+  .messagesRecipientSheet__results {
+    max-height: calc(100dvh - 18rem);
   }
 
   body.shellSheet-open .mobileDock {
     display: none;
   }
 
-  .messageBubble {
-    max-width: 100%;
-  }
-
   .messagesList,
   .messagesThread__messages {
     max-height: none;
     padding-right: 0;
-  }
-
-  .messagesThread__state,
-  .messagesThread__empty {
-    padding: var(--space-2) 0;
-  }
-
-  .messagesComposer__actions {
-    flex-direction: column;
-    align-items: stretch;
   }
 
   .settingsLayout.is-overview,

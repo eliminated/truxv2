@@ -39,7 +39,8 @@ function trux_fetch_direct_conversation_between(int $viewerId, int $otherUserId)
     $db = trux_db();
     $stmt = $db->prepare(
         'SELECT c.id, c.user_one_id, c.user_two_id, c.created_at, c.updated_at,
-                u.id AS other_user_id, u.username AS other_username, u.display_name AS other_display_name
+                u.id AS other_user_id, u.username AS other_username, u.display_name AS other_display_name,
+                u.avatar_path AS other_avatar_path
          FROM direct_conversations c
          JOIN users u ON u.id = ?
          WHERE c.user_one_id = ? AND c.user_two_id = ?
@@ -59,7 +60,8 @@ function trux_fetch_direct_conversation_for_user(int $conversationId, int $viewe
     $db = trux_db();
     $stmt = $db->prepare(
         'SELECT c.id, c.user_one_id, c.user_two_id, c.created_at, c.updated_at,
-                u.id AS other_user_id, u.username AS other_username, u.display_name AS other_display_name
+                u.id AS other_user_id, u.username AS other_username, u.display_name AS other_display_name,
+                u.avatar_path AS other_avatar_path
          FROM direct_conversations c
          JOIN users u ON u.id = CASE
             WHEN c.user_one_id = :viewer_id THEN c.user_two_id
@@ -226,6 +228,7 @@ function trux_fetch_direct_conversations(int $viewerId, int $limit = 50): array 
         $stmt = $db->prepare(
             'SELECT c.id, c.user_one_id, c.user_two_id, c.created_at, c.updated_at,
                     u.id AS other_user_id, u.username AS other_username, u.display_name AS other_display_name,
+                    u.avatar_path AS other_avatar_path,
                     (
                         SELECT dm.body
                         FROM direct_messages dm
@@ -269,6 +272,19 @@ function trux_fetch_direct_conversations(int $viewerId, int $limit = 50): array 
     }
 }
 
+function trux_direct_message_avatar_theme(?string $seed): string {
+    $seed = trim((string)$seed);
+    if ($seed === '') {
+        return 'accent';
+    }
+
+    $themes = ['accent', 'mint', 'warning', 'danger'];
+    $hash = crc32(strtolower($seed));
+    $index = (int)($hash % count($themes));
+
+    return $themes[$index] ?? 'accent';
+}
+
 function trux_direct_message_actor_label(?string $username, ?string $displayName = null): string {
     $name = trim((string)$username);
     $display = trim((string)$displayName);
@@ -295,4 +311,56 @@ function trux_direct_message_preview(?string $body, int $limit = 90): string {
     }
 
     return mb_substr($body, 0, max(1, $limit - 3)) . '...';
+}
+
+function trux_search_direct_message_recipients(int $viewerId, string $term, int $limit = 8): array {
+    if ($viewerId <= 0) {
+        return [];
+    }
+
+    $prefix = trux_normalize_mention_fragment($term);
+    if ($prefix === '') {
+        return [];
+    }
+
+    $limit = max(1, min(12, $limit));
+    $db = trux_db();
+    $like = trux_like_escape($prefix) . '%';
+    $hiddenUsername = trux_report_system_username();
+
+    try {
+        $stmt = $db->prepare(
+            'SELECT u.id, u.username, u.display_name, u.avatar_path, c.id AS conversation_id
+             FROM users u
+             LEFT JOIN direct_conversations c
+               ON (
+                    (c.user_one_id = :viewer_left AND c.user_two_id = u.id)
+                    OR (c.user_one_id = u.id AND c.user_two_id = :viewer_right)
+               )
+             WHERE u.id <> :viewer_self
+               AND u.username <> :hidden_username
+               AND u.username LIKE :username_like ESCAPE \'\\\\\'
+               AND NOT EXISTS (
+                    SELECT 1
+                    FROM blocked_users b
+                    WHERE (b.user_id = :viewer_blocked AND b.blocked_user_id = u.id)
+                       OR (b.user_id = u.id AND b.blocked_user_id = :viewer_blocker)
+               )
+             ORDER BY u.username ASC
+             LIMIT :limit_rows'
+        );
+        $stmt->bindValue(':viewer_left', $viewerId, PDO::PARAM_INT);
+        $stmt->bindValue(':viewer_right', $viewerId, PDO::PARAM_INT);
+        $stmt->bindValue(':viewer_self', $viewerId, PDO::PARAM_INT);
+        $stmt->bindValue(':hidden_username', $hiddenUsername, PDO::PARAM_STR);
+        $stmt->bindValue(':username_like', $like, PDO::PARAM_STR);
+        $stmt->bindValue(':viewer_blocked', $viewerId, PDO::PARAM_INT);
+        $stmt->bindValue(':viewer_blocker', $viewerId, PDO::PARAM_INT);
+        $stmt->bindValue(':limit_rows', $limit, PDO::PARAM_INT);
+        $stmt->execute();
+
+        return $stmt->fetchAll();
+    } catch (PDOException) {
+        return [];
+    }
 }

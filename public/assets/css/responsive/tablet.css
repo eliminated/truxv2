@@ -6,7 +6,6 @@
   .editorStage,
   .profileWorkspace,
   .settingsLayout,
-  .messagesLayout,
   .moderationPanelGrid,
   .authGateway {
     grid-template-columns: minmax(0, 1fr);

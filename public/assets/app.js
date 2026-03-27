@@ -1988,6 +1988,336 @@
 })();
 
 (() => {
+  if (!window.location.href.includes("/messages.php")) return;
+
+  const layout = document.querySelector("[data-messages-layout='1']");
+  if (!(layout instanceof HTMLElement)) return;
+
+  const body = document.body;
+  const searchInput = layout.querySelector("[data-conversation-search='1']");
+  const emptyState = layout.querySelector("[data-conversation-empty='1']");
+  const conversationItems = Array.from(
+    layout.querySelectorAll("[data-conversation-item='1']")
+  ).filter((item) => item instanceof HTMLElement);
+  const backButtons = Array.from(
+    layout.querySelectorAll("[data-thread-back='1']")
+  ).filter((button) => button instanceof HTMLElement);
+  const composerInput = layout.querySelector("[data-messages-input='1']");
+  const recipientInput = document.querySelector("[data-message-recipient-input='1']");
+  const recipientStatus = document.querySelector("[data-message-recipient-status='1']");
+  const recipientResults = document.querySelector("[data-message-recipient-results='1']");
+  const recipientOpenButtons = Array.from(
+    layout.querySelectorAll("[data-new-message-open='1']")
+  ).filter((button) => button instanceof HTMLElement);
+  const mobileQuery =
+    typeof window.matchMedia === "function"
+      ? window.matchMedia("(max-width: 760px)")
+      : null;
+
+  let recipientTimer = 0;
+  let recipientAbort = null;
+  const defaultRecipientStatus =
+    recipientStatus instanceof HTMLElement
+      ? String(recipientStatus.textContent || "").trim()
+      : "";
+
+  const isMobile = () =>
+    mobileQuery instanceof MediaQueryList
+      ? mobileQuery.matches
+      : window.innerWidth <= 760;
+
+  const setThreadOpen = (open) => {
+    layout.classList.toggle("is-thread-open", open);
+    body.classList.toggle("messages-thread-active", open);
+  };
+
+  const updateConversationFilter = () => {
+    if (!(searchInput instanceof HTMLInputElement)) return;
+
+    const query = searchInput.value.trim().toLowerCase();
+    let visibleCount = 0;
+
+    conversationItems.forEach((item) => {
+      const handle = String(item.getAttribute("data-search-handle") || "").toLowerCase();
+      const preview = String(item.getAttribute("data-search-preview") || "").toLowerCase();
+      const isMatch = query === "" || handle.includes(query) || preview.includes(query);
+      item.hidden = !isMatch;
+      if (isMatch) {
+        visibleCount += 1;
+      }
+    });
+
+    if (emptyState instanceof HTMLElement) {
+      emptyState.hidden = query === "" || visibleCount > 0 || conversationItems.length === 0;
+    }
+  };
+
+  const syncComposerHeight = () => {
+    if (!(composerInput instanceof HTMLTextAreaElement)) return;
+
+    composerInput.style.height = "auto";
+    const computed = window.getComputedStyle(composerInput);
+    const maxHeight = Number.parseFloat(computed.maxHeight || "0");
+    const nextHeight =
+      Number.isFinite(maxHeight) && maxHeight > 0
+        ? Math.min(composerInput.scrollHeight, maxHeight)
+        : composerInput.scrollHeight;
+
+    if (nextHeight > 0) {
+      composerInput.style.height = `${nextHeight}px`;
+    }
+    composerInput.style.overflowY =
+      Number.isFinite(maxHeight) && maxHeight > 0 && composerInput.scrollHeight > maxHeight
+        ? "auto"
+        : "hidden";
+  };
+
+  const escapeHtml = (value) =>
+    String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+
+  const avatarThemeFor = (seed) => {
+    const themes = ["accent", "mint", "warning", "danger"];
+    const value = String(seed || "").trim().toLowerCase();
+    if (!value) return themes[0];
+
+    let score = 0;
+    for (const char of value) {
+      score = (score + char.charCodeAt(0)) % themes.length;
+    }
+
+    return themes[score] || themes[0];
+  };
+
+  const renderRecipientAvatar = (username, avatarUrl, label) => {
+    const theme = avatarThemeFor(username || label);
+    const initialSource = String(username || label || "T").trim();
+    const initial = escapeHtml(initialSource.charAt(0).toUpperCase() || "T");
+
+    if (String(avatarUrl || "").trim() !== "") {
+      return `
+        <span class="messagesRecipientResult__avatar dmAvatar dmAvatar--${theme} dmAvatar--image" aria-hidden="true">
+          <img class="messagesRecipientResult__avatar__image dmAvatar__image" src="${escapeHtml(avatarUrl)}" alt="" loading="lazy" decoding="async">
+        </span>
+      `;
+    }
+
+    return `
+      <span class="messagesRecipientResult__avatar dmAvatar dmAvatar--${theme}" aria-hidden="true">
+        <span class="messagesRecipientResult__avatar__fallback dmAvatar__fallback">${initial}</span>
+      </span>
+    `;
+  };
+
+  const setRecipientStatus = (message, tone = "") => {
+    if (!(recipientStatus instanceof HTMLElement)) return;
+    recipientStatus.textContent = String(message || "");
+    recipientStatus.classList.toggle("is-error", tone === "error");
+  };
+
+  const clearRecipientResults = () => {
+    if (recipientResults instanceof HTMLElement) {
+      recipientResults.innerHTML = "";
+    }
+  };
+
+  const renderRecipientResults = (items) => {
+    if (!(recipientResults instanceof HTMLElement)) return;
+
+    if (!Array.isArray(items) || !items.length) {
+      clearRecipientResults();
+      return;
+    }
+
+    recipientResults.innerHTML = items
+      .map((item) => {
+        const username = String(item?.username || "").trim();
+        if (!username) return "";
+
+        const displayName = String(item?.display_name || "").trim();
+        const conversationId = Number(item?.conversation_id || 0);
+        const targetUrl = String(item?.target_url || "").trim();
+        const label = `@${username}`;
+        const metaLabel = conversationId > 0 ? "Existing thread" : "New thread";
+        const copy =
+          displayName !== ""
+            ? `${escapeHtml(displayName)}`
+            : conversationId > 0
+              ? "Open your latest conversation."
+              : "Start a new direct message.";
+
+        return `
+          <a class="messagesRecipientResult" href="${escapeHtml(targetUrl)}">
+            ${renderRecipientAvatar(username, String(item?.avatar_url || ""), label)}
+            <span class="messagesRecipientResult__copy">
+              <strong>${escapeHtml(label)}</strong>
+              <span>${copy}</span>
+            </span>
+            <span class="messagesRecipientResult__meta">${escapeHtml(metaLabel)}</span>
+          </a>
+        `;
+      })
+      .join("");
+  };
+
+  const normalizeToInboxUrl = () => {
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.delete("id");
+    nextUrl.searchParams.delete("with");
+    nextUrl.hash = "";
+    window.history.replaceState({}, "", nextUrl.toString());
+  };
+
+  const loadRecipients = async (query) => {
+    if (!(recipientInput instanceof HTMLInputElement)) return;
+    if (!(recipientResults instanceof HTMLElement)) return;
+
+    if (recipientAbort instanceof AbortController) {
+      recipientAbort.abort();
+    }
+    recipientAbort = new AbortController();
+
+    setRecipientStatus("Searching...");
+    clearRecipientResults();
+
+    try {
+      const res = await fetch(
+        `${window.TRUX_BASE_URL || ""}/message_recipients.php?format=json&q=${encodeURIComponent(query)}`,
+        {
+          method: "GET",
+          headers: { Accept: "application/json" },
+          signal: recipientAbort.signal,
+        }
+      );
+
+      const data = await res.json().catch(() => ({}));
+      if (res.status === 401 && data?.login_url) {
+        window.location.href = String(data.login_url);
+        return;
+      }
+      if (!res.ok || !data?.ok) {
+        throw new Error(data?.error || "Could not load recipients.");
+      }
+
+      const recipients = Array.isArray(data?.recipients) ? data.recipients : [];
+      if (!recipients.length) {
+        clearRecipientResults();
+        setRecipientStatus("No users found for that username.");
+        return;
+      }
+
+      renderRecipientResults(recipients);
+      setRecipientStatus(
+        recipients.length === 1
+          ? "1 match found."
+          : `${recipients.length} matches found.`
+      );
+    } catch (err) {
+      if (err?.name === "AbortError") {
+        return;
+      }
+      clearRecipientResults();
+      setRecipientStatus(
+        err instanceof Error ? err.message : "Could not load recipients.",
+        "error"
+      );
+    }
+  };
+
+  setThreadOpen(layout.classList.contains("is-thread-open"));
+
+  if (searchInput instanceof HTMLInputElement) {
+    searchInput.addEventListener("input", updateConversationFilter);
+  }
+
+  if (composerInput instanceof HTMLTextAreaElement) {
+    syncComposerHeight();
+    composerInput.addEventListener("input", syncComposerHeight);
+  }
+
+  conversationItems.forEach((item) => {
+    item.addEventListener("click", (event) => {
+      if (!isMobile()) return;
+      if (!(item instanceof HTMLAnchorElement)) return;
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
+        return;
+      }
+      setThreadOpen(true);
+    });
+  });
+
+  backButtons.forEach((button) => {
+    button.addEventListener("click", (event) => {
+      event.preventDefault();
+      setThreadOpen(false);
+      normalizeToInboxUrl();
+      if (searchInput instanceof HTMLInputElement) {
+        window.setTimeout(() => {
+          searchInput.focus();
+        }, 20);
+      }
+    });
+  });
+
+  recipientOpenButtons.forEach((button) => {
+    button.addEventListener("click", () => {
+      if (recipientAbort instanceof AbortController) {
+        recipientAbort.abort();
+      }
+      window.clearTimeout(recipientTimer);
+      clearRecipientResults();
+      setRecipientStatus(defaultRecipientStatus);
+      if (recipientInput instanceof HTMLInputElement) {
+        recipientInput.value = "";
+      }
+    });
+  });
+
+  if (recipientInput instanceof HTMLInputElement) {
+    recipientInput.addEventListener("input", () => {
+      const query = recipientInput.value.trim();
+      window.clearTimeout(recipientTimer);
+
+      if (query === "") {
+        if (recipientAbort instanceof AbortController) {
+          recipientAbort.abort();
+        }
+        clearRecipientResults();
+        setRecipientStatus(defaultRecipientStatus);
+        return;
+      }
+
+      recipientTimer = window.setTimeout(() => {
+        void loadRecipients(query);
+      }, 140);
+    });
+  }
+
+  if (recipientResults instanceof HTMLElement) {
+    recipientResults.addEventListener("click", (event) => {
+      if (!isMobile()) return;
+      const link = event.target instanceof Element ? event.target.closest("a") : null;
+      if (link instanceof HTMLAnchorElement) {
+        setThreadOpen(true);
+      }
+    });
+  }
+
+  if (mobileQuery instanceof MediaQueryList) {
+    mobileQuery.addEventListener("change", () => {
+      body.classList.toggle(
+        "messages-thread-active",
+        layout.classList.contains("is-thread-open")
+      );
+    });
+  }
+})();
+
+(() => {
   const rows = document.querySelectorAll("[data-link-preview-row='1']");
   if (!rows.length) return;
 
