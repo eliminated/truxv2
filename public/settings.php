@@ -40,10 +40,19 @@ $settingsSections = [
   ],
 ];
 
-$activeSection = trim(trux_str_param('section', 'notifications'));
-if (!isset($settingsSections[$activeSection])) {
-  $activeSection = 'notifications';
+$requestedSection = trim(trux_str_param('section', ''));
+$showSettingsOverview = $requestedSection === '';
+$activeSection = '';
+if (!$showSettingsOverview) {
+  $activeSection = isset($settingsSections[$requestedSection]) ? $requestedSection : 'notifications';
 }
+
+$activeSectionMeta = $showSettingsOverview
+  ? [
+      'title' => 'Sections',
+      'hero_description' => 'Choose a section to manage your account settings.',
+    ]
+  : $settingsSections[$activeSection];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $redirectSection = trim((string)($_POST['section'] ?? $activeSection));
@@ -110,18 +119,18 @@ require_once __DIR__ . '/_header.php';
       <span class="inlineHeader__eyebrow">Workspace center</span>
       <div class="inlineHeader__titleWrap">
         <h2 class="inlineHeader__title">Settings</h2>
-        <p class="inlineHeader__copy"><?= trux_e((string)$settingsSections[$activeSection]['hero_description']) ?></p>
+        <p class="inlineHeader__copy"><?= trux_e((string)$activeSectionMeta['hero_description']) ?></p>
       </div>
     </div>
     <div class="inlineHeader__aside">
       <div class="inlineHeader__meta">
         <span>@<?= trux_e((string)$me['username']) ?></span>
-        <strong><?= trux_e((string)$settingsSections[$activeSection]['title']) ?></strong>
+        <strong><?= trux_e((string)$activeSectionMeta['title']) ?></strong>
       </div>
     </div>
   </section>
 
-  <section class="settingsLayout">
+  <section class="settingsLayout<?= $showSettingsOverview ? ' is-overview' : ' is-section-view' ?>">
     <aside class="settingsSidebar">
       <div class="settingsNavCard">
         <div class="settingsNavCard__head">
@@ -131,7 +140,7 @@ require_once __DIR__ . '/_header.php';
         <nav class="settingsNav" aria-label="Settings sections">
           <?php foreach ($settingsSections as $sectionKey => $sectionMeta): ?>
             <a
-              class="settingsNav__item<?= $activeSection === $sectionKey ? ' is-active' : '' ?>"
+              class="settingsNav__item<?= (!$showSettingsOverview && $activeSection === $sectionKey) ? ' is-active' : '' ?>"
               href="<?= TRUX_BASE_URL ?>/settings.php?section=<?= urlencode($sectionKey) ?>"
               data-settings-nav="<?= trux_e($sectionKey) ?>">
               <strong><?= trux_e((string)$sectionMeta['title']) ?></strong>
@@ -143,8 +152,31 @@ require_once __DIR__ . '/_header.php';
     </aside>
 
     <div class="settingsContent">
-      <?php if ($activeSection === 'notifications'): ?>
+      <?php if ($showSettingsOverview): ?>
+        <section class="settingsSectionCard settingsSectionCard--overview" id="settings-overview">
+          <div class="settingSection">
+            <div class="settingSection__head">
+              <span class="settingSection__eyebrow">Sections</span>
+              <h3>Choose where to go</h3>
+              <p class="muted">Open one section at a time to manage your settings in a dedicated view.</p>
+            </div>
+
+            <nav class="settingsNav settingsNav--overview" aria-label="Settings section shortcuts">
+              <?php foreach ($settingsSections as $sectionKey => $sectionMeta): ?>
+                <a
+                  class="settingsNav__item"
+                  href="<?= TRUX_BASE_URL ?>/settings.php?section=<?= urlencode($sectionKey) ?>"
+                  data-settings-nav="<?= trux_e($sectionKey) ?>">
+                  <strong><?= trux_e((string)$sectionMeta['title']) ?></strong>
+                  <small><?= trux_e((string)$sectionMeta['nav_description']) ?></small>
+                </a>
+              <?php endforeach; ?>
+            </nav>
+          </div>
+        </section>
+      <?php elseif ($activeSection === 'notifications'): ?>
         <section class="settingsSectionCard" id="settings-notifications" data-settings-section="notifications">
+          <a class="settingsSectionBack shellButton shellButton--ghost" href="<?= TRUX_BASE_URL ?>/settings.php">All sections</a>
           <form class="form settingsForm" method="post" action="<?= TRUX_BASE_URL ?>/settings.php">
             <?= trux_csrf_field() ?>
             <input type="hidden" name="action" value="save_notifications">
@@ -175,6 +207,7 @@ require_once __DIR__ . '/_header.php';
         </section>
       <?php elseif ($activeSection === 'privacy'): ?>
         <section class="settingsSectionCard" id="settings-privacy" data-settings-section="privacy">
+          <a class="settingsSectionBack shellButton shellButton--ghost" href="<?= TRUX_BASE_URL ?>/settings.php">All sections</a>
           <form class="form settingsForm" method="post" action="<?= TRUX_BASE_URL ?>/settings.php">
             <?= trux_csrf_field() ?>
             <input type="hidden" name="action" value="save_privacy">
@@ -211,6 +244,7 @@ require_once __DIR__ . '/_header.php';
         </section>
       <?php elseif ($activeSection === 'muted'): ?>
         <section class="settingsSectionCard" id="settings-muted" data-settings-section="muted">
+          <a class="settingsSectionBack shellButton shellButton--ghost" href="<?= TRUX_BASE_URL ?>/settings.php">All sections</a>
           <div class="settingSection">
             <div class="settingSection__head">
               <span class="settingSection__eyebrow">Muted users</span>
@@ -252,6 +286,7 @@ require_once __DIR__ . '/_header.php';
         </section>
       <?php elseif ($activeSection === 'blocked'): ?>
         <section class="settingsSectionCard" id="settings-blocked" data-settings-section="blocked">
+          <a class="settingsSectionBack shellButton shellButton--ghost" href="<?= TRUX_BASE_URL ?>/settings.php">All sections</a>
           <div class="settingSection">
             <div class="settingSection__head">
               <span class="settingSection__eyebrow">Blocked users</span>
@@ -293,6 +328,7 @@ require_once __DIR__ . '/_header.php';
         </section>
       <?php else: ?>
         <section class="settingsSectionCard" id="settings-interface" data-settings-section="interface">
+          <a class="settingsSectionBack shellButton shellButton--ghost" href="<?= TRUX_BASE_URL ?>/settings.php">All sections</a>
           <div class="settingSection">
             <div class="settingSection__head">
               <span class="settingSection__eyebrow">Interface</span>

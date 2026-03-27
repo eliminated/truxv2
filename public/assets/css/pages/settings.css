@@ -13,6 +13,10 @@
   gap: 0.3rem;
 }
 
+.settingsNav--overview {
+  gap: 0.55rem;
+}
+
 .settingsNav__item {
   display: grid;
   gap: 0.15rem;
@@ -35,6 +39,10 @@
   min-width: 0;
   display: grid;
   gap: var(--space-4);
+}
+
+.settingsSectionBack {
+  display: none;
 }
 
 .settingsSectionCard {
