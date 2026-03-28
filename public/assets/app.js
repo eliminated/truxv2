@@ -4990,6 +4990,9 @@
     return true;
   };
 
+  window.truxOpenShellSheet = openSheet;
+  window.truxCloseShellSheet = closeSheet;
+
   document.addEventListener("click", (e) => {
     if (!(e.target instanceof Element)) return;
 
@@ -5014,4 +5017,241 @@
     if (!(activeSheet instanceof HTMLElement)) return;
     closeSheet();
   });
+})();
+
+(() => {
+  const roots = Array.from(document.querySelectorAll("[data-shell-nav]")).filter(
+    (root) => root instanceof HTMLElement
+  );
+  if (!roots.length) return;
+
+  const compactQuery = window.matchMedia("(max-width: 1120px)");
+  const states = new Map();
+  const desktopHoverCloseDelay = 90;
+
+  const isCompact = () => compactQuery.matches;
+
+  const syncState = (state) => {
+    state.root.classList.toggle("is-open", state.open);
+    state.root.classList.toggle("is-pinned", state.pinned);
+
+    if (state.id === "mobile") {
+      state.root.setAttribute("aria-hidden", state.open ? "false" : "true");
+    } else {
+      state.root.removeAttribute("aria-hidden");
+    }
+
+    if (state.panel instanceof HTMLElement) {
+      state.panel.setAttribute("aria-hidden", state.open ? "false" : "true");
+    }
+
+    state.toggles.forEach((toggle) => {
+      toggle.setAttribute("aria-expanded", state.open ? "true" : "false");
+      toggle.classList.toggle("is-active", state.open);
+    });
+
+    if (state.id === "mobile") {
+      document.body.classList.toggle("shellNav-open", state.open);
+    }
+  };
+
+  const closeNav = (state, options = {}) => {
+    if (!state || !state.open) return;
+
+    const shouldRestoreFocus = options.restoreFocus !== false;
+    if (state.hoverCloseTimer) {
+      window.clearTimeout(state.hoverCloseTimer);
+      state.hoverCloseTimer = 0;
+    }
+    state.open = false;
+    state.pinned = false;
+    syncState(state);
+
+    if (
+      shouldRestoreFocus &&
+      state.returnFocus instanceof HTMLElement &&
+      typeof state.returnFocus.focus === "function"
+    ) {
+      state.returnFocus.focus();
+    }
+
+    state.returnFocus = null;
+  };
+
+  const openNav = (state, options = {}) => {
+    if (!state) return;
+
+    const shouldPin = !!options.pinned || state.id === "mobile";
+    if (state.hoverCloseTimer) {
+      window.clearTimeout(state.hoverCloseTimer);
+      state.hoverCloseTimer = 0;
+    }
+    state.open = true;
+    state.pinned = shouldPin;
+    state.returnFocus =
+      options.trigger instanceof HTMLElement ? options.trigger : state.returnFocus;
+    syncState(state);
+
+    if (state.id === "mobile") {
+      window.setTimeout(() => {
+        const focusTarget = state.panel?.querySelector(
+          "button:not([disabled]), a[href], input:not([type='hidden']), textarea, select"
+        );
+        if (focusTarget instanceof HTMLElement) {
+          focusTarget.focus();
+        }
+      }, 30);
+    }
+  };
+
+  roots.forEach((root) => {
+    const id = (root.getAttribute("data-shell-nav") || "").trim();
+    if (!id) return;
+
+    const panel = root.querySelector("[data-shell-nav-panel]");
+    const backdrop = root.querySelector("[data-shell-nav-backdrop]");
+    const railToggle = root.querySelector(".shellNavToggle--rail");
+    const toggles = Array.from(
+      document.querySelectorAll(`[data-shell-nav-toggle][data-shell-nav-target="${id}"]`)
+    ).filter((toggle) => toggle instanceof HTMLButtonElement);
+
+    const state = {
+      id,
+      root,
+      panel: panel instanceof HTMLElement ? panel : null,
+      backdrop: backdrop instanceof HTMLElement ? backdrop : null,
+      toggles,
+      open: false,
+      pinned: false,
+      returnFocus: null,
+      hoverCloseTimer: 0,
+    };
+
+    states.set(id, state);
+    syncState(state);
+
+    if (id === "desktop") {
+      if (railToggle instanceof HTMLButtonElement) {
+        railToggle.addEventListener("pointerenter", () => {
+          if (isCompact()) return;
+          openNav(state, {
+            pinned: false,
+            trigger: railToggle,
+          });
+        });
+
+        railToggle.addEventListener("focus", () => {
+          if (isCompact()) return;
+          openNav(state, {
+            pinned: false,
+            trigger: railToggle,
+          });
+        });
+      }
+
+      root.addEventListener("pointerenter", () => {
+        if (state.hoverCloseTimer) {
+          window.clearTimeout(state.hoverCloseTimer);
+          state.hoverCloseTimer = 0;
+        }
+      });
+
+      root.addEventListener("pointerleave", () => {
+        if (isCompact() || !state.open) return;
+        if (state.hoverCloseTimer) {
+          window.clearTimeout(state.hoverCloseTimer);
+        }
+        state.hoverCloseTimer = window.setTimeout(() => {
+          state.hoverCloseTimer = 0;
+          closeNav(state, { restoreFocus: false });
+        }, desktopHoverCloseDelay);
+      });
+
+      root.addEventListener("focusout", () => {
+        window.setTimeout(() => {
+          if (state.root.contains(document.activeElement)) return;
+          closeNav(state, { restoreFocus: false });
+        }, 0);
+      });
+    }
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!(event.target instanceof Element)) return;
+
+    const toggle = event.target.closest("[data-shell-nav-toggle]");
+    if (toggle instanceof HTMLButtonElement) {
+      const targetId = toggle.getAttribute("data-shell-nav-target") || "";
+      const state = states.get(targetId);
+      if (!state) return;
+
+      event.preventDefault();
+      if (state.open) {
+        closeNav(state);
+      } else {
+        if (state.id === "desktop" && states.get("mobile")?.open) {
+          closeNav(states.get("mobile"), { restoreFocus: false });
+        }
+        openNav(state, {
+          pinned: state.id === "mobile",
+          trigger: toggle,
+        });
+      }
+      return;
+    }
+
+    const backdrop = event.target.closest("[data-shell-nav-backdrop]");
+    if (backdrop instanceof HTMLElement) {
+      const targetId = backdrop.getAttribute("data-shell-nav-target") || "";
+      closeNav(states.get(targetId));
+      return;
+    }
+
+    const openSheetTrigger = event.target.closest("[data-shell-nav-open-sheet]");
+    if (openSheetTrigger instanceof HTMLButtonElement) {
+      const sheetName = openSheetTrigger.getAttribute("data-shell-nav-open-sheet") || "";
+      if (!sheetName) return;
+      event.preventDefault();
+      const mobileState = states.get("mobile");
+      const sheetReturnFocus =
+        mobileState?.returnFocus instanceof HTMLElement ? mobileState.returnFocus : openSheetTrigger;
+      closeNav(mobileState, { restoreFocus: false });
+      window.setTimeout(() => {
+        if (typeof window.truxOpenShellSheet === "function") {
+          window.truxOpenShellSheet(sheetName, sheetReturnFocus);
+        }
+      }, 60);
+      return;
+    }
+
+    states.forEach((state) => {
+      if (!state.open) return;
+      const clickedInsideRoot = state.root.contains(event.target);
+      const clickedToggle = state.toggles.some((button) => button.contains(event.target));
+      if (clickedInsideRoot || clickedToggle) return;
+      closeNav(state, { restoreFocus: false });
+    });
+  });
+
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    states.forEach((state) => {
+      if (!state.open) return;
+      closeNav(state);
+    });
+  });
+
+  const resetForViewport = () => {
+    if (isCompact()) {
+      closeNav(states.get("desktop"), { restoreFocus: false });
+      return;
+    }
+    closeNav(states.get("mobile"), { restoreFocus: false });
+  };
+
+  if (typeof compactQuery.addEventListener === "function") {
+    compactQuery.addEventListener("change", resetForViewport);
+  } else if (typeof compactQuery.addListener === "function") {
+    compactQuery.addListener(resetForViewport);
+  }
 })();

@@ -26,6 +26,28 @@
     display: none;
   }
 
+  .shellTopbar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+  }
+
+  .shellTopbar__mobileCore {
+    display: inline-flex;
+  }
+
+  .shellTopbar__actions {
+    display: none;
+  }
+
+  .shellTopbar__title {
+    gap: 0.1rem;
+  }
+
+  .shellTopbar__eyebrow {
+    display: none;
+  }
+
   .pageBand,
   .inlineHeader {
     grid-template-columns: minmax(0, 1fr);

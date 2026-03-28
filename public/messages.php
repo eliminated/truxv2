@@ -110,6 +110,24 @@ require_once __DIR__ . '/_header.php';
     data-messages-layout="1"
     data-messages-active-conversation-id="<?= $activeConversationId ?>">
     <section class="messagesMobileBar" aria-label="Messages navigation">
+      <div class="messagesMobileBar__core" aria-label="Primary mobile navigation">
+        <div class="shellBrand shellBrand--compact shellBrand--static" aria-label="<?= trux_e(TRUX_APP_NAME) ?> brand">
+          <span class="shellBrand__mark">
+            <img src="<?= TRUX_BASE_URL ?>/favicon.php?v=<?= $faviconVersion ?>" alt="" width="28" height="28" loading="eager" decoding="async">
+          </span>
+          <span class="shellBrand__copy shellBrand__copy--compact">
+            <strong><?= trux_e(TRUX_APP_NAME) ?></strong>
+            <span>Command shell</span>
+          </span>
+        </div>
+
+        <a class="railHomeButton railHomeButton--mobile<?= $homeRailActive ? ' is-active' : '' ?>" href="<?= $homeUrl ?>" aria-label="Go to home" <?= $homeRailActive ? 'aria-current="page"' : '' ?>>
+          <svg viewBox="0 0 24 24" focusable="false"><?= $railIcon('home') ?></svg>
+        </a>
+
+        <?php $renderShellNavToggle('mobile', $shellNavMobilePanelId, 'shellNavToggle--mobile'); ?>
+      </div>
+
       <div class="messagesMobileBar__state messagesMobileBar__state--inbox">
         <div class="messagesMobileBar__titleWrap">
           <h2 class="messagesMobileBar__title">Messages</h2>

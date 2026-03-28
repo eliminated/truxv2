@@ -12,6 +12,10 @@
   display: none;
 }
 
+.messagesMobileBar__core {
+  display: none;
+}
+
 .messagesLayout {
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
@@ -566,6 +570,32 @@
   color: var(--text-faint);
   font-size: 0.72rem;
   text-align: right;
+}
+
+@media (max-width: 760px) {
+  .messagesMobileBar {
+    gap: var(--space-3);
+  }
+
+  .messagesMobileBar__core {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+  }
+
+  .messagesMobileBar__core .shellBrand {
+    min-width: 0;
+  }
+
+  .messagesMobileBar__core .shellBrand__copy span {
+    display: none;
+  }
+
+  .messagesMobileBar__titleWrap,
+  .messagesMobileBar__threadCopy {
+    min-width: 0;
+  }
 }
 
 @media (min-width: 761px) {

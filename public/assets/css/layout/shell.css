@@ -50,7 +50,7 @@
 }
 
 .appShell {
-  grid-template-columns: var(--app-rail-width) minmax(0, 1fr);
+  grid-template-columns: var(--app-rail-collapsed-width) minmax(0, 1fr);
 }
 
 .opsShell {
@@ -62,11 +62,13 @@
   min-width: 0;
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
+  overflow: visible;
 }
 
 .shellContent,
 .opsContent {
   min-width: 0;
+  overflow: visible;
 }
 
 .sceneCanvas,

@@ -68,11 +68,13 @@
   --focus-ring: 0 0 0 3px rgba(97, 221, 255, 0.18);
 
   --content-max: 1420px;
-  --app-rail-width: 220px;
+  --app-rail-collapsed-width: 4.75rem;
+  --shell-nav-panel-width: 21.5rem;
+  --shell-nav-z: 52;
   --ops-rail-width: 260px;
   --utility-width: 280px;
   --canvas-max: 960px;
-  --mobile-dock-height: 4.35rem;
+  --mobile-dock-height: 0px;
 
   --duration-fast: 140ms;
   --duration-mid: 220ms;

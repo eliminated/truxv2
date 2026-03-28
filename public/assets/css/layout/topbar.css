@@ -15,6 +15,21 @@
   backdrop-filter: blur(24px);
 }
 
+.shellTopbar {
+  overflow: visible;
+}
+
+.shellTopbar__mobileCore {
+  display: none;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.shellTopbar__mobileCore .shellBrand {
+  min-width: 0;
+}
+
 .shellTopbar__title,
 .opsTopbar__title {
   min-width: 0;
@@ -133,11 +148,6 @@
 .shellAction svg {
   width: 0.92rem;
   height: 0.92rem;
-}
-
-.shellAction--search,
-.shellAction--account {
-  display: none;
 }
 
 .shellAction__badge {

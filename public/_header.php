@@ -53,7 +53,6 @@ $bodyClasses = array_values(array_filter([
   'shell--' . $pageLayout,
   'page--' . $pageSlug,
   $isAuthenticated ? 'is-authenticated' : 'is-guest',
-  $pageLayout === 'app' ? 'has-mobile-dock' : '',
 ]));
 
 $unreadNotificationCount = $user ? trux_count_unread_notifications((int)$user['id']) : 0;
@@ -131,8 +130,20 @@ $editProfileUrl = TRUX_BASE_URL . '/edit_profile.php';
 $settingsUrl = TRUX_BASE_URL . '/settings.php';
 $homeUrl = TRUX_BASE_URL . '/';
 $homeRailActive = $isPage(['home', 'post-viewer']);
+$desktopAccountRailActive = $user
+  ? $isPage(['profile', 'edit-profile', 'settings', 'premium', 'appeal'])
+  : $isPage(['login', 'register']);
+$primaryRailAction = [
+  'href' => $user ? TRUX_BASE_URL . '/new_post.php' : TRUX_BASE_URL . '/login.php',
+  'label' => $user ? 'Create post' : 'Enter TruX',
+  'meta' => $user ? 'Open composer' : 'Login to publish',
+  'active' => $user ? $isPage(['new-post']) : $isPage(['login']),
+];
+$shellNavDesktopPanelId = 'shellNavDesktopPanel';
+$shellNavMobilePanelId = 'shellNavMobilePanel';
 $appRailItems = [
   [
+    'kind' => 'search',
     'href' => TRUX_BASE_URL . '/search.php',
     'label' => 'Search',
     'meta' => 'People and posts',
@@ -200,6 +211,8 @@ if ($user) {
 
 $railIcon = static function (string $name): string {
   return match ($name) {
+    'compose' => '<path d="M5.25 18.75h3.45l8.85-8.85a1.7 1.7 0 0 0 0-2.4l-1-1a1.7 1.7 0 0 0-2.4 0l-8.9 8.9v3.35Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M12.75 7.75 16.25 11.25" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+    'home' => '<path d="M4 10.8 12 4l8 6.8M7 9.9V20h10V9.9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
     'search' => '<path d="M10.5 4a6.5 6.5 0 1 0 4.02 11.61l4.43 4.43a1 1 0 0 0 1.41-1.41l-4.43-4.43A6.5 6.5 0 0 0 10.5 4Zm0 2a4.5 4.5 0 1 1 0 9a4.5 4.5 0 0 1 0-9Z" fill="currentColor"/>',
     'messages' => '<path d="M4.75 6.75h14.5a1.5 1.5 0 0 1 1.5 1.5v7.5a1.5 1.5 0 0 1-1.5 1.5H9.5l-4.75 3v-3H4.75a1.5 1.5 0 0 1-1.5-1.5v-7.5a1.5 1.5 0 0 1 1.5-1.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/>',
     'activity' => '<path d="M12 3a5 5 0 0 0-5 5v1.2c0 .9-.28 1.78-.81 2.5l-1.1 1.54A2 2 0 0 0 6.72 17h10.56a2 2 0 0 0 1.63-3.16l-1.1-1.54A4.3 4.3 0 0 1 17 9.2V8a5 5 0 0 0-5-5Zm0 18a2.75 2.75 0 0 0 2.58-1.8.75.75 0 0 0-.7-1.02h-3.76a.75.75 0 0 0-.7 1.02A2.75 2.75 0 0 0 12 21Z" fill="currentColor"/>',
@@ -226,6 +239,141 @@ $menuIcon = static function (string $name): string {
     'register' => '<path d="M12 4.75v14.5M4.75 12h14.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12" cy="12" r="8.25" fill="none" stroke="currentColor" stroke-width="1.7"/>',
     default => '<path d="M4 10.8 12 4l8 6.8M7 9.9V20h10V9.9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
   };
+};
+
+$navToggleIcon = static function (string $state): string {
+  return match ($state) {
+    'open' => '<path d="M6.25 6.25 17.75 17.75" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M17.75 6.25 6.25 17.75" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M6.4 4.75h11.2l1.65 1.65v11.2l-1.65 1.65H6.4L4.75 17.6V6.4Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" opacity=".72"/>',
+    default => '<path d="M6 7.25h12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M9 12h9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M6 16.75h12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M6.4 4.75h11.2l1.65 1.65v11.2l-1.65 1.65H6.4L4.75 17.6V6.4Z" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linejoin="round" opacity=".72"/>',
+  };
+};
+
+$renderShellNavToggle = static function (string $target, string $panelId, string $extraClass = '') use ($navToggleIcon): void {
+  $className = 'shellNavToggle' . ($extraClass !== '' ? ' ' . $extraClass : '');
+  ?>
+  <button
+    class="<?= trux_e($className) ?>"
+    type="button"
+    data-shell-nav-toggle
+    data-shell-nav-target="<?= trux_e($target) ?>"
+    aria-expanded="false"
+    aria-controls="<?= trux_e($panelId) ?>"
+    aria-label="Toggle navigation menu">
+    <span class="shellNavToggle__icon shellNavToggle__icon--closed" aria-hidden="true">
+      <svg viewBox="0 0 24 24" focusable="false"><?= $navToggleIcon('closed') ?></svg>
+    </span>
+    <span class="shellNavToggle__icon shellNavToggle__icon--open" aria-hidden="true">
+      <svg viewBox="0 0 24 24" focusable="false"><?= $navToggleIcon('open') ?></svg>
+    </span>
+  </button>
+  <?php
+};
+
+$renderAppRailItems = static function (array $items, string $surface = 'desktop') use ($railIcon): void {
+  foreach ($items as $item):
+    $itemHref = trim((string)($item['href'] ?? ''));
+    $itemLabel = trim((string)($item['label'] ?? ''));
+    $itemMeta = trim((string)($item['meta'] ?? ''));
+    $itemIconName = trim((string)($item['icon'] ?? 'home'));
+    $itemBadge = trim((string)($item['badge'] ?? ''));
+    $itemKind = trim((string)($item['kind'] ?? 'link'));
+    $itemIsActive = !empty($item['active']);
+    $itemClasses = 'railNav__item' . ($itemIsActive ? ' is-active' : '');
+    if ($surface === 'mobile' && $itemKind === 'search'):
+      ?>
+      <button class="<?= trux_e($itemClasses) ?> railNav__item--button" type="button" data-shell-nav-open-sheet="search">
+        <span class="railNav__icon" aria-hidden="true">
+          <svg viewBox="0 0 24 24" focusable="false"><?= $railIcon($itemIconName) ?></svg>
+        </span>
+        <span class="railNav__copy">
+          <strong><?= trux_e($itemLabel) ?></strong>
+          <small><?= trux_e($itemMeta) ?></small>
+        </span>
+        <?php if ($itemBadge !== ''): ?>
+          <span class="railNav__badge"><?= trux_e($itemBadge) ?></span>
+        <?php endif; ?>
+      </button>
+      <?php
+      continue;
+    endif;
+
+    if ($itemHref === '') {
+      continue;
+    }
+    ?>
+    <a class="<?= trux_e($itemClasses) ?>" href="<?= trux_e($itemHref) ?>" <?= $itemIsActive ? 'aria-current="page"' : '' ?>>
+      <span class="railNav__icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false"><?= $railIcon($itemIconName) ?></svg>
+      </span>
+      <span class="railNav__copy">
+        <strong><?= trux_e($itemLabel) ?></strong>
+        <small><?= trux_e($itemMeta) ?></small>
+      </span>
+      <?php if ($itemBadge !== ''): ?>
+        <span class="railNav__badge"><?= trux_e($itemBadge) ?></span>
+      <?php endif; ?>
+    </a>
+    <?php
+  endforeach;
+};
+
+$renderShellNavFooter = static function (string $surface = 'desktop') use (
+  $user,
+  $selfProfileUrl,
+  $editProfileUrl,
+  $settingsUrl,
+  $railAvatarUrl,
+  $menuIcon
+): void {
+  $panelClass = 'railPresence railPresence--panel' . ($surface === 'mobile' ? ' railPresence--drawer' : '');
+  if ($user):
+    ?>
+    <div class="<?= trux_e($panelClass) ?>">
+      <div class="railPresence__card railPresence__card--profile">
+        <a class="railPresence__identity" href="<?= $selfProfileUrl ?>">
+          <span class="railPresence__avatar" aria-hidden="true">
+            <?php if ($railAvatarUrl !== ''): ?>
+              <img class="railPresence__avatarImage" src="<?= trux_e($railAvatarUrl) ?>" alt="">
+            <?php else: ?>
+              <?= strtoupper(substr((string)$user['username'], 0, 1)) ?>
+            <?php endif; ?>
+          </span>
+          <span class="railPresence__copy">
+            <strong>@<?= trux_e((string)$user['username']) ?></strong>
+            <small><?= trux_e((string)($user['display_name'] ?? 'Personal workspace')) ?></small>
+          </span>
+        </a>
+        <div class="railPresence__tools" aria-label="Profile actions">
+          <a class="railPresence__tool" href="<?= $editProfileUrl ?>" aria-label="Edit profile" title="Edit profile">
+            <svg viewBox="0 0 24 24" focusable="false"><?= $menuIcon('edit') ?></svg>
+          </a>
+          <a class="railPresence__tool" href="<?= $settingsUrl ?>" aria-label="Settings" title="Settings">
+            <svg viewBox="0 0 24 24" focusable="false"><?= $menuIcon('settings') ?></svg>
+          </a>
+          <form class="railPresence__toolForm" method="post" action="<?= TRUX_BASE_URL ?>/logout.php">
+            <?= trux_csrf_field() ?>
+            <button class="railPresence__tool" type="submit" aria-label="Logout" title="Logout">
+              <svg viewBox="0 0 24 24" focusable="false"><?= $menuIcon('logout') ?></svg>
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <?php
+  else:
+    ?>
+    <div class="<?= trux_e($panelClass) ?>">
+      <div class="railPresence__guest">
+        <strong>Guest browsing</strong>
+        <span>Sign in to post, save, and join conversations.</span>
+      </div>
+      <div class="railPresence__actions">
+        <a class="railPresence__action" href="<?= TRUX_BASE_URL ?>/login.php">Login</a>
+        <a class="railPresence__action" href="<?= TRUX_BASE_URL ?>/register.php">Create account</a>
+      </div>
+    </div>
+    <?php
+  endif;
 };
 
 $opsModules = [];
@@ -371,76 +519,78 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
           <div class="opsCanvas">
   <?php else: ?>
     <div class="appShell">
-      <aside class="appRail" aria-label="Primary navigation">
-        <div class="appRail__head">
-          <div class="appRail__brandRow">
-            <div class="shellBrand shellBrand--static" aria-label="<?= trux_e(TRUX_APP_NAME) ?> brand">
-              <span class="shellBrand__mark">
-                <img src="<?= TRUX_BASE_URL ?>/favicon.php?v=<?= $faviconVersion ?>" alt="" width="28" height="28" loading="eager" decoding="async">
-              </span>
-              <span class="shellBrand__copy">
-                <strong><?= trux_e(TRUX_APP_NAME) ?></strong>
-                <span>Command feed</span>
-              </span>
-            </div>
+      <aside class="appRail" aria-label="Primary navigation" data-shell-nav="desktop">
+        <div class="appRail__shell">
+          <?php $renderShellNavToggle('desktop', $shellNavDesktopPanelId, 'shellNavToggle--rail'); ?>
 
-            <a class="railHomeButton<?= $homeRailActive ? ' is-active' : '' ?>" href="<?= $homeUrl ?>" aria-label="Go to home" <?= $homeRailActive ? 'aria-current="page"' : '' ?>>
-              <svg viewBox="0 0 24 24" focusable="false"><?= $railIcon('home') ?></svg>
-            </a>
+          <div class="appRail__authWrap">
+            <?php if ($user): ?>
+              <a class="appRail__authControl appRail__authControl--profile<?= $desktopAccountRailActive ? ' is-active' : '' ?>" href="<?= $selfProfileUrl ?>" aria-label="Profile" title="Profile" <?= $desktopAccountRailActive ? 'aria-current="page"' : '' ?>>
+                <svg viewBox="0 0 24 24" focusable="false"><?= $menuIcon('profile') ?></svg>
+              </a>
+            <?php else: ?>
+              <a class="appRail__authControl appRail__authControl--login<?= $desktopAccountRailActive ? ' is-active' : '' ?>" href="<?= TRUX_BASE_URL ?>/login.php" aria-label="Login" title="Login" <?= $desktopAccountRailActive ? 'aria-current="page"' : '' ?>>
+                <svg viewBox="0 0 24 24" focusable="false"><?= $menuIcon('login') ?></svg>
+              </a>
+            <?php endif; ?>
           </div>
-
-          <a class="railCompose" href="<?= $user ? TRUX_BASE_URL . '/new_post.php' : TRUX_BASE_URL . '/login.php' ?>">
-            <span class="railCompose__plus" aria-hidden="true">+</span>
-            <span class="railCompose__copy">
-              <strong><?= $user ? 'Create post' : 'Enter TruX' ?></strong>
-              <small><?= $user ? 'Open composer' : 'Login to publish' ?></small>
-            </span>
-          </a>
         </div>
 
-        <nav class="railNav" aria-label="Primary app links">
-          <?php foreach ($appRailItems as $item): ?>
-            <a class="railNav__item<?= !empty($item['active']) ? ' is-active' : '' ?>" href="<?= trux_e((string)$item['href']) ?>" <?= !empty($item['active']) ? 'aria-current="page"' : '' ?>>
-              <span class="railNav__icon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false"><?= $railIcon((string)($item['icon'] ?? 'home')) ?></svg>
-              </span>
-              <span class="railNav__copy">
-                <strong><?= trux_e((string)$item['label']) ?></strong>
-                <small><?= trux_e((string)$item['meta']) ?></small>
-              </span>
-              <?php if (!empty($item['badge'])): ?>
-                <span class="railNav__badge"><?= trux_e((string)$item['badge']) ?></span>
-              <?php endif; ?>
-            </a>
-          <?php endforeach; ?>
-        </nav>
+        <section class="appRail__flyout" id="<?= trux_e($shellNavDesktopPanelId) ?>" data-shell-nav-panel aria-label="Secondary navigation">
+          <div class="appRail__flyoutInner">
+            <div class="appRail__flyoutHead">
+              <div class="appRail__flyoutBar">
+                <a class="shellBrand appRail__brandLink" href="<?= $homeUrl ?>" aria-label="Go to home" <?= $homeRailActive ? 'aria-current="page"' : '' ?>>
+                  <span class="shellBrand__mark">
+                    <img src="<?= TRUX_BASE_URL ?>/favicon.php?v=<?= $faviconVersion ?>" alt="" width="28" height="28" loading="eager" decoding="async">
+                  </span>
+                  <span class="shellBrand__copy">
+                    <strong><?= trux_e(TRUX_APP_NAME) ?></strong>
+                    <span>Command shell</span>
+                  </span>
+                </a>
 
-        <div class="railPresence">
-          <?php if ($user): ?>
-            <a class="railPresence__card" href="<?= $selfProfileUrl ?>">
-              <span class="railPresence__avatar" aria-hidden="true">
-                <?php if ($railAvatarUrl !== ''): ?>
-                  <img class="railPresence__avatarImage" src="<?= trux_e($railAvatarUrl) ?>" alt="">
-                <?php else: ?>
-                  <?= strtoupper(substr((string)$user['username'], 0, 1)) ?>
-                <?php endif; ?>
-              </span>
-              <span class="railPresence__copy">
-                <strong>@<?= trux_e((string)$user['username']) ?></strong>
-                <small><?= trux_e((string)($user['display_name'] ?? 'Personal workspace')) ?></small>
-              </span>
-            </a>
-          <?php else: ?>
-            <div class="railPresence__guest">
-              <strong>Guest browsing</strong>
-              <span>Sign in to post, save, and join conversations.</span>
+                <?php $renderShellNavToggle('desktop', $shellNavDesktopPanelId, 'shellNavToggle--drawer shellNavToggle--panel'); ?>
+              </div>
             </div>
-          <?php endif; ?>
-        </div>
+
+            <a class="railCompose<?= !empty($primaryRailAction['active']) ? ' is-active' : '' ?>" href="<?= trux_e((string)$primaryRailAction['href']) ?>" <?= !empty($primaryRailAction['active']) ? 'aria-current="page"' : '' ?>>
+              <span class="railCompose__plus" aria-hidden="true">+</span>
+              <span class="railCompose__copy">
+                <strong><?= trux_e((string)$primaryRailAction['label']) ?></strong>
+                <small><?= trux_e((string)$primaryRailAction['meta']) ?></small>
+              </span>
+            </a>
+
+            <nav class="railNav railNav--panel" aria-label="Secondary app links">
+              <?php $renderAppRailItems($appRailItems, 'desktop'); ?>
+            </nav>
+
+            <?php $renderShellNavFooter('desktop'); ?>
+          </div>
+        </section>
       </aside>
 
       <div class="shellViewport">
         <header class="shellTopbar">
+          <div class="shellTopbar__mobileCore" aria-label="Primary mobile navigation">
+            <div class="shellBrand shellBrand--compact shellBrand--static" aria-label="<?= trux_e(TRUX_APP_NAME) ?> brand">
+              <span class="shellBrand__mark">
+                <img src="<?= TRUX_BASE_URL ?>/favicon.php?v=<?= $faviconVersion ?>" alt="" width="28" height="28" loading="eager" decoding="async">
+              </span>
+              <span class="shellBrand__copy shellBrand__copy--compact">
+                <strong><?= trux_e(TRUX_APP_NAME) ?></strong>
+                <span>Command shell</span>
+              </span>
+            </div>
+
+            <a class="railHomeButton railHomeButton--mobile<?= $homeRailActive ? ' is-active' : '' ?>" href="<?= $homeUrl ?>" aria-label="Go to home" <?= $homeRailActive ? 'aria-current="page"' : '' ?>>
+              <svg viewBox="0 0 24 24" focusable="false"><?= $railIcon('home') ?></svg>
+            </a>
+
+            <?php $renderShellNavToggle('mobile', $shellNavMobilePanelId, 'shellNavToggle--mobile'); ?>
+          </div>
+
           <div class="shellTopbar__title">
             <span class="shellTopbar__eyebrow"><?= trux_e($pageContextLabel) ?></span>
             <h1><?= trux_e($pageContextTitle) ?></h1>
@@ -459,12 +609,6 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
                 </label>
               </form>
             <?php endif; ?>
-
-            <button class="shellAction shellAction--search" type="button" data-shell-sheet-open="search" aria-label="Open search">
-              <svg viewBox="0 0 24 24" focusable="false">
-                <path fill="currentColor" d="M10.5 4a6.5 6.5 0 1 0 4.02 11.61l4.43 4.43a1 1 0 0 0 1.41-1.41l-4.43-4.43A6.5 6.5 0 0 0 10.5 4Zm0 2a4.5 4.5 0 1 1 0 9a4.5 4.5 0 0 1 0-9Z" />
-              </svg>
-            </button>
 
             <?php if ($user): ?>
               <a class="shellButton shellButton--accent" href="<?= TRUX_BASE_URL ?>/new_post.php">Compose</a>
@@ -624,10 +768,6 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
                   </form>
                 </div>
               </div>
-
-              <button class="shellAction shellAction--account" type="button" data-shell-sheet-open="account" aria-label="Open account sheet">
-                <span class="shellAction__profileMark"><?= strtoupper(substr((string)$user['username'], 0, 1)) ?></span>
-              </button>
             <?php else: ?>
               <a class="shellButton shellButton--ghost" href="<?= TRUX_BASE_URL ?>/login.php">Login</a>
               <a class="shellButton shellButton--accent" href="<?= TRUX_BASE_URL ?>/register.php">Create account</a>

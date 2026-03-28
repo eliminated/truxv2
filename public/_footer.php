@@ -4,12 +4,6 @@ declare(strict_types=1);
 $isAppLayout = $pageLayout === 'app';
 $isAuthLayout = $pageLayout === 'auth';
 $isOpsLayout = $pageLayout === 'moderation';
-$mobileDockHomeActive = $pageSlug === 'home' || $pageSlug === 'post-viewer';
-$mobileDockInboxActive = $pageSlug === 'messages';
-$mobileDockActivityActive = $pageSlug === 'notifications';
-$mobileCreateHref = $user ? TRUX_BASE_URL . '/new_post.php' : TRUX_BASE_URL . '/register.php';
-$mobileInboxHref = $user ? TRUX_BASE_URL . '/messages.php' : TRUX_BASE_URL . '/login.php';
-$mobileActivityHref = $user ? TRUX_BASE_URL . '/notifications.php' : TRUX_BASE_URL . '/login.php';
 ?>
 <?php if ($isAppLayout): ?>
           </div>
@@ -38,49 +32,6 @@ $mobileActivityHref = $user ? TRUX_BASE_URL . '/notifications.php' : TRUX_BASE_U
   <?php endif; ?>
 
   <?php if ($isAppLayout): ?>
-    <nav class="mobileDock" aria-label="Primary mobile navigation">
-      <a class="mobileDock__item<?= $mobileDockHomeActive ? ' is-active' : '' ?>" href="<?= TRUX_BASE_URL ?>/">
-        <span class="mobileDock__icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" focusable="false">
-            <path d="M4 10.8 12 4l8 6.8M7 9.9V20h10V9.9" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
-          </svg>
-        </span>
-        <span>Home</span>
-      </a>
-
-      <button class="mobileDock__item" type="button" data-shell-sheet-open="search">
-        <span class="mobileDock__icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" focusable="false">
-            <path fill="currentColor" d="M10.5 4a6.5 6.5 0 1 0 4.02 11.61l4.43 4.43a1 1 0 0 0 1.41-1.41l-4.43-4.43A6.5 6.5 0 0 0 10.5 4Zm0 2a4.5 4.5 0 1 1 0 9a4.5 4.5 0 0 1 0-9Z" />
-          </svg>
-        </span>
-        <span>Search</span>
-      </button>
-
-      <a class="mobileDock__item mobileDock__item--accent<?= $pageSlug === 'new-post' ? ' is-active' : '' ?>" href="<?= $mobileCreateHref ?>">
-        <span class="mobileDock__icon" aria-hidden="true">+</span>
-        <span>Create</span>
-      </a>
-
-      <a class="mobileDock__item<?= $mobileDockInboxActive ? ' is-active' : '' ?>" href="<?= $mobileInboxHref ?>">
-        <span class="mobileDock__icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" focusable="false">
-            <path d="M4.75 6.75h14.5a1.5 1.5 0 0 1 1.5 1.5v7.5a1.5 1.5 0 0 1-1.5 1.5H9.5l-4.75 3v-3H4.75a1.5 1.5 0 0 1-1.5-1.5v-7.5a1.5 1.5 0 0 1 1.5-1.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
-          </svg>
-        </span>
-        <span>Inbox</span>
-      </a>
-
-      <a class="mobileDock__item<?= $mobileDockActivityActive ? ' is-active' : '' ?>" href="<?= $mobileActivityHref ?>">
-        <span class="mobileDock__icon" aria-hidden="true">
-          <svg viewBox="0 0 24 24" focusable="false">
-            <path fill="currentColor" d="M12 3a5 5 0 0 0-5 5v1.2c0 .9-.28 1.78-.81 2.5l-1.1 1.54A2 2 0 0 0 6.72 17h10.56a2 2 0 0 0 1.63-3.16l-1.1-1.54A4.3 4.3 0 0 1 17 9.2V8a5 5 0 0 0-5-5Zm0 18a2.75 2.75 0 0 0 2.58-1.8.75.75 0 0 0-.7-1.02h-3.76a.75.75 0 0 0-.7 1.02A2.75 2.75 0 0 0 12 21Z" />
-          </svg>
-        </span>
-        <span>Activity</span>
-      </a>
-    </nav>
-
     <div class="shellSheet" data-shell-sheet="search" hidden>
       <div class="shellSheet__backdrop" data-shell-sheet-close="1"></div>
       <section class="shellSheet__panel" role="dialog" aria-modal="true" aria-labelledby="shellSearchTitle">
@@ -109,102 +60,38 @@ $mobileActivityHref = $user ? TRUX_BASE_URL . '/notifications.php' : TRUX_BASE_U
       </section>
     </div>
 
-    <div class="shellSheet" data-shell-sheet="account" hidden>
-      <div class="shellSheet__backdrop" data-shell-sheet-close="1"></div>
-      <section class="shellSheet__panel" role="dialog" aria-modal="true" aria-labelledby="shellAccountTitle">
-        <header class="shellSheet__head">
-          <div>
-            <span class="shellSheet__eyebrow">Account</span>
-            <h2 id="shellAccountTitle"><?= $user ? '@' . trux_e((string)$user['username']) : 'Guest mode' ?></h2>
+    <div class="shellNavDrawer" data-shell-nav="mobile" aria-hidden="true">
+      <button class="shellNavDrawer__backdrop" type="button" data-shell-nav-backdrop data-shell-nav-target="mobile" aria-label="Close navigation menu"></button>
+      <section class="shellNavDrawer__panel" id="<?= trux_e($shellNavMobilePanelId) ?>" data-shell-nav-panel role="dialog" aria-modal="true" aria-labelledby="shellNavMobileTitle">
+        <header class="shellNavDrawer__head">
+          <div class="shellBrand shellBrand--compact shellBrand--static" aria-label="<?= trux_e(TRUX_APP_NAME) ?> brand">
+            <span class="shellBrand__mark">
+              <img src="<?= TRUX_BASE_URL ?>/favicon.php?v=<?= $faviconVersion ?>" alt="" width="28" height="28" loading="eager" decoding="async">
+            </span>
+            <span class="shellBrand__copy shellBrand__copy--compact">
+              <span class="shellNavDrawer__eyebrow">Navigation</span>
+              <strong id="shellNavMobileTitle"><?= trux_e(TRUX_APP_NAME) ?></strong>
+            </span>
           </div>
-          <button class="iconBtn" type="button" aria-label="Close account sheet" data-shell-sheet-close="1">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
-            </svg>
-          </button>
+
+          <?php $renderShellNavToggle('mobile', $shellNavMobilePanelId, 'shellNavToggle--mobile shellNavToggle--drawer'); ?>
         </header>
 
-        <?php if ($user): ?>
-          <div class="shellSheet__stack">
-            <a class="shellSheet__link" href="<?= $selfProfileUrl ?>">
-              <span class="shellSheet__itemIcon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false"><?= $menuIcon('profile') ?></svg>
-              </span>
-              <span class="shellSheet__itemMain">
-                <strong>Profile</strong>
-                <span>Open your public identity page</span>
-              </span>
-            </a>
-            <a class="shellSheet__link" href="<?= $editProfileUrl ?>">
-              <span class="shellSheet__itemIcon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false"><?= $menuIcon('edit') ?></svg>
-              </span>
-              <span class="shellSheet__itemMain">
-                <strong>Edit profile</strong>
-                <span>Banner, avatar, links, and about</span>
-              </span>
-            </a>
-            <a class="shellSheet__link" href="<?= TRUX_BASE_URL ?>/bookmarks.php">
-              <span class="shellSheet__itemIcon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false"><?= $menuIcon('bookmarks') ?></svg>
-              </span>
-              <span class="shellSheet__itemMain">
-                <strong>Bookmarks</strong>
-                <span>Saved posts, comments, and replies</span>
-              </span>
-            </a>
-            <a class="shellSheet__link" href="<?= $settingsUrl ?>">
-              <span class="shellSheet__itemIcon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false"><?= $menuIcon('settings') ?></svg>
-              </span>
-              <span class="shellSheet__itemMain">
-                <strong>Settings</strong>
-                <span>Notifications, privacy, and interface center</span>
-              </span>
-            </a>
-            <?php if ($showProfileMenuModeration): ?>
-              <a class="shellSheet__link" href="<?= TRUX_BASE_URL ?>/moderation/">
-                <span class="shellSheet__itemIcon" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" focusable="false"><?= $menuIcon('moderation') ?></svg>
-                </span>
-                <span class="shellSheet__itemMain">
-                  <strong>Moderation</strong>
-                  <span><?= $moderationBadgeTotal > 0 ? $moderationBadgeTotal . ' items waiting' : 'Open staff workspace' ?></span>
-                </span>
-              </a>
-            <?php endif; ?>
-            <form class="shellSheet__logout" method="post" action="<?= TRUX_BASE_URL ?>/logout.php">
-              <?= trux_csrf_field() ?>
-              <button class="shellButton shellButton--ghost shellButton--danger shellSheet__logoutButton" type="submit">
-                <span class="shellSheet__itemIcon shellSheet__itemIcon--danger" aria-hidden="true">
-                  <svg viewBox="0 0 24 24" focusable="false"><?= $menuIcon('logout') ?></svg>
-                </span>
-                <span>Logout</span>
-              </button>
-            </form>
-          </div>
-        <?php else: ?>
-          <div class="shellSheet__stack">
-            <a class="shellSheet__link" href="<?= TRUX_BASE_URL ?>/login.php">
-              <span class="shellSheet__itemIcon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false"><?= $menuIcon('login') ?></svg>
-              </span>
-              <span class="shellSheet__itemMain">
-                <strong>Login</strong>
-                <span>Access messages, bookmarks, and posting</span>
-              </span>
-            </a>
-            <a class="shellSheet__link" href="<?= TRUX_BASE_URL ?>/register.php">
-              <span class="shellSheet__itemIcon" aria-hidden="true">
-                <svg viewBox="0 0 24 24" focusable="false"><?= $menuIcon('register') ?></svg>
-              </span>
-              <span class="shellSheet__itemMain">
-                <strong>Create account</strong>
-                <span>Join TruX and build your workspace</span>
-              </span>
-            </a>
-          </div>
-        <?php endif; ?>
+        <div class="shellNavDrawer__body">
+          <a class="railCompose<?= !empty($primaryRailAction['active']) ? ' is-active' : '' ?>" href="<?= trux_e((string)$primaryRailAction['href']) ?>" <?= !empty($primaryRailAction['active']) ? 'aria-current="page"' : '' ?>>
+            <span class="railCompose__plus" aria-hidden="true">+</span>
+            <span class="railCompose__copy">
+              <strong><?= trux_e((string)$primaryRailAction['label']) ?></strong>
+              <small><?= trux_e((string)$primaryRailAction['meta']) ?></small>
+            </span>
+          </a>
+
+          <nav class="railNav railNav--panel railNav--drawer" aria-label="Secondary app links">
+            <?php $renderAppRailItems($appRailItems, 'mobile'); ?>
+          </nav>
+
+          <?php $renderShellNavFooter('mobile'); ?>
+        </div>
       </section>
     </div>
   <?php endif; ?>
