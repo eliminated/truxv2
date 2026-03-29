@@ -12,6 +12,17 @@ if (!$me) {
   trux_redirect('/login.php');
 }
 
+$settingsSectionIcon = static function (string $key): string {
+  return match ($key) {
+    'notifications' => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4.75a4 4 0 0 0-4 4v1.35c0 1.12-.37 2.21-1.05 3.1L5.8 14.75h12.4l-1.15-1.55A5.4 5.4 0 0 1 16 10.1V8.75a4 4 0 0 0-4-4Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /><path d="M9.75 17.5a2.25 2.25 0 0 0 4.5 0" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>',
+    'privacy' => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4.5c3.75 0 6.98 2.24 8.5 5.45-1.52 3.21-4.75 5.45-8.5 5.45S5.02 13.16 3.5 9.95C5.02 6.74 8.25 4.5 12 4.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /><circle cx="12" cy="9.95" r="2.2" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>',
+    'muted' => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 10.5h3.25L13 6.75v10.5l-4.75-3.75H5v-3Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /><path d="m16.5 9.25 4 5.5M20.5 9.25l-4 5.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>',
+    'blocked' => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="7.25" fill="none" stroke="currentColor" stroke-width="1.7" /><path d="m7 17 10-10" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>',
+    'interface' => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6.5h11M6 12h6M6 17.5h11" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /><circle cx="9.5" cy="6.5" r="1.75" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="14.5" cy="12" r="1.75" fill="none" stroke="currentColor" stroke-width="1.7" /><circle cx="11" cy="17.5" r="1.75" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>',
+    default => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="7.25" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>',
+  };
+};
+
 $settingsSections = [
   'notifications' => [
     'title' => 'Notifications',
@@ -123,6 +134,16 @@ require_once __DIR__ . '/_header.php';
       </div>
     </div>
     <div class="inlineHeader__aside">
+      <div class="commandReadoutGrid" aria-hidden="true">
+        <div class="commandReadout">
+          <span>Operator</span>
+          <strong>@<?= trux_e((string)$me['username']) ?></strong>
+        </div>
+        <div class="commandReadout">
+          <span>Sections</span>
+          <strong><?= count($settingsSections) ?> modules</strong>
+        </div>
+      </div>
       <div class="inlineHeader__meta">
         <span>@<?= trux_e((string)$me['username']) ?></span>
         <strong><?= trux_e((string)$activeSectionMeta['title']) ?></strong>
@@ -137,14 +158,27 @@ require_once __DIR__ . '/_header.php';
           <span class="settingsNavCard__eyebrow">Sections</span>
           <h3>Account controls</h3>
         </div>
+        <div class="settingsNavCard__grid" aria-hidden="true">
+          <div class="settingsSignal">
+            <span>Matrix</span>
+            <strong><?= count($settingsSections) ?> sectors</strong>
+          </div>
+          <div class="settingsSignal">
+            <span>Active</span>
+            <strong><?= trux_e((string)$activeSectionMeta['title']) ?></strong>
+          </div>
+        </div>
         <nav class="settingsNav" aria-label="Settings sections">
           <?php foreach ($settingsSections as $sectionKey => $sectionMeta): ?>
             <a
               class="settingsNav__item<?= (!$showSettingsOverview && $activeSection === $sectionKey) ? ' is-active' : '' ?>"
               href="<?= TRUX_BASE_URL ?>/settings.php?section=<?= urlencode($sectionKey) ?>"
               data-settings-nav="<?= trux_e($sectionKey) ?>">
-              <strong><?= trux_e((string)$sectionMeta['title']) ?></strong>
-              <small><?= trux_e((string)$sectionMeta['nav_description']) ?></small>
+              <span class="settingsNav__signal" aria-hidden="true"><?= $settingsSectionIcon($sectionKey) ?></span>
+              <span class="settingsNav__copy">
+                <strong><?= trux_e((string)$sectionMeta['title']) ?></strong>
+                <small><?= trux_e((string)$sectionMeta['nav_description']) ?></small>
+              </span>
             </a>
           <?php endforeach; ?>
         </nav>
@@ -167,8 +201,11 @@ require_once __DIR__ . '/_header.php';
                   class="settingsNav__item"
                   href="<?= TRUX_BASE_URL ?>/settings.php?section=<?= urlencode($sectionKey) ?>"
                   data-settings-nav="<?= trux_e($sectionKey) ?>">
-                  <strong><?= trux_e((string)$sectionMeta['title']) ?></strong>
-                  <small><?= trux_e((string)$sectionMeta['nav_description']) ?></small>
+                  <span class="settingsNav__signal" aria-hidden="true"><?= $settingsSectionIcon($sectionKey) ?></span>
+                  <span class="settingsNav__copy">
+                    <strong><?= trux_e((string)$sectionMeta['title']) ?></strong>
+                    <small><?= trux_e((string)$sectionMeta['nav_description']) ?></small>
+                  </span>
                 </a>
               <?php endforeach; ?>
             </nav>

@@ -117,7 +117,7 @@ require_once __DIR__ . '/_header.php';
           </span>
           <span class="shellBrand__copy shellBrand__copy--compact">
             <strong><?= trux_e(TRUX_APP_NAME) ?></strong>
-            <span>Command shell</span>
+            <span>Command lattice</span>
           </span>
         </div>
 
@@ -130,6 +130,7 @@ require_once __DIR__ . '/_header.php';
 
       <div class="messagesMobileBar__state messagesMobileBar__state--inbox">
         <div class="messagesMobileBar__titleWrap">
+          <span class="messagesMobileBar__eyebrow">Comms grid</span>
           <h2 class="messagesMobileBar__title">Messages</h2>
         </div>
         <div class="messagesMobileBar__actions">
@@ -160,6 +161,7 @@ require_once __DIR__ . '/_header.php';
           <div class="messagesMobileBar__threadIdentity">
             <?= trux_render_direct_message_avatar($recipientUsername, $recipientAvatarUrl, 'messagesMobileBar__threadAvatar', $recipientLabel) ?>
             <div class="messagesMobileBar__threadCopy">
+              <span class="messagesMobileBar__eyebrow">Active transmission</span>
               <strong><?= trux_e($recipientLabel) ?></strong>
               <span class="messagesMobileBar__threadStatus">
                 <span class="messagesThread__statusDot" aria-hidden="true"></span>
@@ -185,25 +187,41 @@ require_once __DIR__ . '/_header.php';
     <aside class="messagesSidebar workspacePane" data-messages-sidebar="1">
       <div class="messagesSidebar__header">
         <div class="messagesSidebar__titleWrap">
+          <span class="messagesSidebar__eyebrow">Channel relay</span>
           <h2>Messages</h2>
-          <p class="muted">@<?= trux_e($viewerUsername) ?> · <?= $conversationCount ?> conversation<?= $conversationCount === 1 ? '' : 's' ?></p>
+          <p class="muted">@<?= trux_e($viewerUsername) ?> &middot; <?= $conversationCount ?> conversation<?= $conversationCount === 1 ? '' : 's' ?></p>
         </div>
-      </div>
-
-      <div class="messagesSidebar__search">
-        <label class="topSearch__field messagesSidebar__searchField">
-          <span class="topSearch__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false">
-              <path fill="currentColor" d="M10.5 4a6.5 6.5 0 1 0 4.02 11.61l4.43 4.43a1 1 0 0 0 1.41-1.41l-4.43-4.43A6.5 6.5 0 0 0 10.5 4Zm0 2a4.5 4.5 0 1 1 0 9a4.5 4.5 0 0 1 0-9Z" />
-            </svg>
-          </span>
-          <input
-            class="topSearch__input"
-            type="text"
-            placeholder="Search conversations..."
-            autocomplete="off"
-            data-conversation-search="1">
-        </label>
+        <div class="messagesSidebar__search">
+          <label class="topSearch__field messagesSidebar__searchField">
+            <span class="topSearch__icon" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path fill="currentColor" d="M10.5 4a6.5 6.5 0 1 0 4.02 11.61l4.43 4.43a1 1 0 0 0 1.41-1.41l-4.43-4.43A6.5 6.5 0 0 0 10.5 4Zm0 2a4.5 4.5 0 1 1 0 9a4.5 4.5 0 0 1 0-9Z" />
+              </svg>
+            </span>
+            <input
+              class="topSearch__input"
+              type="text"
+              placeholder="Search conversations..."
+              autocomplete="off"
+              data-conversation-search="1">
+            <span class="messagesSidebar__searchAction" aria-hidden="true">
+              <svg viewBox="0 0 24 24" focusable="false">
+                <path d="M10.5 5.25a5.25 5.25 0 1 0 3.24 9.39l3.56 3.56a.9.9 0 0 0 1.27-1.27l-3.56-3.56a5.25 5.25 0 0 0-4.51-8.12Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+              </svg>
+              <span>Find</span>
+            </span>
+          </label>
+        </div>
+        <div class="messagesSidebar__statusGrid" aria-hidden="true">
+          <div class="messagesSidebar__status">
+            <span>Threads</span>
+            <strong><?= $conversationCount ?></strong>
+          </div>
+          <div class="messagesSidebar__status">
+            <span>Focus</span>
+            <strong><?= $recipientUser ? 'Engaged' : 'Standby' ?></strong>
+          </div>
+        </div>
       </div>
 
       <div class="messagesSidebar__listWrap">
@@ -243,6 +261,7 @@ require_once __DIR__ . '/_header.php';
           <div class="messagesThread__identity">
             <?= trux_render_direct_message_avatar($recipientUsername, $recipientAvatarUrl, 'messagesThread__avatar', $recipientLabel) ?>
             <div class="messagesThread__identityCopy">
+              <span class="messagesThread__eyebrow">Active transmission</span>
               <h3><?= trux_e($recipientLabel) ?></h3>
               <div class="messagesThread__status">
                 <span class="messagesThread__statusDot" aria-hidden="true"></span>
@@ -256,12 +275,12 @@ require_once __DIR__ . '/_header.php';
               <form method="post" action="<?= TRUX_BASE_URL ?>/mark_conversation_read.php" class="inline" data-no-fx="1">
                 <?= trux_csrf_field() ?>
                 <input type="hidden" name="id" value="<?= $activeConversationId ?>">
-                <button class="btn btn--small btn--ghost" type="submit">Mark as read</button>
+                <button class="shellButton shellButton--ghost" type="submit">Mark as read</button>
               </form>
             <?php endif; ?>
 
             <?php if (!$recipientIsReportSystem): ?>
-              <a class="btn btn--small btn--ghost" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e(rawurlencode($recipientUsername)) ?>">View profile</a>
+              <a class="shellButton shellButton--ghost" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e(rawurlencode($recipientUsername)) ?>">View profile</a>
             <?php endif; ?>
           </div>
         </header>
@@ -315,6 +334,11 @@ require_once __DIR__ . '/_header.php';
               <input type="hidden" name="recipient_id" value="<?= (int)$recipientUser['id'] ?>">
             <?php endif; ?>
 
+            <div class="messagesComposer__header" aria-hidden="true">
+              <span>Outbound relay</span>
+              <strong><?= trux_e($recipientLabel) ?></strong>
+            </div>
+
             <div class="messagesComposer__row">
               <textarea
                 name="body"
@@ -332,7 +356,7 @@ require_once __DIR__ . '/_header.php';
               </button>
             </div>
 
-            <div class="messagesComposer__hint muted">Only text messages for now.</div>
+            <div class="messagesComposer__hint muted">Text-only secure relay.</div>
           </form>
         <?php elseif ($recipientIsReportSystem): ?>
           <div class="messagesThread__footerNote muted">This inbox only sends automated report updates. Replies are not accepted.</div>
@@ -341,6 +365,7 @@ require_once __DIR__ . '/_header.php';
         <div class="messagesThread__empty">
           <div class="messagesThread__emptyIcon" aria-hidden="true"><?= $renderDmEmptyIcon() ?></div>
           <div class="messagesThread__emptyCopy">
+            <span class="messagesThread__emptyEyebrow">Standby state</span>
             <h3>Select a conversation</h3>
             <p class="muted">Or start a new one from a user profile.</p>
           </div>

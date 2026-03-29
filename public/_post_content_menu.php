@@ -24,6 +24,10 @@ $muteMessage = $postUsername !== '' ? 'Mute controls for @' . $postUsername . ' 
   </button>
 
   <div class="contentMenu__panel" role="menu" aria-label="Post actions">
+    <div class="contentMenu__summary">
+      <strong>Post controls</strong>
+      <small><?= $postUsername !== '' ? '@' . trux_e($postUsername) : 'Transmission item' ?></small>
+    </div>
     <?php if ($isOwner): ?>
       <button
         class="contentMenu__item"

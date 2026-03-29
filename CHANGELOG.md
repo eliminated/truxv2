@@ -1,4 +1,35 @@
 # Omnicus Updates
+## Omnicus v0.5.6 - Hard Visual Replacement
+
+**Branch**: Production
+**Date**: 2026-03-28
+
+***
+
+### Added
+
+- New `public/assets/css/theme/` redesign layer with dedicated shell, navigation, components, pages, overlays, motion, tablet, and mobile files
+- New command-readout, telemetry, and gateway-frame structures across auth, feed, search, messages, settings, profile, and moderation surfaces
+- New post action internals, sidebar signal markers, search scope modules, and moderation dashboard readouts for the aerospace-style UI system
+
+***
+
+### Changed
+
+- Hard-replaced the visual identity across app, auth, and moderation layouts with an obsidian, indigo, magenta-led command-surface language
+- Rebuilt shared rail, topbar, search, post action, DM, settings, notification, and moderation surfaces without changing backend routes or submission behavior
+- Refactored key page and partial markup so posts, utility modules, auth forms, message workspaces, and moderation dashboards no longer inherit the previous shell language
+
+***
+
+### Technical
+
+- Imported the redesign theme files last in `public/assets/css/main.css` so the new layer overrides the older modular stack predictably
+- Preserved existing PHP routes, forms, CSRF/session flows, AJAX hooks, and JavaScript selector anchors while restyling the surrounding markup
+- Kept the responsive breakpoints at `1120px` and `760px` while extending the redesign through dedicated tablet and mobile theme files
+
+***
+
 ## Omnicus v0.5.5 - Full UI Replacement
 
 **Branch**: Production

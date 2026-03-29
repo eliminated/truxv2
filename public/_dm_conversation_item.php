@@ -21,8 +21,8 @@ $conversationAvatarUrl = trux_public_url((string)($conversation['other_avatar_pa
   <?= $isActive ? 'aria-current="page"' : '' ?>
   data-conversation-item="1"
   data-conversation-id="<?= $conversationId ?>"
-  data-search-handle="<?= trux_e(strtolower($conversationLabel . ' ' . $otherUsername)) ?>"
-  data-search-preview="<?= trux_e(strtolower($preview)) ?>">
+  data-search-text="<?= trux_e(strtolower($conversationLabel . ' ' . $otherUsername . ' ' . $preview)) ?>">
+  <span class="messagesList__signal" aria-hidden="true">CH</span>
   <?= trux_render_direct_message_avatar($otherUsername, $conversationAvatarUrl, 'messagesList__avatar', $conversationLabel) ?>
 
   <div class="messagesList__content">

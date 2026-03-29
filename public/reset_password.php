@@ -52,9 +52,28 @@ require_once __DIR__ . '/_header.php';
 
 <section class="authGateway authGateway--recovery">
   <div class="authGateway__signal">
-    <span class="authGateway__eyebrow">Credential refresh</span>
-    <h1 class="authGateway__title">Set a new password and reopen your workspace.</h1>
-    <p class="authGateway__copy">Token validation, password rules, and redirect behavior remain unchanged while the reset flow adopts the new gateway system.</p>
+    <div class="authGateway__signalFrame">
+      <div class="authGateway__signalHead">
+        <span class="authGateway__eyebrow">Credential refresh</span>
+        <h1 class="authGateway__title">Set a new password and reopen your workspace.</h1>
+        <p class="authGateway__copy">Token validation, password rules, and redirect behavior remain unchanged while the reset flow adopts the new gateway system.</p>
+      </div>
+
+      <div class="authReadoutGrid" aria-hidden="true">
+        <div class="authReadout">
+          <span>Lane</span>
+          <strong>Credential refresh</strong>
+        </div>
+        <div class="authReadout">
+          <span>Protocol</span>
+          <strong>Token consume</strong>
+        </div>
+        <div class="authReadout">
+          <span>Policy</span>
+          <strong>Minimum 8 chars</strong>
+        </div>
+      </div>
+    </div>
 
     <div class="authGateway__stats">
       <div class="authStat">
@@ -74,43 +93,51 @@ require_once __DIR__ . '/_header.php';
 
   <div class="authGateway__lane">
     <section class="authSlab">
-      <div class="authSlab__head">
-        <span class="authSlab__eyebrow">Reset password</span>
-        <h2>Choose a new password</h2>
-        <p class="muted">Use at least eight characters.</p>
-      </div>
+      <div class="authSlab__frame">
+        <div class="authSlab__head">
+          <span class="authSlab__eyebrow">Reset password</span>
+          <h2>Choose a new password</h2>
+          <p class="muted">Use at least eight characters.</p>
+        </div>
 
-      <?php if (!$valid && $_SERVER['REQUEST_METHOD'] !== 'POST'): ?>
-        <div class="flash flash--error">This reset link is invalid or has expired.</div>
-        <a class="authSlab__metaLink" href="<?= TRUX_BASE_URL ?>/forgot_password.php">Request a new reset link</a>
-      <?php else: ?>
-        <?php if ($errors): ?>
-          <div class="flash flash--error">
-            <?php foreach ($errors as $e): ?>
-              <div><?= trux_e($e) ?></div>
-            <?php endforeach; ?>
-          </div>
+        <div class="authSlab__status" aria-hidden="true">
+          <span>Route</span>
+          <strong>/reset_password.php</strong>
+          <small>Token consume relay</small>
+        </div>
+
+        <?php if (!$valid && $_SERVER['REQUEST_METHOD'] !== 'POST'): ?>
+          <div class="flash flash--error">This reset link is invalid or has expired.</div>
+          <a class="authSlab__metaLink" href="<?= TRUX_BASE_URL ?>/forgot_password.php">Request a new reset link</a>
+        <?php else: ?>
+          <?php if ($errors): ?>
+            <div class="flash flash--error">
+              <?php foreach ($errors as $e): ?>
+                <div><?= trux_e($e) ?></div>
+              <?php endforeach; ?>
+            </div>
+          <?php endif; ?>
+
+          <form method="post" action="<?= TRUX_BASE_URL ?>/reset_password.php" class="form authSlab__form">
+            <?= trux_csrf_field() ?>
+            <input type="hidden" name="token" value="<?= trux_e($token) ?>">
+
+            <label class="field">
+              <span>New password</span>
+              <input type="password" name="password" minlength="8" required autocomplete="new-password" placeholder="Minimum 8 characters">
+            </label>
+
+            <label class="field">
+              <span>Confirm new password</span>
+              <input type="password" name="password_confirm" minlength="8" required autocomplete="new-password" placeholder="Repeat your new password">
+            </label>
+
+            <div class="authSlab__actions">
+              <button class="shellButton shellButton--accent" type="submit">Set new password</button>
+            </div>
+          </form>
         <?php endif; ?>
-
-        <form method="post" action="<?= TRUX_BASE_URL ?>/reset_password.php" class="form authSlab__form">
-          <?= trux_csrf_field() ?>
-          <input type="hidden" name="token" value="<?= trux_e($token) ?>">
-
-          <label class="field">
-            <span>New password</span>
-            <input type="password" name="password" minlength="8" required autocomplete="new-password" placeholder="Minimum 8 characters">
-          </label>
-
-          <label class="field">
-            <span>Confirm new password</span>
-            <input type="password" name="password_confirm" minlength="8" required autocomplete="new-password" placeholder="Repeat your new password">
-          </label>
-
-          <div class="authSlab__actions">
-            <button class="shellButton shellButton--accent" type="submit">Set new password</button>
-          </div>
-        </form>
-      <?php endif; ?>
+      </div>
     </section>
   </div>
 </section>

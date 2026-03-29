@@ -33,9 +33,28 @@ require_once __DIR__ . '/_header.php';
 
 <section class="authGateway authGateway--register">
   <div class="authGateway__signal">
-    <span class="authGateway__eyebrow">New account</span>
-    <h1 class="authGateway__title">Create your TruX identity in one clean step.</h1>
-    <p class="authGateway__copy">Join the network with the same existing validation, account creation, and authentication behavior behind a fully rebuilt gateway.</p>
+    <div class="authGateway__signalFrame">
+      <div class="authGateway__signalHead">
+        <span class="authGateway__eyebrow">New account</span>
+        <h1 class="authGateway__title">Create your TruX identity in one clean step.</h1>
+        <p class="authGateway__copy">Join the network with the same existing validation, account creation, and authentication behavior behind a fully rebuilt gateway.</p>
+      </div>
+
+      <div class="authReadoutGrid" aria-hidden="true">
+        <div class="authReadout">
+          <span>Lane</span>
+          <strong>Identity issue</strong>
+        </div>
+        <div class="authReadout">
+          <span>Protocol</span>
+          <strong>Account bootstrap</strong>
+        </div>
+        <div class="authReadout">
+          <span>Validation</span>
+          <strong>Existing ruleset</strong>
+        </div>
+      </div>
+    </div>
 
     <div class="authGateway__stats">
       <div class="authStat">
@@ -55,47 +74,55 @@ require_once __DIR__ . '/_header.php';
 
   <div class="authGateway__lane">
     <section class="authSlab">
-      <div class="authSlab__head">
-        <span class="authSlab__eyebrow">Account setup</span>
-        <h2>Create account</h2>
-        <p class="muted">Same validation rules, new gateway experience.</p>
+      <div class="authSlab__frame">
+        <div class="authSlab__head">
+          <span class="authSlab__eyebrow">Account setup</span>
+          <h2>Create account</h2>
+          <p class="muted">Same validation rules, new gateway experience.</p>
+        </div>
+
+        <div class="authSlab__status" aria-hidden="true">
+          <span>Route</span>
+          <strong>/register.php</strong>
+          <small>Identity issuance</small>
+        </div>
+
+        <?php if ($errors): ?>
+          <div class="flash flash--error">
+            <ul class="list">
+              <?php foreach ($errors as $e): ?>
+                <li><?= trux_e((string)$e) ?></li>
+              <?php endforeach; ?>
+            </ul>
+          </div>
+        <?php endif; ?>
+
+        <form method="post" action="<?= TRUX_BASE_URL ?>/register.php" class="form authSlab__form">
+          <?= trux_csrf_field() ?>
+
+          <label class="field">
+            <span>Username</span>
+            <input name="username" value="<?= trux_e($username) ?>" maxlength="32" required autocomplete="username">
+            <small class="muted">3-32 chars, letters/numbers/underscore.</small>
+          </label>
+
+          <label class="field">
+            <span>Email</span>
+            <input type="email" name="email" value="<?= trux_e($email) ?>" maxlength="255" required autocomplete="email">
+          </label>
+
+          <label class="field">
+            <span>Password</span>
+            <input type="password" name="password" minlength="8" required autocomplete="new-password">
+            <small class="muted">Minimum 8 characters.</small>
+          </label>
+
+          <div class="authSlab__actions">
+            <button class="shellButton shellButton--accent" type="submit">Create account</button>
+            <a class="shellButton shellButton--ghost" href="<?= TRUX_BASE_URL ?>/login.php">Already have an account?</a>
+          </div>
+        </form>
       </div>
-
-      <?php if ($errors): ?>
-        <div class="flash flash--error">
-          <ul class="list">
-            <?php foreach ($errors as $e): ?>
-              <li><?= trux_e((string)$e) ?></li>
-            <?php endforeach; ?>
-          </ul>
-        </div>
-      <?php endif; ?>
-
-      <form method="post" action="<?= TRUX_BASE_URL ?>/register.php" class="form authSlab__form">
-        <?= trux_csrf_field() ?>
-
-        <label class="field">
-          <span>Username</span>
-          <input name="username" value="<?= trux_e($username) ?>" maxlength="32" required autocomplete="username">
-          <small class="muted">3-32 chars, letters/numbers/underscore.</small>
-        </label>
-
-        <label class="field">
-          <span>Email</span>
-          <input type="email" name="email" value="<?= trux_e($email) ?>" maxlength="255" required autocomplete="email">
-        </label>
-
-        <label class="field">
-          <span>Password</span>
-          <input type="password" name="password" minlength="8" required autocomplete="new-password">
-          <small class="muted">Minimum 8 characters.</small>
-        </label>
-
-        <div class="authSlab__actions">
-          <button class="shellButton shellButton--accent" type="submit">Create account</button>
-          <a class="shellButton shellButton--ghost" href="<?= TRUX_BASE_URL ?>/login.php">Already have an account?</a>
-        </div>
-      </form>
     </section>
   </div>
 </section>

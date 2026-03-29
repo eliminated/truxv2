@@ -1,0 +1,708 @@
+.pageFrame--feed,
+.pageFrame--search,
+.pageFrame--settings,
+.pageFrame--notifications,
+.pageFrame--messages,
+.pageFrame--profile {
+  width: 100%;
+}
+
+.feedScene {
+  grid-template-columns: minmax(0, 1.68fr) minmax(248px, 0.52fr);
+}
+
+.searchScene {
+  grid-template-columns: minmax(0, 1.62fr) minmax(240px, 0.48fr);
+}
+
+.pageFrame--feed {
+  gap: var(--space-3);
+}
+
+.inlineHeader--feed {
+  padding-block: var(--space-4);
+}
+
+.pageFrame--feed .timelineFrame__head {
+  align-items: start;
+}
+
+.pageFrame--feed .timelineFrame__actions {
+  align-self: start;
+}
+
+.inlineHeader--feed .commandReadoutGrid {
+  grid-template-columns: repeat(2, minmax(112px, 1fr));
+}
+
+.pageFrame--messages {
+  --messages-desktop-panel-height: calc(100dvh - 4.85rem - var(--space-5) - var(--space-10));
+  min-height: var(--messages-desktop-panel-height);
+}
+
+.messagesLayout {
+  display: grid;
+  grid-template-columns: minmax(292px, 320px) minmax(0, 1fr);
+  gap: var(--space-3);
+  width: 100%;
+  min-height: 0;
+  height: var(--messages-desktop-panel-height);
+}
+
+.messagesSidebar,
+.messagesThread {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.messagesSidebar__search {
+  padding-bottom: 0;
+}
+
+.messagesSidebar__searchField {
+  width: 100%;
+  min-width: 0;
+  min-height: 3rem;
+  gap: 0.55rem;
+  padding: 0 0.95rem 0 0.92rem;
+  overflow: hidden;
+  background:
+    linear-gradient(90deg, rgba(89, 243, 255, 0.05), transparent 22%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), rgba(255, 255, 255, 0.01)),
+    rgba(10, 9, 16, 0.76);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.03),
+    0 10px 24px rgba(0, 0, 0, 0.15);
+}
+
+.messagesSidebar__searchField .topSearch__icon {
+  color: rgba(155, 147, 188, 0.82);
+}
+
+.messagesSidebar__searchAction {
+  min-width: 4.7rem;
+  align-self: stretch;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  padding: 0 0 0 0.9rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-strong);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.messagesSidebar__searchAction svg {
+  width: 0.82rem;
+  height: 0.82rem;
+}
+
+.messagesSidebar__searchField input.topSearch__input {
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  appearance: none;
+  font-size: 0.84rem;
+}
+
+.messagesSidebar__searchField input.topSearch__input:focus {
+  box-shadow: none;
+}
+
+.messagesSidebar__searchField input.topSearch__input::placeholder {
+  letter-spacing: 0.12em;
+  font-size: 0.68rem;
+}
+
+.messagesSidebar__statusGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0;
+}
+
+.messagesSidebar__listWrap,
+.messagesThread__messages {
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+.messagesList,
+.messagesThread__messages {
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+}
+
+.messagesList {
+  display: grid;
+  gap: var(--space-3);
+  align-content: start;
+}
+
+.messagesThread__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.messagesThread__identity {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.messagesThread__status {
+  color: var(--text-soft);
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.messagesThread__statusDot {
+  width: 0.52rem;
+  height: 0.52rem;
+  border-radius: 999px;
+  background: var(--rx-cyan);
+  box-shadow: 0 0 0 0.26rem rgba(89, 243, 255, 0.12);
+}
+
+.messagesThread__messages {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-4) 0;
+}
+
+.messagesComposer {
+  flex: 0 0 auto;
+  display: grid;
+  gap: var(--space-2);
+  padding-top: var(--space-3);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.messagesMobileBar {
+  display: none;
+}
+
+.authGateway {
+  display: grid;
+  grid-template-columns: minmax(0, 1.05fr) minmax(420px, 0.95fr);
+  gap: var(--space-6);
+  align-items: stretch;
+}
+
+.authGateway__signal,
+.authGateway__lane {
+  min-width: 0;
+}
+
+.authGateway__signal {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(2rem, 4vw, 3.2rem);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.6rem 0.5rem 1.6rem 0.5rem;
+  background:
+    radial-gradient(circle at top left, rgba(255, 79, 216, 0.18), transparent 30%),
+    radial-gradient(circle at bottom right, rgba(89, 243, 255, 0.08), transparent 26%),
+    linear-gradient(135deg, rgba(108, 92, 255, 0.16), rgba(255, 79, 216, 0.1) 40%, rgba(255, 255, 255, 0.02) 100%),
+    rgba(11, 10, 17, 0.82);
+  box-shadow: var(--shadow-lg);
+  display: grid;
+  align-content: start;
+  gap: var(--space-6);
+}
+
+.authGateway__signal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.024) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.024) 1px, transparent 1px);
+  background-size: 36px 36px;
+  mask-image: linear-gradient(180deg, black, transparent);
+  pointer-events: none;
+}
+
+.authGateway__title {
+  color: var(--text-strong);
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 4rem);
+  line-height: 0.96;
+  letter-spacing: -0.05em;
+  max-width: 12ch;
+}
+
+.authGateway__stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.authStat {
+  padding: var(--space-4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.96rem 0.28rem 0.96rem 0.28rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.012)),
+    rgba(7, 7, 11, 0.44);
+  display: grid;
+  gap: 0.3rem;
+}
+
+.authStat strong {
+  color: var(--text-strong);
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.72rem;
+}
+
+.authStat span {
+  color: var(--text-soft);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.authSlab__form {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.authSlab__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.authSlab__metaLink {
+  color: var(--rx-cyan-strong);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.notificationList {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.notificationItem {
+  display: block;
+  padding: var(--space-4);
+}
+
+.notificationItem.is-unread {
+  border-color: rgba(255, 79, 216, 0.2);
+  background:
+    linear-gradient(90deg, rgba(255, 79, 216, 0.08), transparent 18%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.012)),
+    rgba(10, 9, 15, 0.72);
+}
+
+.notificationItem__body {
+  display: grid;
+  gap: 0.32rem;
+}
+
+.notificationItem__time {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+}
+
+.settingsLayout {
+  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr);
+  align-items: start;
+}
+
+.settingsSidebar,
+.settingsContent {
+  min-width: 0;
+}
+
+.settingsForm,
+.settingSection {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.settingsActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.pageFrame--studio .editorStage {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.pageFrame--studio .editorStage__main {
+  max-width: none;
+}
+
+.composePanel__titleRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.composeGuide {
+  position: relative;
+  display: inline-flex;
+}
+
+.composeGuide > summary {
+  list-style: none;
+}
+
+.composeGuide > summary::-webkit-details-marker {
+  display: none;
+}
+
+.composeGuide__trigger {
+  width: auto;
+  min-width: 0;
+  height: auto;
+  min-height: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-soft);
+  cursor: pointer;
+  transition:
+    color var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard);
+}
+
+.composeGuide__trigger svg {
+  width: 1rem;
+  height: 1rem;
+}
+
+.composeGuide__trigger:hover,
+.composeGuide__trigger:focus-visible,
+.composeGuide[open] > .composeGuide__trigger {
+  outline: none;
+  transform: translateY(-1px);
+  color: var(--text-strong);
+  background: transparent;
+  box-shadow: none;
+}
+
+.composeGuide__panel {
+  position: absolute;
+  top: calc(100% + 0.7rem);
+  left: 0;
+  z-index: 18;
+  width: min(24rem, calc(100vw - 2rem));
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem 0.3rem 1rem 0.3rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.014)),
+    linear-gradient(135deg, rgba(108, 92, 255, 0.14), rgba(255, 79, 216, 0.08) 45%, rgba(255, 255, 255, 0.02)),
+    rgba(9, 8, 14, 0.96);
+  box-shadow:
+    var(--shadow-lg),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.composeGuide__eyebrow {
+  color: var(--rx-cyan-strong);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.composeGuide__panel h4 {
+  color: var(--text-strong);
+  font-family: var(--font-display);
+  font-size: 1rem;
+}
+
+.composeGuide__stack {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.profileScene {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.identityBand__avatar {
+  width: clamp(5.6rem, 8.8vw, 6.8rem);
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  align-self: end;
+  overflow: hidden;
+  outline: 0.35rem solid rgba(10, 9, 15, 0.9);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 1.15rem 0.32rem 1.15rem 0.32rem;
+  background:
+    linear-gradient(135deg, rgba(89, 243, 255, 0.14), rgba(255, 79, 216, 0.18)),
+    rgba(10, 9, 16, 0.72);
+  box-shadow: var(--shadow-sm);
+}
+
+.identityBand__avatarImage {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.identityBand__handle {
+  color: var(--rx-cyan-strong);
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.76rem;
+}
+
+.identityBand__bio {
+  color: var(--text-main);
+  max-width: 60ch;
+  font-size: 0.98rem;
+}
+
+.identityBand__actions,
+.profileActions,
+.profileMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.profileMeta__item {
+  min-height: 2rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 0.38rem 0.62rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.8rem 0.22rem 0.8rem 0.22rem;
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-soft);
+  font-size: 0.78rem;
+}
+
+.profileWorkspace {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(248px, 0.42fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.profileFacts__row {
+  display: grid;
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: baseline;
+  justify-content: start;
+  gap: 0.3rem 0.8rem;
+  padding: 0.55rem 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.profileFacts__row:first-child {
+  border-top: 0;
+}
+
+.profileFacts__row > strong,
+.profileFacts__row > a {
+  justify-self: start;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+
+.profileAbout__body {
+  color: var(--text-main);
+  line-height: 1.7;
+}
+
+.profileLinks {
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+}
+
+.profileLink {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.8rem;
+}
+
+.profileLink__icon {
+  width: 2.4rem;
+  height: 2.4rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.8rem 0.24rem 0.8rem 0.24rem;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.messagesRecipientSheet__form,
+.messagesActionSheet .shellSheet__stack {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.messagesRecipientSheet__lookup {
+  position: relative;
+}
+
+.messagesRecipientSheet__results {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.moderationLayout {
+  gap: var(--space-5);
+}
+
+.moderationFilters,
+.moderationActions,
+.moderationPagination,
+.moderationListItem__top,
+.moderationListItem__meta,
+.reviewModal__metaRow,
+.moderationKeyValue {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.moderationFilters {
+  align-items: end;
+}
+
+.moderationFilters__search {
+  flex: 1 1 280px;
+}
+
+.moderationFilters__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.moderationTableWrap {
+  overflow: auto;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem 0.34rem 1rem 0.34rem;
+  background: rgba(8, 8, 12, 0.48);
+}
+
+.moderationTable {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.moderationTable th,
+.moderationTable td {
+  padding: 1rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  text-align: left;
+  vertical-align: top;
+}
+
+.moderationTable thead th {
+  color: var(--rx-cyan-strong);
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  border-top: 0;
+}
+
+.moderationTable tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.reviewModal__metaList,
+.reviewModal__section,
+.reviewModalWorkspace,
+.reviewModalDiscussion,
+.reviewModalVoteList,
+.moderationKeyValueList {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.reviewModal__note {
+  padding: var(--space-4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.92rem 0.26rem 0.92rem 0.26rem;
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.inlineHeader__aside,
+.messagesSidebar__header,
+.hero__main,
+.authGateway__signalHead,
+.opsQueueStrip__frame,
+.messagesThread__emptyCopy {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.inlineHeader__aside,
+.messagesSidebar__header {
+  gap: 0.32rem;
+}
+
+.messagesSidebar__titleWrap {
+  gap: 0.12rem;
+}
+
+.utilityBand__head > div {
+  display: grid;
+  gap: 0.14rem;
+}
+
+.messagesSidebar__searchField {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.messagesSidebar__statusGrid .messagesSidebar__status {
+  gap: 0.16rem;
+  padding: 0.5rem 0.74rem;
+}
+
+.messagesMobileBar__eyebrow,
+.messagesThread__emptyEyebrow {
+  color: var(--rx-cyan-strong);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.hero--moderation {
+  align-items: start;
+}

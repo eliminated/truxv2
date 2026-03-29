@@ -15,6 +15,7 @@ $messageReportLabel = 'Message #' . $messageId . ' from @' . $messageSenderUsern
 $messageReportUrl = TRUX_BASE_URL . '/messages.php?id=' . $conversationId . '#message-' . $messageId;
 ?>
 <article id="message-<?= $messageId ?>" class="messageBubble<?= $isMine ? ' messageBubble--mine' : '' ?>" data-message-bubble="1" data-message-id="<?= $messageId ?>">
+  <span class="messageBubble__signal" aria-hidden="true"><?= $isMine ? 'OUT' : 'IN' ?></span>
   <div class="messageBubble__meta">
     <div class="messageBubble__metaMain">
       <span class="messageBubble__author"><?= $isMine ? 'You' : trux_e(trux_direct_message_actor_label($messageSenderUsername, (string)($message['sender_display_name'] ?? ''))) ?></span>

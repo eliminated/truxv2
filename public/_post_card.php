@@ -39,7 +39,6 @@ $postCardClassAttr = trim('post streamItem ' . $postCardClasses);
         <span class="post__avatarFallback"><?= trux_e(strtoupper(substr($postUsername !== '' ? $postUsername : 'T', 0, 1))) ?></span>
       <?php endif; ?>
     </a>
-    <span class="post__rail" aria-hidden="true"></span>
   </div>
 
   <div class="post__band">
@@ -93,7 +92,9 @@ $postCardClassAttr = trim('post streamItem ' . $postCardClasses);
       </div>
     </header>
 
-    <div class="post__body"><?= trux_render_post_body((string)$postRecord['body']) ?></div>
+    <div class="post__bodyWrap">
+      <div class="post__body"><?= trux_render_post_body((string)$postRecord['body']) ?></div>
+    </div>
 
     <?php if ($postImageUrl !== ''): ?>
       <div class="post__media">

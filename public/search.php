@@ -68,6 +68,16 @@ require_once __DIR__ . '/_header.php';
     </div>
 
     <div class="inlineHeader__aside">
+      <div class="commandReadoutGrid" aria-hidden="true">
+        <div class="commandReadout">
+          <span>Mode</span>
+          <strong><?= $searchFilter === 'hashtags' ? 'Hashtag lock' : 'Network sweep' ?></strong>
+        </div>
+        <div class="commandReadout">
+          <span>Query</span>
+          <strong><?= $q !== '' ? trux_e($q) : 'Standby' ?></strong>
+        </div>
+      </div>
       <nav class="segmented" aria-label="Search filter">
         <a class="segmented__item<?= $searchFilter === 'all' ? ' is-active' : '' ?>" href="<?= TRUX_BASE_URL ?>/search.php?q=<?= urlencode($q) ?>&filter=all" <?= $searchFilter === 'all' ? 'aria-current="page"' : '' ?>>All</a>
         <a class="segmented__item<?= $searchFilter === 'hashtags' ? ' is-active' : '' ?>" href="<?= TRUX_BASE_URL ?>/search.php?q=<?= urlencode($q) ?>&filter=hashtags" <?= $searchFilter === 'hashtags' ? 'aria-current="page"' : '' ?>>Hashtags</a>
@@ -109,6 +119,7 @@ require_once __DIR__ . '/_header.php';
               <div class="userStack">
                 <?php foreach ($users as $u): ?>
                   <a class="userBand userBand--link" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e((string)$u['username']) ?>">
+                    <span class="userBand__signal" aria-hidden="true">USR</span>
                     <div class="userBand__copy">
                       <div class="userBand__title">@<?= trux_e((string)$u['username']) ?></div>
                       <div class="userBand__meta muted">
@@ -180,13 +191,19 @@ require_once __DIR__ . '/_header.php';
         <div class="utilityPanel__stack">
           <section class="utilityBand">
             <div class="utilityBand__head">
-              <h4>Accounts</h4>
+              <div>
+                <span class="utilityBand__eyebrow">Lookup syntax</span>
+                <h4>Accounts</h4>
+              </div>
             </div>
             <p class="muted">Use <code>@username</code> or part of a username to find people.</p>
           </section>
           <section class="utilityBand">
             <div class="utilityBand__head">
-              <h4>Hashtags</h4>
+              <div>
+                <span class="utilityBand__eyebrow">Topic syntax</span>
+                <h4>Hashtags</h4>
+              </div>
             </div>
             <p class="muted">Switch to hashtag mode to focus on exact tags such as <code>#updates</code>.</p>
           </section>

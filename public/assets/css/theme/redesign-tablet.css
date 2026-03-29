@@ -1,0 +1,88 @@
+@media (max-width: 1120px) {
+  .appShell,
+  .opsShell,
+  .feedScene,
+  .searchScene,
+  .profileWorkspace,
+  .settingsLayout,
+  .authGateway {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .appRail,
+  .opsRail,
+  .feedScene__rail,
+  .searchScene__rail,
+  .profileWorkspace__side,
+  .settingsSidebar {
+    display: none;
+  }
+
+  .shellViewport,
+  .opsViewport {
+    min-height: 100vh;
+  }
+
+  .shellTopbar {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: var(--space-4);
+    align-items: center;
+  }
+
+  .shellTopbar__mobileCore {
+    display: inline-flex;
+  }
+
+  .shellTopbar__actions {
+    display: none;
+  }
+
+  .inlineHeader,
+  .pageBand {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .inlineHeader__aside,
+  .timelineFrame__actions,
+  .bandSurface__meta {
+    justify-items: start;
+  }
+
+  .authGateway__stats,
+  .identityBand__stats {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .commentDock__panel,
+  .reviewModal__panel {
+    width: min(calc(100vw - 1.5rem), 1100px);
+    height: min(calc(100vh - 1.5rem), 920px);
+    margin: 0.75rem auto;
+  }
+
+  .commentDock__split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .commentDock__left {
+    padding-right: 0;
+    padding-bottom: var(--space-4);
+    border-right: 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  }
+
+  .messagesLayout {
+    grid-template-columns: minmax(300px, 340px) minmax(0, 1fr);
+  }
+
+  .messagesSidebar,
+  .messagesThread {
+    padding: var(--space-5);
+  }
+
+  .opsTopbar__actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+}

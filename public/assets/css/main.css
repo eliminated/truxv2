@@ -36,3 +36,13 @@
 
 @import url("./responsive/tablet.css");
 @import url("./responsive/mobile.css");
+
+@import url("./theme/redesign-tokens.css");
+@import url("./theme/redesign-shell.css");
+@import url("./theme/redesign-navigation.css");
+@import url("./theme/redesign-components.css");
+@import url("./theme/redesign-pages.css");
+@import url("./theme/redesign-overlays.css");
+@import url("./theme/redesign-motion.css");
+@import url("./theme/redesign-tablet.css");
+@import url("./theme/redesign-mobile.css");

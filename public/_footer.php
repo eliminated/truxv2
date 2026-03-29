@@ -37,7 +37,7 @@ $isOpsLayout = $pageLayout === 'moderation';
       <section class="shellSheet__panel" role="dialog" aria-modal="true" aria-labelledby="shellSearchTitle">
         <header class="shellSheet__head">
           <div>
-            <span class="shellSheet__eyebrow">Search</span>
+            <span class="shellSheet__eyebrow">Sensor array</span>
             <h2 id="shellSearchTitle">Search TruX</h2>
           </div>
           <button class="iconBtn" type="button" aria-label="Close search" data-shell-sheet-close="1">
@@ -49,7 +49,7 @@ $isOpsLayout = $pageLayout === 'moderation';
 
         <form class="shellSheet__form" method="get" action="<?= TRUX_BASE_URL ?>/search.php" role="search">
           <label class="field">
-            <span>Query</span>
+            <span>Target query</span>
             <input name="q" value="<?= trux_e((string)$q) ?>" placeholder="Search users, posts, or #hashtags" maxlength="80" autofocus>
           </label>
           <div class="shellSheet__actions">
@@ -69,7 +69,7 @@ $isOpsLayout = $pageLayout === 'moderation';
               <img src="<?= TRUX_BASE_URL ?>/favicon.php?v=<?= $faviconVersion ?>" alt="" width="28" height="28" loading="eager" decoding="async">
             </span>
             <span class="shellBrand__copy shellBrand__copy--compact">
-              <span class="shellNavDrawer__eyebrow">Navigation</span>
+              <span class="shellNavDrawer__eyebrow">Navigation relay</span>
               <strong id="shellNavMobileTitle"><?= trux_e(TRUX_APP_NAME) ?></strong>
             </span>
           </div>
@@ -101,7 +101,7 @@ $isOpsLayout = $pageLayout === 'moderation';
     <section class="commentDock__panel" role="dialog" aria-modal="true" aria-labelledby="commentDockTitle">
       <header class="commentDock__head">
         <div class="commentDock__titleWrap">
-          <span class="commentDock__eyebrow">Post viewer</span>
+          <span class="commentDock__eyebrow">Transmission thread</span>
           <h2 id="commentDockTitle">Thread</h2>
         </div>
         <div class="commentDock__headActions">
@@ -134,11 +134,26 @@ $isOpsLayout = $pageLayout === 'moderation';
               </div>
               <label class="field commentDock__field">
                 <span class="commentDock__fieldLabel">Add a comment</span>
-                <textarea class="commentDock__textarea" name="body" rows="3" maxlength="1000" required placeholder="Write your comment..." data-mention-input="1"></textarea>
+                <div class="commentDock__composer">
+                  <textarea
+                    class="commentDock__textarea"
+                    name="body"
+                    rows="1"
+                    maxlength="1000"
+                    required
+                    placeholder="Write your comment..."
+                    data-comment-input="1"
+                    data-expand-mode="newline"
+                    data-enter-submit="1"
+                    data-mention-input="1"></textarea>
+                  <button class="iconBtn commentDock__submit" type="submit" aria-label="Post comment">
+                    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                      <path d="M19 5v8a4 4 0 0 1-4 4H7m0 0 3.5-3.5M7 17l3.5 3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" />
+                    </svg>
+                    <span class="u-visually-hidden">Post comment</span>
+                  </button>
+                </div>
               </label>
-              <div class="row commentDock__formActions">
-                <button class="shellButton shellButton--accent" type="submit">Post comment</button>
-              </div>
             </form>
           <?php else: ?>
             <div class="commentDock__login muted">
@@ -155,7 +170,7 @@ $isOpsLayout = $pageLayout === 'moderation';
     <section class="entityEditModal__panel" role="dialog" aria-modal="true" aria-labelledby="entityEditTitle">
       <header class="entityEditModal__head">
         <div class="entityEditModal__titleWrap">
-          <span class="entityEditModal__eyebrow">Edit</span>
+          <span class="entityEditModal__eyebrow">Field editor</span>
           <h2 id="entityEditTitle" data-edit-title="1">Edit content</h2>
         </div>
         <button class="iconBtn entityEditModal__close" type="button" aria-label="Close editor" data-edit-close="1">
@@ -194,7 +209,7 @@ $isOpsLayout = $pageLayout === 'moderation';
       <section class="reportModal__panel" role="dialog" aria-modal="true" aria-labelledby="postReportTitle">
         <header class="reportModal__head">
           <div>
-            <div class="reportModal__eyebrow">Report</div>
+            <div class="reportModal__eyebrow">Escalation relay</div>
             <h2 id="postReportTitle">Report content</h2>
           </div>
           <button class="iconBtn reportModal__close" type="button" aria-label="Close report form" data-report-close="1">

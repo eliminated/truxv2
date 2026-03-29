@@ -135,9 +135,33 @@ require_once __DIR__ . '/_header.php';
   <div class="editorStage">
     <section class="editorStage__main bandSurface">
       <div class="bandSurface__head">
-        <div>
+        <div class="composePanel__head">
           <span class="bandSurface__eyebrow">Compose</span>
-          <h3>Draft your update</h3>
+          <div class="composePanel__titleRow">
+            <h3>Draft your update</h3>
+            <details class="composeGuide">
+              <summary class="composeGuide__trigger" aria-label="Open publish guide">
+                <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <circle cx="12" cy="12" r="8" fill="none" stroke="currentColor" stroke-width="1.7" />
+                  <path d="M12 10.25v5.25M12 7.8h.01" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+              </summary>
+              <div class="composeGuide__panel">
+                <span class="composeGuide__eyebrow">Publish guide</span>
+                <h4>Before you post</h4>
+                <div class="composeGuide__stack">
+                  <section class="utilityBand">
+                    <div class="utilityBand__head"><h4>Formatting</h4></div>
+                    <p class="muted">Mentions and links are rendered automatically after publish.</p>
+                  </section>
+                  <section class="utilityBand">
+                    <div class="utilityBand__head"><h4>Media</h4></div>
+                    <p class="muted">One image per post, processed with the same existing upload rules.</p>
+                  </section>
+                </div>
+              </div>
+            </details>
+          </div>
         </div>
       </div>
 
@@ -166,25 +190,6 @@ require_once __DIR__ . '/_header.php';
         </div>
       </form>
     </section>
-
-    <aside class="editorStage__rail">
-      <section class="utilityPanel utilityPanel--compact">
-        <div class="utilityPanel__head">
-          <span class="utilityPanel__eyebrow">Publish guide</span>
-          <h3>Before you post</h3>
-        </div>
-        <div class="utilityPanel__stack">
-          <section class="utilityBand">
-            <div class="utilityBand__head"><h4>Formatting</h4></div>
-            <p class="muted">Mentions and links are rendered automatically after publish.</p>
-          </section>
-          <section class="utilityBand">
-            <div class="utilityBand__head"><h4>Media</h4></div>
-            <p class="muted">One image per post, processed with the same existing upload rules.</p>
-          </section>
-        </div>
-      </section>
-    </aside>
   </div>
 </div>
 

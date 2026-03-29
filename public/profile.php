@@ -321,6 +321,7 @@ require_once __DIR__ . '/_header.php';
         </div>
 
         <div class="identityBand__copy">
+          <span class="identityBand__eyebrow">Identity surface</span>
           <div class="identityBand__nameRow">
             <h2><?= $displayName !== '' ? trux_e($displayName) : '@' . trux_e((string)$profileUser['username']) ?></h2>
             <span class="identityBand__handle">@<?= trux_e((string)$profileUser['username']) ?></span>
@@ -340,6 +341,21 @@ require_once __DIR__ . '/_header.php';
               <?php endif; ?>
             </div>
           <?php endif; ?>
+
+          <div class="identityBand__telemetry" aria-hidden="true">
+            <div class="identityBand__telemetryItem">
+              <span>Mode</span>
+              <strong><?= $isSelf ? 'Owner' : 'Public' ?></strong>
+            </div>
+            <div class="identityBand__telemetryItem">
+              <span>Links</span>
+              <strong><?= count($profileLinks) ?> mapped</strong>
+            </div>
+            <div class="identityBand__telemetryItem">
+              <span>Tabs</span>
+              <strong><?= count($allowedTabs) ?> visible</strong>
+            </div>
+          </div>
         </div>
 
         <div class="identityBand__actions">

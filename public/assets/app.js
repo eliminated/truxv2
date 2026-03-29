@@ -1,11 +1,70 @@
 (function () {
+  const pendingAutosizeTextareas = new Set();
+  let autosizeFrame = 0;
+
+  const autosizeTextarea = (textarea) => {
+    if (!(textarea instanceof HTMLTextAreaElement)) return;
+
+    textarea.style.height = "auto";
+
+    const styles = window.getComputedStyle(textarea);
+    const computedMinHeight = Number.parseFloat(styles.minHeight || "");
+    const computedMaxHeight = Number.parseFloat(styles.maxHeight || "");
+    const hasMinHeight = Number.isFinite(computedMinHeight) && computedMinHeight > 0;
+    const hasMaxHeight = Number.isFinite(computedMaxHeight) && computedMaxHeight > 0;
+    const maxHeight = hasMaxHeight ? computedMaxHeight : 420;
+    let nextHeight = textarea.scrollHeight;
+
+    if (textarea.dataset.expandMode === "newline") {
+      const lineHeight = Number.parseFloat(styles.lineHeight) || 24;
+      const verticalChrome =
+        (Number.parseFloat(styles.paddingTop) || 0) +
+        (Number.parseFloat(styles.paddingBottom) || 0) +
+        (Number.parseFloat(styles.borderTopWidth) || 0) +
+        (Number.parseFloat(styles.borderBottomWidth) || 0);
+      const newlineCount = (textarea.value.match(/\n/g) || []).length;
+
+      if (newlineCount === 0) {
+        nextHeight = Math.ceil(lineHeight + verticalChrome);
+      }
+    }
+
+    if (hasMinHeight) {
+      nextHeight = Math.max(nextHeight, computedMinHeight);
+    }
+
+    nextHeight = Math.min(nextHeight, maxHeight);
+    textarea.style.height = `${nextHeight}px`;
+    textarea.style.overflowY = textarea.scrollHeight > maxHeight ? "auto" : "hidden";
+  };
+
+  const flushAutosizeQueue = () => {
+    pendingAutosizeTextareas.forEach((textarea) => {
+      autosizeTextarea(textarea);
+    });
+    pendingAutosizeTextareas.clear();
+    autosizeFrame = 0;
+  };
+
+  const scheduleAutosizeTextarea = (textarea) => {
+    if (!(textarea instanceof HTMLTextAreaElement)) return;
+    pendingAutosizeTextareas.add(textarea);
+    if (autosizeFrame !== 0) return;
+    autosizeFrame = window.requestAnimationFrame(flushAutosizeQueue);
+  };
+
+  window.truxAutosizeTextarea = autosizeTextarea;
+
   // Autosize textareas a bit on input
   document.addEventListener("input", (e) => {
     const el = e.target;
-    if (el && el.tagName === "TEXTAREA") {
-      el.style.height = "auto";
-      el.style.height = Math.min(el.scrollHeight, 420) + "px";
+    if (el instanceof HTMLTextAreaElement) {
+      scheduleAutosizeTextarea(el);
     }
+  });
+
+  document.querySelectorAll("textarea").forEach((textarea) => {
+    autosizeTextarea(textarea);
   });
 
   // Confirm dangerous actions (delete)
@@ -172,6 +231,10 @@
       .replaceAll("'", "&#39;");
 
   const autosize = (textarea) => {
+    if (typeof window.truxAutosizeTextarea === "function") {
+      window.truxAutosizeTextarea(textarea);
+      return;
+    }
     textarea.style.height = "auto";
     textarea.style.height = Math.min(textarea.scrollHeight, 420) + "px";
   };
@@ -203,16 +266,28 @@
   const initMentionInput = (textarea) => {
     if (!(textarea instanceof HTMLTextAreaElement)) return;
     if (textarea.dataset.mentionReady === "1") return;
-    textarea.dataset.mentionReady = "1";
 
     const host = textarea.closest(".field") || textarea.parentElement;
     if (!(host instanceof HTMLElement)) return;
+
+    let referenceNode = textarea;
+    while (
+      referenceNode.parentElement instanceof HTMLElement &&
+      referenceNode.parentElement !== host
+    ) {
+      referenceNode = referenceNode.parentElement;
+    }
+
+    if (referenceNode.parentElement !== host) {
+      return;
+    }
 
     const panel = document.createElement("div");
     panel.className = "mentionSuggest";
     panel.hidden = true;
     panel.setAttribute("data-mention-panel", "1");
-    host.insertBefore(panel, textarea);
+    host.insertBefore(panel, referenceNode);
+    textarea.dataset.mentionReady = "1";
 
     const state = {
       items: [],
@@ -573,6 +648,8 @@
   const replyUserIdField = dock.querySelector("[data-comment-reply-user-id]");
   const replyingBox = dock.querySelector("[data-comment-replying]");
   const replyingUser = dock.querySelector("[data-comment-replying-user]");
+  const commentTextarea = form?.querySelector("textarea[name='body']");
+  const commentSubmitBtn = form?.querySelector("button[type='submit']");
   const editModal = document.getElementById("entityEditModal");
   const editForm = editModal?.querySelector("[data-entity-edit-form='1']");
   const editTitle = editModal?.querySelector("[data-edit-title='1']");
@@ -616,6 +693,14 @@
   };
   const commentScoreClass = (score) =>
     score < 0 ? " is-negative" : score > 0 ? " is-positive" : "";
+  const commentActionIcons = {
+    bookmark:
+      '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 4.8h10a1 1 0 0 1 1 1V20l-6-3.8L6 20V5.8a1 1 0 0 1 1-1Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /></svg>',
+    report:
+      '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 20V5m0 0h9l-1.5 3L15 11H6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>',
+    reply:
+      '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m10 8-5 4 5 4v-3h4.5A4.5 4.5 0 0 1 19 17.5V18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" /></svg>',
+  };
 
   const editedMetaMarkup = (editedAt, editedTimeAgo, editedExactTime) => {
     if (!editedAt) return "";
@@ -699,8 +784,12 @@
     editTextarea.maxLength = maxLength;
     editTextarea.placeholder = placeholderText;
     editTextarea.value = currentBody;
-    editTextarea.style.height = "auto";
-    editTextarea.style.height = Math.min(editTextarea.scrollHeight, 420) + "px";
+    if (typeof window.truxAutosizeTextarea === "function") {
+      window.truxAutosizeTextarea(editTextarea);
+    } else {
+      editTextarea.style.height = "auto";
+      editTextarea.style.height = Math.min(editTextarea.scrollHeight, 420) + "px";
+    }
     setEditFlash("");
     setEditBusy(false);
 
@@ -1062,8 +1151,12 @@
       const withoutLeadingMention = textarea.value.replace(/^@\S+\s+/, "").trimStart();
       textarea.value = `${mention}${withoutLeadingMention}`;
       textarea.focus();
-      textarea.style.height = "auto";
-      textarea.style.height = Math.min(textarea.scrollHeight, 420) + "px";
+      if (typeof window.truxAutosizeTextarea === "function") {
+        window.truxAutosizeTextarea(textarea);
+      } else {
+        textarea.style.height = "auto";
+        textarea.style.height = Math.min(textarea.scrollHeight, 420) + "px";
+      }
     }
   };
 
@@ -1169,7 +1262,8 @@
             data-comment-bookmark="1"
             data-comment-id="${c.id}"
             aria-label="${c.bookmarked ? "Remove bookmark" : "Bookmark comment"}">
-            <span data-comment-bookmark-label="1">${c.bookmarked ? "Saved" : "Bookmark"}</span>
+            ${commentActionIcons.bookmark}
+            <span class="u-visually-hidden" data-comment-bookmark-label="1">${c.bookmarked ? "Saved" : "Bookmark"}</span>
           </button>
           ${
             c.can_report
@@ -1180,7 +1274,11 @@
             data-report-target-type="comment"
             data-report-target-id="${c.id}"
             data-report-open-url="${esc(c.report_url || `${window.TRUX_BASE_URL || ""}/post.php?id=${c.post_id}&viewer=1&comment_id=${c.id}`)}"
-            data-report-target-label="${esc(c.report_label || `Comment #${c.id} by @${c.username}`)}">Report</button>`
+            data-report-target-label="${esc(c.report_label || `Comment #${c.id} by @${c.username}`)}"
+            aria-label="Report comment">
+            ${commentActionIcons.report}
+            <span class="u-visually-hidden">Report</span>
+          </button>`
               : ""
           }
           <button
@@ -1189,7 +1287,11 @@
             data-comment-reply="1"
             data-comment-id="${c.id}"
             data-comment-user-id="${c.user_id}"
-            data-comment-username="${esc(c.username)}">Reply</button>
+            data-comment-username="${esc(c.username)}"
+            aria-label="Reply to @${esc(c.username)}">
+            ${commentActionIcons.reply}
+            <span class="u-visually-hidden">Reply</span>
+          </button>
         </div>
       </div>
     `;
@@ -1330,6 +1432,9 @@
     const input = form ? form.querySelector("textarea[name='body']") : null;
     if (input instanceof HTMLTextAreaElement) {
       input.value = "";
+      if (typeof window.truxAutosizeTextarea === "function") {
+        window.truxAutosizeTextarea(input);
+      }
       window.setTimeout(() => input.focus(), 30);
     }
   };
@@ -1803,6 +1908,25 @@
     });
   }
 
+  if (form instanceof HTMLFormElement && commentTextarea instanceof HTMLTextAreaElement) {
+    commentTextarea.addEventListener("keydown", (e) => {
+      if (e.key !== "Enter" || e.shiftKey || e.isComposing || e.defaultPrevented) {
+        return;
+      }
+
+      e.preventDefault();
+      if (commentSubmitBtn instanceof HTMLButtonElement && commentSubmitBtn.disabled) {
+        return;
+      }
+
+      if (typeof form.requestSubmit === "function") {
+        form.requestSubmit(commentSubmitBtn instanceof HTMLButtonElement ? commentSubmitBtn : undefined);
+      } else if (commentSubmitBtn instanceof HTMLButtonElement) {
+        commentSubmitBtn.click();
+      }
+    });
+  }
+
   if (form instanceof HTMLFormElement) {
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
@@ -1832,7 +1956,11 @@
         }
 
         textarea.value = "";
-        textarea.style.height = "auto";
+        if (typeof window.truxAutosizeTextarea === "function") {
+          window.truxAutosizeTextarea(textarea);
+        } else {
+          textarea.style.height = "auto";
+        }
         clearReplyState();
 
         if (typeof data.comments_count === "number") {
@@ -2135,6 +2263,7 @@
   let recipientAbort = null;
   let threadAbort = null;
   let threadRequestId = 0;
+  let conversationFilterFrame = 0;
   const defaultRecipientStatus =
     recipientStatus instanceof HTMLElement
       ? String(recipientStatus.textContent || "").trim()
@@ -2373,9 +2502,14 @@
     let visibleCount = 0;
 
     conversationItems.forEach((item) => {
-      const handle = String(item.getAttribute("data-search-handle") || "").toLowerCase();
-      const preview = String(item.getAttribute("data-search-preview") || "").toLowerCase();
-      const isMatch = query === "" || handle.includes(query) || preview.includes(query);
+      let searchText = String(item.dataset.searchTextCache || "");
+      if (searchText === "") {
+        searchText = String(item.getAttribute("data-search-text") || "").toLowerCase();
+        if (searchText !== "") {
+          item.dataset.searchTextCache = searchText;
+        }
+      }
+      const isMatch = query === "" || searchText.includes(query);
       item.hidden = !isMatch;
       if (isMatch) {
         visibleCount += 1;
@@ -2387,8 +2521,21 @@
     }
   };
 
+  const scheduleConversationFilter = () => {
+    if (conversationFilterFrame !== 0) return;
+    conversationFilterFrame = window.requestAnimationFrame(() => {
+      conversationFilterFrame = 0;
+      updateConversationFilter();
+    });
+  };
+
   const syncComposerHeight = (input = getComposerInput()) => {
     if (!(input instanceof HTMLTextAreaElement)) return;
+
+    if (typeof window.truxAutosizeTextarea === "function") {
+      window.truxAutosizeTextarea(input);
+      return;
+    }
 
     input.style.height = "auto";
     const computed = window.getComputedStyle(input);
@@ -2892,7 +3039,7 @@
   });
 
   if (searchInput instanceof HTMLInputElement) {
-    searchInput.addEventListener("input", updateConversationFilter);
+    searchInput.addEventListener("input", scheduleConversationFilter);
   }
 
   document.addEventListener("click", (event) => {
@@ -2957,16 +3104,6 @@
 
     event.preventDefault();
     void submitComposer(form);
-  });
-
-  document.addEventListener("input", (event) => {
-    const input = event.target;
-    if (
-      input instanceof HTMLTextAreaElement &&
-      input.matches("[data-messages-input='1']")
-    ) {
-      syncComposerHeight(input);
-    }
   });
 
   document.addEventListener("compositionstart", (event) => {

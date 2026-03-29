@@ -243,8 +243,8 @@ $menuIcon = static function (string $name): string {
 
 $navToggleIcon = static function (string $state): string {
   return match ($state) {
-    'open' => '<path d="M6.25 6.25 17.75 17.75" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M17.75 6.25 6.25 17.75" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M6.4 4.75h11.2l1.65 1.65v11.2l-1.65 1.65H6.4L4.75 17.6V6.4Z" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" opacity=".72"/>',
-    default => '<path d="M6 7.25h12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M9 12h9" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M6 16.75h12" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/><path d="M6.4 4.75h11.2l1.65 1.65v11.2l-1.65 1.65H6.4L4.75 17.6V6.4Z" fill="none" stroke="currentColor" stroke-width="1.35" stroke-linejoin="round" opacity=".72"/>',
+    'open' => '<path d="m6.75 6.75 10.5 10.5M17.25 6.75 6.75 17.25" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>',
+    default => '<path d="M5.75 7.25h12.5M5.75 12h12.5M5.75 16.75h12.5" fill="none" stroke="currentColor" stroke-width="1.95" stroke-linecap="round"/>',
   };
 };
 
@@ -282,12 +282,15 @@ $renderAppRailItems = static function (array $items, string $surface = 'desktop'
     if ($surface === 'mobile' && $itemKind === 'search'):
       ?>
       <button class="<?= trux_e($itemClasses) ?> railNav__item--button" type="button" data-shell-nav-open-sheet="search">
+        <span class="railNav__signal" aria-hidden="true"></span>
         <span class="railNav__icon" aria-hidden="true">
           <svg viewBox="0 0 24 24" focusable="false"><?= $railIcon($itemIconName) ?></svg>
         </span>
         <span class="railNav__copy">
           <strong><?= trux_e($itemLabel) ?></strong>
-          <small><?= trux_e($itemMeta) ?></small>
+          <span class="railNav__copyMeta">
+            <small><?= trux_e($itemMeta) ?></small>
+          </span>
         </span>
         <?php if ($itemBadge !== ''): ?>
           <span class="railNav__badge"><?= trux_e($itemBadge) ?></span>
@@ -302,12 +305,15 @@ $renderAppRailItems = static function (array $items, string $surface = 'desktop'
     }
     ?>
     <a class="<?= trux_e($itemClasses) ?>" href="<?= trux_e($itemHref) ?>" <?= $itemIsActive ? 'aria-current="page"' : '' ?>>
+      <span class="railNav__signal" aria-hidden="true"></span>
       <span class="railNav__icon" aria-hidden="true">
         <svg viewBox="0 0 24 24" focusable="false"><?= $railIcon($itemIconName) ?></svg>
       </span>
       <span class="railNav__copy">
         <strong><?= trux_e($itemLabel) ?></strong>
-        <small><?= trux_e($itemMeta) ?></small>
+        <span class="railNav__copyMeta">
+          <small><?= trux_e($itemMeta) ?></small>
+        </span>
       </span>
       <?php if ($itemBadge !== ''): ?>
         <span class="railNav__badge"><?= trux_e($itemBadge) ?></span>
@@ -364,6 +370,7 @@ $renderShellNavFooter = static function (string $surface = 'desktop') use (
     ?>
     <div class="<?= trux_e($panelClass) ?>">
       <div class="railPresence__guest">
+        <small class="railPresence__eyebrow">Access state</small>
         <strong>Guest browsing</strong>
         <span>Sign in to post, save, and join conversations.</span>
       </div>
@@ -438,7 +445,7 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
           </span>
           <span class="shellBrand__copy">
             <strong><?= trux_e(TRUX_APP_NAME) ?></strong>
-            <span>Secure entry</span>
+            <span>Gateway lattice</span>
           </span>
         </a>
         <nav class="authTopbar__nav" aria-label="Account navigation">
@@ -459,7 +466,7 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
             </span>
             <span class="shellBrand__copy">
               <strong><?= trux_e(TRUX_APP_NAME) ?></strong>
-              <span>Moderation Ops</span>
+              <span>Oversight lattice</span>
             </span>
           </a>
 
@@ -474,6 +481,7 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
           <?php foreach ($opsModules as $moduleKey => $module): ?>
             <?php $moduleBadge = (int)($moderationBadgeCounts[$moduleKey] ?? 0); ?>
             <a class="opsRail__link<?= (($moderationActiveKey ?? '') === $moduleKey) ? ' is-active' : '' ?>" href="<?= TRUX_BASE_URL . $module['path'] ?>">
+              <span class="railNav__signal" aria-hidden="true"></span>
               <span class="opsRail__linkMain">
                 <strong><?= trux_e((string)$module['title']) ?></strong>
                 <small><?= trux_e((string)$module['description']) ?></small>
@@ -508,10 +516,11 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
                     </svg>
                   </span>
                   <input class="topSearch__input" name="q" value="<?= trux_e($q) ?>" placeholder="Search people, posts, hashtags" maxlength="80">
+                  <span class="topSearch__scope" aria-hidden="true">SCAN</span>
                 </label>
               </form>
             <?php endif; ?>
-            <a class="shellButton shellButton--ghost" href="<?= $selfProfileUrl ?>">Profile</a>
+            <a class="shellButton shellButton--ghost" href="<?= $selfProfileUrl ?>">Operator profile</a>
           </div>
         </header>
 
@@ -546,7 +555,7 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
                   </span>
                   <span class="shellBrand__copy">
                     <strong><?= trux_e(TRUX_APP_NAME) ?></strong>
-                    <span>Command shell</span>
+                    <span>Command lattice</span>
                   </span>
                 </a>
 
@@ -580,7 +589,7 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
               </span>
               <span class="shellBrand__copy shellBrand__copy--compact">
                 <strong><?= trux_e(TRUX_APP_NAME) ?></strong>
-                <span>Command shell</span>
+                <span>Command lattice</span>
               </span>
             </div>
 
@@ -606,12 +615,13 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
                     </svg>
                   </span>
                   <input class="topSearch__input" name="q" value="<?= trux_e($q) ?>" placeholder="Search users, posts, or hashtags" maxlength="80">
+                  <span class="topSearch__scope" aria-hidden="true">SCAN</span>
                 </label>
               </form>
             <?php endif; ?>
 
             <?php if ($user): ?>
-              <a class="shellButton shellButton--accent" href="<?= TRUX_BASE_URL ?>/new_post.php">Compose</a>
+              <a class="shellButton shellButton--accent" href="<?= TRUX_BASE_URL ?>/new_post.php">Open compose</a>
 
               <div class="nav__menu shellMenu shellMenu--notifications">
                 <button class="shellAction shellAction--icon" type="button" aria-label="Notifications">

@@ -1,0 +1,124 @@
+:root {
+  color-scheme: dark;
+
+  --rx-obsidian: #05060a;
+  --rx-void: #090a10;
+  --rx-graphite: #11121a;
+  --rx-plinth: #161625;
+  --rx-deck: #1a182a;
+  --rx-bay: #221d34;
+  --rx-frame: #2d2350;
+  --rx-violet: #6c5cff;
+  --rx-violet-strong: #978cff;
+  --rx-magenta: #ff4fd8;
+  --rx-magenta-strong: #ff92ee;
+  --rx-cyan: #59f3ff;
+  --rx-cyan-strong: #a3fbff;
+  --rx-success: #8ef0b4;
+  --rx-warning: #ffbd73;
+  --rx-danger: #ff6d97;
+
+  --ink-0: #05060a;
+  --ink-1: #090a10;
+  --ink-2: #10111a;
+  --ink-3: #151523;
+  --ink-4: #1d1b2d;
+  --ink-5: #241f38;
+
+  --surface-0: rgba(12, 11, 18, 0.94);
+  --surface-1: rgba(17, 15, 27, 0.96);
+  --surface-2: rgba(22, 19, 36, 0.98);
+  --surface-3: rgba(30, 25, 48, 0.985);
+  --surface-band: rgba(255, 255, 255, 0.02);
+  --surface-frost: rgba(255, 255, 255, 0.028);
+  --surface-overlay: rgba(4, 4, 8, 0.82);
+
+  --bg-panel: rgba(18, 14, 28, 0.9);
+  --bg-panel-strong: rgba(23, 18, 35, 0.96);
+  --bg-panel-soft: rgba(255, 255, 255, 0.02);
+
+  --text-strong: #fbf9ff;
+  --text-main: #ddd8ef;
+  --text-soft: #9b93bc;
+  --text-faint: #736b92;
+
+  --line-soft: rgba(255, 255, 255, 0.08);
+  --line-mid: rgba(167, 149, 255, 0.16);
+  --line-strong: rgba(255, 79, 216, 0.24);
+  --line-accent: rgba(89, 243, 255, 0.3);
+
+  --accent: #ff4fd8;
+  --accent-strong: #ff92ee;
+  --accent-soft: rgba(255, 79, 216, 0.16);
+  --accent-mint: #59f3ff;
+  --accent-mint-soft: rgba(89, 243, 255, 0.13);
+  --danger: #ff6d97;
+  --danger-soft: rgba(255, 109, 151, 0.16);
+  --warning: #ffbd73;
+  --warning-soft: rgba(255, 189, 115, 0.16);
+  --success: #8ef0b4;
+  --success-soft: rgba(142, 240, 180, 0.14);
+
+  --radius-1: 0.34rem;
+  --radius-2: 0.58rem;
+  --radius-3: 0.88rem;
+  --radius-4: 1.18rem;
+  --radius-pill: 0.88rem;
+
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.78rem;
+  --space-4: 1rem;
+  --space-5: 1.2rem;
+  --space-6: 1.45rem;
+  --space-7: 1.75rem;
+  --space-8: 2rem;
+  --space-10: 2.65rem;
+  --space-12: 3.3rem;
+  --space-16: 4.35rem;
+  --space-20: 5.5rem;
+
+  --shadow-xs: 0 10px 30px rgba(0, 0, 0, 0.16);
+  --shadow-sm: 0 18px 44px rgba(0, 0, 0, 0.24);
+  --shadow-md: 0 28px 76px rgba(0, 0, 0, 0.34);
+  --shadow-lg: 0 44px 120px rgba(0, 0, 0, 0.42);
+  --focus-ring:
+    0 0 0 1px rgba(89, 243, 255, 0.42),
+    0 0 0 4px rgba(89, 243, 255, 0.12);
+
+  --content-max: 1580px;
+  --app-rail-collapsed-width: 5.2rem;
+  --shell-nav-panel-width: 23rem;
+  --shell-nav-z: 72;
+  --ops-rail-width: 320px;
+  --utility-width: 300px;
+  --canvas-max: 1060px;
+  --mobile-dock-height: 0px;
+
+  --duration-fast: 140ms;
+  --duration-mid: 220ms;
+  --duration-slow: 360ms;
+  --ease-standard: cubic-bezier(0.2, 0.7, 0.1, 1);
+
+  --rx-shell-border:
+    linear-gradient(135deg, rgba(255, 79, 216, 0.18), rgba(89, 243, 255, 0.08) 40%, rgba(255, 255, 255, 0.06) 100%);
+  --rx-shell-fill:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.015)),
+    linear-gradient(135deg, rgba(108, 92, 255, 0.08), rgba(255, 79, 216, 0.06) 52%, rgba(5, 6, 10, 0) 100%);
+}
+
+*::selection {
+  background: rgba(255, 79, 216, 0.28);
+  color: var(--text-strong);
+}
+
+html {
+  background: var(--ink-0);
+}
+
+body {
+  --trux-shell-cut: 18px;
+  --trux-shell-cut-small: 12px;
+  background-color: var(--ink-0);
+  color: var(--text-main);
+}

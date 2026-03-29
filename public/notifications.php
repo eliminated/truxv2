@@ -55,6 +55,16 @@ require_once __DIR__ . '/_header.php';
     </div>
 
     <div class="inlineHeader__aside">
+      <div class="commandReadoutGrid" aria-hidden="true">
+        <div class="commandReadout">
+          <span>Operator</span>
+          <strong>@<?= trux_e((string)$me['username']) ?></strong>
+        </div>
+        <div class="commandReadout">
+          <span>Queue</span>
+          <strong><?= count($notifications) ?> signals</strong>
+        </div>
+      </div>
       <?php if ($notifications): ?>
         <div class="row">
           <form method="post" action="<?= TRUX_BASE_URL ?>/notifications.php" class="inline">
@@ -96,6 +106,7 @@ require_once __DIR__ . '/_header.php';
       <div class="notificationList">
         <?php foreach ($notifications as $notification): ?>
           <a class="notificationItem<?= empty($notification['read_at']) ? ' is-unread' : '' ?>" href="<?= trux_e(trux_notification_url($notification)) ?>">
+            <span class="notificationItem__signal" aria-hidden="true"><?= empty($notification['read_at']) ? 'NEW' : 'LOG' ?></span>
             <div class="notificationItem__body">
               <div class="notificationItem__text"><?= trux_e(trux_notification_text($notification)) ?></div>
               <div class="notificationItem__time muted" data-time-ago="1" data-time-source="<?= trux_e((string)$notification['created_at']) ?>" title="<?= trux_e(trux_format_exact_time((string)$notification['created_at'])) ?>">

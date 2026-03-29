@@ -17,9 +17,26 @@ $badgeCounts = is_array($dashboard['badge_counts'] ?? null) ? $dashboard['badge_
 require_once dirname(__DIR__) . '/_header.php';
 ?>
 
-<section class="hero">
-  <h1>Moderation</h1>
-  <p class="muted">Staff-only workspace for reports, suspicious activity, and audit review.</p>
+<section class="hero hero--moderation">
+  <span class="hero__eyebrow">Oversight command</span>
+  <div class="hero__main">
+    <h1>Moderation</h1>
+    <p class="muted">Staff-only workspace for reports, suspicious activity, escalations, appeals, and audit review.</p>
+  </div>
+  <div class="hero__readouts" aria-hidden="true">
+    <div class="heroReadout">
+      <span>Reports</span>
+      <strong><?= (int)($badgeCounts['reports'] ?? 0) ?></strong>
+    </div>
+    <div class="heroReadout">
+      <span>Signals</span>
+      <strong><?= (int)($badgeCounts['activity'] ?? 0) ?></strong>
+    </div>
+    <div class="heroReadout">
+      <span>Escalations</span>
+      <strong><?= (int)($badgeCounts['escalations'] ?? 0) ?></strong>
+    </div>
+  </div>
 </section>
 
 <section class="moderationLayout">
@@ -45,7 +62,7 @@ require_once dirname(__DIR__) . '/_header.php';
               <h2 class="h2">Needs Attention</h2>
               <p class="muted">Newest open reports.</p>
             </div>
-            <a class="btn btn--small btn--ghost" href="<?= TRUX_BASE_URL ?>/moderation/reports.php?status=open">Open queue</a>
+            <a class="shellButton shellButton--ghost" href="<?= TRUX_BASE_URL ?>/moderation/reports.php?status=open">Open queue</a>
           </div>
 
           <?php if (!$openReports): ?>
@@ -87,7 +104,7 @@ require_once dirname(__DIR__) . '/_header.php';
               <h2 class="h2">Suspicious Activity</h2>
               <p class="muted">Newest open signals.</p>
             </div>
-            <a class="btn btn--small btn--ghost" href="<?= TRUX_BASE_URL ?>/moderation/activity.php?status=open">Review activity</a>
+            <a class="shellButton shellButton--ghost" href="<?= TRUX_BASE_URL ?>/moderation/activity.php?status=open">Review activity</a>
           </div>
 
           <?php if (!$openSuspicious): ?>
@@ -134,7 +151,7 @@ require_once dirname(__DIR__) . '/_header.php';
               <h2 class="h2">Recent Audit Log</h2>
               <p class="muted">Latest staff actions recorded.</p>
             </div>
-            <a class="btn btn--small btn--ghost" href="<?= TRUX_BASE_URL ?>/moderation/audit_logs.php">View all logs</a>
+            <a class="shellButton shellButton--ghost" href="<?= TRUX_BASE_URL ?>/moderation/audit_logs.php">View all logs</a>
           </div>
 
           <?php if (!$recentAuditLogs): ?>
@@ -216,7 +233,7 @@ require_once dirname(__DIR__) . '/_header.php';
                 <h2 class="h2">Open Escalations</h2>
                 <p class="muted">Highest-level review queue.</p>
               </div>
-              <a class="btn btn--small btn--ghost" href="<?= TRUX_BASE_URL ?>/moderation/escalations.php">Open queue</a>
+              <a class="shellButton shellButton--ghost" href="<?= TRUX_BASE_URL ?>/moderation/escalations.php">Open queue</a>
             </div>
             <?php if (!$openEscalations): ?>
               <div class="moderationEmptyState">
@@ -246,7 +263,7 @@ require_once dirname(__DIR__) . '/_header.php';
                 <h2 class="h2">Open Appeals</h2>
                 <p class="muted">Recent account-action appeals.</p>
               </div>
-              <a class="btn btn--small btn--ghost" href="<?= TRUX_BASE_URL ?>/moderation/appeals.php">Open queue</a>
+              <a class="shellButton shellButton--ghost" href="<?= TRUX_BASE_URL ?>/moderation/appeals.php">Open queue</a>
             </div>
             <?php if (!$openAppeals): ?>
               <div class="moderationEmptyState">

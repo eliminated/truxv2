@@ -1,0 +1,852 @@
+.appRail,
+.opsRail {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  display: grid;
+  background:
+    linear-gradient(180deg, rgba(8, 8, 12, 0.98), rgba(14, 12, 22, 0.96));
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.02);
+}
+
+.appRail {
+  z-index: var(--shell-nav-z);
+  width: var(--app-rail-collapsed-width);
+  padding: var(--space-4) 0;
+}
+
+.opsRail {
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: var(--space-5);
+  width: var(--ops-rail-width);
+  padding: var(--space-5);
+}
+
+.appRail__shell {
+  height: calc(100vh - (var(--space-4) * 2));
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  gap: var(--space-4);
+  justify-items: center;
+}
+
+.appRail__flyout {
+  position: fixed;
+  inset: 0 auto 0 0;
+  width: min(calc(100vw - 1rem), 24rem);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateX(-100%);
+  transition:
+    opacity var(--duration-mid) var(--ease-standard),
+    transform var(--duration-mid) var(--ease-standard),
+    visibility var(--duration-mid) var(--ease-standard);
+}
+
+.appRail.is-open .appRail__flyout {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateX(0);
+}
+
+.appRail__flyoutInner,
+.shellNavDrawer__panel {
+  height: 100dvh;
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: var(--space-4);
+  padding: var(--space-5);
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  background:
+    linear-gradient(180deg, rgba(12, 11, 18, 0.98), rgba(22, 19, 34, 0.98));
+  box-shadow: 28px 0 110px rgba(0, 0, 0, 0.42);
+}
+
+.appRail__flyoutInner::before,
+.shellNavDrawer__panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, rgba(255, 79, 216, 0.07), transparent 15%),
+    linear-gradient(90deg, rgba(89, 243, 255, 0.05), transparent 20%);
+}
+
+.appRail__flyoutHead,
+.opsRail__head {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.appRail__flyoutBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.shellBrand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3);
+  min-width: 0;
+  text-decoration: none;
+}
+
+.shellBrand__mark {
+  width: 3rem;
+  height: 3rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1.05rem 0.4rem 1.05rem 0.4rem;
+  background:
+    linear-gradient(135deg, rgba(108, 92, 255, 0.22), rgba(255, 79, 216, 0.18) 56%, rgba(89, 243, 255, 0.16)),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.02));
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.02),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 12px 30px rgba(0, 0, 0, 0.24);
+}
+
+.shellBrand__mark img {
+  width: 1.35rem;
+  height: 1.35rem;
+  filter: saturate(0) brightness(2.2);
+}
+
+.shellBrand__copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.16rem;
+}
+
+.shellBrand__copy strong {
+  color: var(--text-strong);
+  font-size: 0.96rem;
+  line-height: 1;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+}
+
+.shellBrand__copy span {
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.shellBrand__copy--compact strong {
+  font-size: 0.84rem;
+}
+
+.appRail__brandLink,
+.opsRail__staff,
+.railPresence__card,
+.railPresence__guest {
+  padding: var(--space-4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem 0.4rem 1rem 0.4rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.015)),
+    rgba(10, 9, 16, 0.62);
+}
+
+.appRail__brandLink {
+  background: transparent;
+  box-shadow: none;
+}
+
+.appRail__brandLink .shellBrand__mark,
+.shellNavDrawer__head .shellBrand__mark {
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.shellNavToggle,
+.railHomeButton,
+.appRail__authControl {
+  width: 2.85rem;
+  min-width: 2.85rem;
+  min-height: 2.85rem;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 0.92rem 0.32rem 0.92rem 0.32rem;
+  color: var(--text-soft);
+  transition:
+    transform var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.railHomeButton,
+.appRail__authControl {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.01)),
+    rgba(12, 11, 19, 0.78);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
+}
+
+.shellNavToggle {
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.shellNavToggle:hover,
+.shellNavToggle:focus-visible,
+.shellNavToggle[aria-expanded="true"] {
+  transform: none;
+  color: var(--text-strong);
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.railHomeButton:hover,
+.railHomeButton.is-active,
+.appRail__authControl:hover,
+.appRail__authControl.is-active,
+.appRail__authControl:focus-visible {
+  transform: translateY(-2px);
+  color: var(--text-strong);
+  border-color: rgba(255, 79, 216, 0.22);
+  background:
+    linear-gradient(180deg, rgba(255, 79, 216, 0.16), rgba(89, 243, 255, 0.06)),
+    rgba(18, 15, 27, 0.94);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 14px 28px rgba(0, 0, 0, 0.28);
+}
+
+.shellNavToggle__icon svg,
+.railHomeButton svg,
+.appRail__authControl svg {
+  width: 1.08rem;
+  height: 1.08rem;
+}
+
+.shellNavToggle {
+  position: relative;
+  overflow: hidden;
+}
+
+.shellNavToggle__icon {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  transition:
+    opacity var(--duration-mid) var(--ease-standard),
+    transform var(--duration-mid) var(--ease-standard);
+}
+
+.shellNavToggle__icon--open {
+  opacity: 0;
+  transform: rotate(-14deg) scale(0.82);
+}
+
+.shellNavToggle[aria-expanded="true"] .shellNavToggle__icon--closed {
+  opacity: 0;
+  transform: rotate(12deg) scale(0.84);
+}
+
+.shellNavToggle[aria-expanded="true"] .shellNavToggle__icon--open {
+  opacity: 1;
+  transform: rotate(0deg) scale(1);
+}
+
+.shellNavToggle--mobile,
+.railHomeButton--mobile,
+.shellNavToggle--drawer {
+  width: 2.9rem;
+  min-width: 2.9rem;
+  min-height: 2.9rem;
+}
+
+.shellNavToggle--drawer {
+  justify-self: end;
+}
+
+.railCompose {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem 0.35rem 1rem 0.35rem;
+  background: transparent;
+  box-shadow: none;
+  transition:
+    transform var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard);
+}
+
+.railCompose:hover,
+.railCompose.is-active {
+  transform: translateY(-2px);
+  border-color: rgba(255, 79, 216, 0.24);
+  background: transparent;
+  box-shadow: none;
+}
+
+.railCompose__plus {
+  width: 2.3rem;
+  height: 2.3rem;
+  display: grid;
+  place-items: center;
+  color: var(--text-strong);
+  font-size: 1.15rem;
+  font-weight: 800;
+  border: 0;
+  border-radius: 0.8rem 0.28rem 0.8rem 0.28rem;
+  background: transparent;
+}
+
+.railCompose__copy {
+  min-width: 0;
+  display: grid;
+  gap: 0.1rem;
+}
+
+.railCompose__copy strong {
+  color: var(--text-strong);
+  font-size: 0.92rem;
+}
+
+.railCompose__copy small {
+  color: var(--text-soft);
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.shellNavToggle:hover,
+.shellNavToggle:focus-visible,
+.shellNavToggle[aria-expanded="true"],
+.railHomeButton:hover,
+.railHomeButton.is-active,
+.appRail__authControl:hover,
+.appRail__authControl.is-active,
+.appRail__authControl:focus-visible {
+  color: var(--text-strong);
+}
+
+.railNav,
+.opsRail__nav {
+  display: grid;
+  gap: 0.55rem;
+  min-height: 0;
+  align-content: start;
+  overflow: auto;
+  padding-right: 0.1rem;
+}
+
+.railNav__item,
+.opsRail__link {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  gap: var(--space-3);
+  align-items: center;
+  padding: 0.9rem 1rem;
+  border: 1px solid transparent;
+  border-radius: 0.98rem 0.32rem 0.98rem 0.32rem;
+  color: var(--text-soft);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.015), rgba(255, 255, 255, 0.008)),
+    rgba(255, 255, 255, 0.01);
+  transition:
+    transform var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard),
+  box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.railNav__item {
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
+}
+
+.opsRail__link {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.railNav__item:hover,
+.railNav__item.is-active,
+.opsRail__link:hover,
+.opsRail__link.is-active {
+  transform: translateX(6px);
+  color: var(--text-strong);
+  border-color: rgba(255, 79, 216, 0.18);
+  background:
+    linear-gradient(90deg, rgba(89, 243, 255, 0.08), transparent 22%),
+    linear-gradient(180deg, rgba(255, 79, 216, 0.12), rgba(255, 255, 255, 0.02)),
+    rgba(18, 14, 28, 0.88);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.railNav__item--button {
+  appearance: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.railNav__icon {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 0.8rem 0.25rem 0.8rem 0.25rem;
+  background:
+    linear-gradient(135deg, rgba(108, 92, 255, 0.18), rgba(255, 79, 216, 0.08) 55%, rgba(255, 255, 255, 0.03)),
+    rgba(10, 9, 16, 0.78);
+}
+
+.railNav__icon svg {
+  width: 0.96rem;
+  height: 0.96rem;
+}
+
+.railNav__copy,
+.opsRail__linkMain {
+  min-width: 0;
+  display: grid;
+  gap: 0.14rem;
+}
+
+.railNav__copy strong,
+.opsRail__linkMain strong {
+  color: inherit;
+  font-size: 0.9rem;
+  letter-spacing: 0.04em;
+}
+
+.railNav__copy small,
+.opsRail__linkMain small,
+.opsRail__staff span,
+.railPresence__copy small,
+.railPresence__guest span {
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  line-height: 1.35;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.railNav__badge,
+.opsRail__badge,
+.menuBadge,
+.shellAction__badge {
+  min-width: 1.6rem;
+  height: 1.6rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.35rem;
+  border: 1px solid rgba(255, 79, 216, 0.28);
+  border-radius: 0.75rem 0.22rem 0.75rem 0.22rem;
+  background:
+    linear-gradient(180deg, rgba(255, 79, 216, 0.22), rgba(255, 79, 216, 0.1)),
+    rgba(15, 12, 20, 0.78);
+  color: var(--text-strong);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.railPresence {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.railPresence__card--profile {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.railPresence__identity {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-3);
+  align-items: center;
+}
+
+.railPresence__avatar {
+  width: 2.9rem;
+  height: 2.9rem;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.95rem 0.32rem 0.95rem 0.32rem;
+  background:
+    linear-gradient(135deg, rgba(89, 243, 255, 0.18), rgba(255, 79, 216, 0.12)),
+    rgba(8, 8, 12, 0.56);
+  color: var(--text-strong);
+  font-weight: 800;
+}
+
+.railPresence__avatarImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.railPresence__copy strong,
+.opsRail__staff strong,
+.railPresence__guest strong {
+  color: var(--text-strong);
+  font-size: 0.92rem;
+}
+
+.railPresence__tools,
+.shellTopbar__actions,
+.opsTopbar__actions,
+.authTopbar__nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.railPresence__tool,
+.shellAction,
+.notificationMenu__link,
+.authTopbar__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.5rem;
+  padding: 0.42rem 0.78rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.86rem 0.28rem 0.86rem 0.28rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)),
+    rgba(10, 9, 15, 0.42);
+  color: var(--text-soft);
+  transition:
+    transform var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard);
+}
+
+.railPresence__tool {
+  width: 2.45rem;
+  min-width: 2.45rem;
+  padding: 0;
+}
+
+.railPresence__tool:hover,
+.railPresence__tool:focus-visible,
+.shellAction:hover,
+.shellAction:focus-visible,
+.notificationMenu__link:hover,
+.authTopbar__link:hover,
+.authTopbar__link.is-active {
+  transform: translateY(-2px);
+  color: var(--text-strong);
+  border-color: rgba(89, 243, 255, 0.22);
+  background:
+    linear-gradient(180deg, rgba(89, 243, 255, 0.12), rgba(255, 79, 216, 0.06)),
+    rgba(14, 12, 22, 0.88);
+}
+
+.shellTopbar,
+.opsTopbar,
+.authTopbar {
+  position: sticky;
+  top: 0;
+  z-index: 48;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  min-height: 4.85rem;
+  padding: var(--space-3) var(--space-5);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  background:
+    linear-gradient(180deg, rgba(7, 7, 11, 0.95), rgba(13, 12, 20, 0.92));
+  box-shadow: 0 18px 52px rgba(0, 0, 0, 0.22);
+}
+
+.shellTopbar__mobileCore {
+  display: none;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.shellTopbar__title,
+.opsTopbar__title {
+  min-width: 0;
+  display: grid;
+  gap: 0.18rem;
+}
+
+.shellTopbar__eyebrow,
+.opsTopbar__eyebrow,
+.shellNavDrawer__eyebrow,
+.opsRail__eyebrow {
+  color: var(--text-soft);
+  font-size: 0.68rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  font-weight: 800;
+}
+
+.shellTopbar__title h1,
+.opsTopbar__title h1 {
+  font-size: clamp(1.08rem, 1.55vw, 1.52rem);
+  color: var(--text-strong);
+}
+
+.topSearch {
+  min-width: min(28rem, 31vw);
+}
+
+.topSearch--compact {
+  min-width: min(21.5rem, 24vw);
+}
+
+.topSearch__field {
+  min-height: 2.95rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.65rem;
+  align-items: center;
+  padding: 0 0.85rem 0 0.95rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem 0.3rem 1rem 0.3rem;
+  background:
+    linear-gradient(90deg, rgba(89, 243, 255, 0.07), transparent 22%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.024), rgba(255, 255, 255, 0.012)),
+    rgba(10, 9, 16, 0.86);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 14px 28px rgba(0, 0, 0, 0.18);
+}
+
+.topSearch__field:focus-within {
+  border-color: rgba(89, 243, 255, 0.28);
+  box-shadow: var(--focus-ring);
+}
+
+.topSearch__icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  display: grid;
+  place-items: center;
+  color: var(--rx-cyan);
+}
+
+.topSearch__icon svg {
+  width: 0.92rem;
+  height: 0.92rem;
+}
+
+.topSearch__input {
+  min-width: 0;
+  color: var(--text-main);
+  font-size: 0.88rem;
+  letter-spacing: 0.04em;
+  border: 0;
+  background: transparent;
+  outline: none;
+}
+
+.topSearch__input::placeholder {
+  color: rgba(155, 147, 188, 0.82);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+}
+
+.shellNavDrawer {
+  position: fixed;
+  inset: 0;
+  z-index: calc(var(--shell-nav-z) + 6);
+  pointer-events: none;
+}
+
+.shellNavDrawer__backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(2, 2, 6, 0.74);
+  opacity: 0;
+  transition: opacity var(--duration-mid) var(--ease-standard);
+}
+
+.shellNavDrawer.is-open {
+  pointer-events: auto;
+}
+
+.shellNavDrawer.is-open .shellNavDrawer__backdrop {
+  opacity: 1;
+}
+
+.shellNavDrawer__panel {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: min(calc(100vw - 1rem), 23rem);
+  max-width: 100vw;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
+  transform: translateX(-100%);
+  transition: transform var(--duration-mid) var(--ease-standard);
+}
+
+.shellNavDrawer.is-open .shellNavDrawer__panel {
+  transform: translateX(0);
+}
+
+.shellNavDrawer__head,
+.shellSheet__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.shellNavDrawer__body {
+  min-height: 0;
+  min-width: 0;
+  display: grid;
+  gap: var(--space-4);
+  align-content: start;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding-right: 0.2rem;
+}
+
+.shellNavDrawer__body > * {
+  min-width: 0;
+}
+
+.authTopbar__link {
+  text-decoration: none;
+}
+
+.railNav__signal {
+  width: 0.3rem;
+  height: 2.6rem;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(89, 243, 255, 0), rgba(89, 243, 255, 0.95), rgba(255, 79, 216, 0.78));
+  opacity: 0.45;
+  transform: scaleY(0.7);
+  transform-origin: center;
+  transition:
+    opacity var(--duration-fast) var(--ease-standard),
+    transform var(--duration-fast) var(--ease-standard),
+    box-shadow var(--duration-fast) var(--ease-standard);
+}
+
+.opsRail__link .railNav__signal {
+  width: 0.74rem;
+  height: 0.74rem;
+  justify-self: center;
+  align-self: center;
+  border-radius: 0.22rem;
+  background:
+    linear-gradient(135deg, rgba(89, 243, 255, 0.98), rgba(255, 79, 216, 0.82));
+  opacity: 0.72;
+  transform: scale(0.92);
+}
+
+.railNav__item:hover .railNav__signal,
+.railNav__item.is-active .railNav__signal,
+.opsRail__link:hover .railNav__signal,
+.opsRail__link.is-active .railNav__signal {
+  opacity: 1;
+  transform: scaleY(1);
+  box-shadow: 0 0 18px rgba(89, 243, 255, 0.28);
+}
+
+.opsRail__link:hover .railNav__signal,
+.opsRail__link.is-active .railNav__signal {
+  transform: scale(1.08);
+  box-shadow: 0 0 14px rgba(89, 243, 255, 0.24);
+}
+
+.railNav__copyMeta {
+  display: block;
+}
+
+.railPresence__eyebrow {
+  color: var(--rx-cyan-strong);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.railPresence__actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.railPresence__action {
+  min-height: 2.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.9rem 0.24rem 0.9rem 0.24rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01)),
+    rgba(10, 9, 15, 0.42);
+  color: var(--text-soft);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition:
+    transform var(--duration-fast) var(--ease-standard),
+    border-color var(--duration-fast) var(--ease-standard),
+    color var(--duration-fast) var(--ease-standard),
+    background var(--duration-fast) var(--ease-standard);
+}
+
+.railPresence__action:hover,
+.railPresence__action:focus-visible {
+  transform: translateY(-2px);
+  color: var(--text-strong);
+  border-color: rgba(255, 79, 216, 0.22);
+  background:
+    linear-gradient(135deg, rgba(255, 79, 216, 0.16), rgba(89, 243, 255, 0.06)),
+    rgba(18, 14, 28, 0.86);
+}
+
+.topSearch__scope {
+  min-width: 3.5rem;
+  height: 1.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.48rem;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--rx-cyan-strong);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}

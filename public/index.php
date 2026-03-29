@@ -85,6 +85,16 @@ require_once __DIR__ . '/_header.php';
     </div>
 
     <div class="inlineHeader__aside">
+      <div class="commandReadoutGrid" aria-hidden="true">
+        <div class="commandReadout">
+          <span>Source</span>
+          <strong><?= $feedMode === 'following' ? 'Follow graph' : 'Open discovery' ?></strong>
+        </div>
+        <div class="commandReadout">
+          <span>Output</span>
+          <strong><?= count($posts) ?> packets</strong>
+        </div>
+      </div>
       <div class="inlineHeader__meta">
         <span><?= $me ? 'Signed in as @' . trux_e((string)$me['username']) : 'Guest browsing' ?></span>
         <strong><?= $feedMode === 'following' ? 'Following mode' : 'Discovery mode' ?></strong>
@@ -176,7 +186,10 @@ require_once __DIR__ . '/_header.php';
           <div class="utilityPanel__stack">
             <section class="utilityBand">
               <div class="utilityBand__head">
-                <h4>Trending hashtags</h4>
+                <div>
+                  <span class="utilityBand__eyebrow">Topic radar</span>
+                  <h4>Trending hashtags</h4>
+                </div>
                 <span><?= count($trendingHashtags) ?> live</span>
               </div>
 
@@ -194,6 +207,7 @@ require_once __DIR__ . '/_header.php';
                     }
                     ?>
                     <a class="tagChip" href="<?= TRUX_BASE_URL ?>/search.php?q=<?= urlencode('#' . $hashtag) ?>&filter=hashtags">
+                      <span class="tagChip__signal" aria-hidden="true">TAG</span>
                       <strong>#<?= trux_e($hashtag) ?></strong>
                       <span><?= number_format($usageCount) ?> post<?= $usageCount === 1 ? '' : 's' ?><?= $recentHits > 0 ? ' · ' . number_format($recentHits) . ' recent' : '' ?></span>
                     </a>
@@ -204,7 +218,10 @@ require_once __DIR__ . '/_header.php';
 
             <section class="utilityBand">
               <div class="utilityBand__head">
-                <h4><?= $me ? 'Who to follow' : 'Suggested creators' ?></h4>
+                <div>
+                  <span class="utilityBand__eyebrow">Identity radar</span>
+                  <h4><?= $me ? 'Who to follow' : 'Suggested creators' ?></h4>
+                </div>
                 <span><?= count($suggestedUsers) ?> suggestions</span>
               </div>
 
@@ -228,6 +245,7 @@ require_once __DIR__ . '/_header.php';
                     $displayName = trim((string)($suggestion['display_name'] ?? ''));
                     ?>
                     <div class="userBand">
+                      <span class="userBand__signal" aria-hidden="true">USR</span>
                       <div class="userBand__copy">
                         <div class="userBand__title">
                           <a href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= urlencode($suggestedUsername) ?>">@<?= trux_e($suggestedUsername) ?></a>
