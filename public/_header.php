@@ -68,7 +68,7 @@ $showGlobalSearch = $pageLayout !== 'auth';
 $pageContextLabel = match ($pageLayout) {
   'moderation' => 'Ops Workspace',
   'auth' => 'Gateway',
-  default => 'Command Shell',
+  default => 'TruX',
 };
 $pageContextTitle = match ($pageSlug) {
   'home' => 'Feed',
@@ -395,6 +395,18 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= trux_e($pageTitle) ?></title>
+  <script>
+    (function () {
+      try {
+        var theme = localStorage.getItem('trux:theme');
+        if (theme === 'graphite') {
+          document.documentElement.classList.add('theme-graphite');
+        }
+      } catch (err) {
+        // no-op
+      }
+    })();
+  </script>
   <?php
   $faviconVersion = max(
     (int)(filemtime(__DIR__ . '/favicon.php') ?: 0),
@@ -445,7 +457,7 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
           </span>
           <span class="shellBrand__copy">
             <strong><?= trux_e(TRUX_APP_NAME) ?></strong>
-            <span>Gateway lattice</span>
+            <span>Welcome back</span>
           </span>
         </a>
         <nav class="authTopbar__nav" aria-label="Account navigation">
@@ -466,7 +478,7 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
             </span>
             <span class="shellBrand__copy">
               <strong><?= trux_e(TRUX_APP_NAME) ?></strong>
-              <span>Oversight lattice</span>
+              <span>Moderation</span>
             </span>
           </a>
 
@@ -516,11 +528,11 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
                     </svg>
                   </span>
                   <input class="topSearch__input" name="q" value="<?= trux_e($q) ?>" placeholder="Search people, posts, hashtags" maxlength="80">
-                  <span class="topSearch__scope" aria-hidden="true">SCAN</span>
+                  <span class="topSearch__scope" aria-hidden="true">Search</span>
                 </label>
               </form>
             <?php endif; ?>
-            <a class="shellButton shellButton--ghost" href="<?= $selfProfileUrl ?>">Operator profile</a>
+            <a class="shellButton shellButton--ghost" href="<?= $selfProfileUrl ?>">My profile</a>
           </div>
         </header>
 
@@ -555,7 +567,7 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
                   </span>
                   <span class="shellBrand__copy">
                     <strong><?= trux_e(TRUX_APP_NAME) ?></strong>
-                    <span>Command lattice</span>
+                    <span>Social network</span>
                   </span>
                 </a>
 
@@ -589,7 +601,7 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
               </span>
               <span class="shellBrand__copy shellBrand__copy--compact">
                 <strong><?= trux_e(TRUX_APP_NAME) ?></strong>
-                <span>Command lattice</span>
+                <span>Social network</span>
               </span>
             </div>
 
@@ -615,7 +627,7 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
                     </svg>
                   </span>
                   <input class="topSearch__input" name="q" value="<?= trux_e($q) ?>" placeholder="Search users, posts, or hashtags" maxlength="80">
-                  <span class="topSearch__scope" aria-hidden="true">SCAN</span>
+                  <span class="topSearch__scope" aria-hidden="true">Search</span>
                 </label>
               </form>
             <?php endif; ?>

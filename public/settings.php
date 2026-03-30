@@ -46,8 +46,8 @@ $settingsSections = [
   ],
   'interface' => [
     'title' => 'Interface',
-    'nav_description' => 'Current UI status',
-    'hero_description' => 'Check the current state of interface-related options.',
+    'nav_description' => 'Theme and layout',
+    'hero_description' => 'Choose appearance options that improve readability and comfort.',
   ],
 ];
 
@@ -127,21 +127,21 @@ require_once __DIR__ . '/_header.php';
 <div class="pageFrame pageFrame--settings">
   <section class="inlineHeader inlineHeader--settings">
     <div class="inlineHeader__main">
-      <span class="inlineHeader__eyebrow">Workspace center</span>
+      <span class="inlineHeader__eyebrow">Account center</span>
       <div class="inlineHeader__titleWrap">
         <h2 class="inlineHeader__title">Settings</h2>
         <p class="inlineHeader__copy"><?= trux_e((string)$activeSectionMeta['hero_description']) ?></p>
       </div>
     </div>
     <div class="inlineHeader__aside">
-      <div class="commandReadoutGrid" aria-hidden="true">
-        <div class="commandReadout">
-          <span>Operator</span>
+        <div class="commandReadoutGrid" aria-hidden="true">
+          <div class="commandReadout">
+          <span>Account</span>
           <strong>@<?= trux_e((string)$me['username']) ?></strong>
         </div>
         <div class="commandReadout">
           <span>Sections</span>
-          <strong><?= count($settingsSections) ?> modules</strong>
+          <strong><?= count($settingsSections) ?> options</strong>
         </div>
       </div>
       <div class="inlineHeader__meta">
@@ -369,16 +369,19 @@ require_once __DIR__ . '/_header.php';
           <div class="settingSection">
             <div class="settingSection__head">
               <span class="settingSection__eyebrow">Interface</span>
-              <h3>UI status</h3>
-              <p class="muted">A quick status check for UI-related options.</p>
+              <h3>Appearance</h3>
+              <p class="muted">Pick the look that feels best for your reading comfort.</p>
             </div>
 
             <div class="settingRow">
               <span class="settingRow__label">
-                <strong>Visual system</strong>
-                <small class="muted">TruX now runs on the command-shell interface foundation across the site.</small>
+                <strong>Theme</strong>
+                <small class="muted">This preference is saved in your browser on this device.</small>
               </span>
-              <strong class="muted">Unified</strong>
+              <div class="themePresetSwitch" role="group" aria-label="Theme preset">
+                <button class="shellButton shellButton--ghost themePresetSwitch__btn" type="button" data-theme-switch="aurora">Soft Aurora</button>
+                <button class="shellButton shellButton--ghost themePresetSwitch__btn" type="button" data-theme-switch="graphite">Graphite Electric</button>
+              </div>
             </div>
           </div>
         </section>

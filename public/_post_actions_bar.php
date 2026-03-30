@@ -40,7 +40,7 @@ $isLoggedIn = (bool)$isLoggedIn;
   <?php endif; ?>
 
   <button
-    class="postAct"
+    class="postAct postAct--primary"
     type="button"
     data-comment-open="1"
     data-post-action-kind="comment"

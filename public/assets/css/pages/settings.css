@@ -50,3 +50,21 @@
   gap: var(--space-4);
   padding: var(--space-5);
 }
+
+.themePresetSwitch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+  justify-content: flex-end;
+}
+
+.themePresetSwitch__btn {
+  min-height: 2.35rem;
+  font-size: 0.82rem;
+}
+
+.themePresetSwitch__btn.is-active {
+  border-color: var(--line-accent);
+  color: var(--text-strong);
+  background: var(--accent-soft);
+}

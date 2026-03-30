@@ -69,9 +69,9 @@ require_once __DIR__ . '/_header.php';
 <div class="pageFrame pageFrame--feed">
   <section class="inlineHeader inlineHeader--feed">
     <div class="inlineHeader__main">
-      <span class="inlineHeader__eyebrow">Command feed</span>
+      <span class="inlineHeader__eyebrow">Home feed</span>
       <div class="inlineHeader__titleWrap">
-        <h2 class="inlineHeader__title"><?= $feedMode === 'following' ? 'Following stream' : 'Discovery stream' ?></h2>
+        <h2 class="inlineHeader__title"><?= $feedMode === 'following' ? 'Following feed' : 'For you' ?></h2>
         <p class="inlineHeader__copy">
         <?php if ($feedMode === 'following' && $me): ?>
           Latest posts from people you follow, plus your own posts.
@@ -88,11 +88,11 @@ require_once __DIR__ . '/_header.php';
       <div class="commandReadoutGrid" aria-hidden="true">
         <div class="commandReadout">
           <span>Source</span>
-          <strong><?= $feedMode === 'following' ? 'Follow graph' : 'Open discovery' ?></strong>
+          <strong><?= $feedMode === 'following' ? 'People you follow' : 'Recommended posts' ?></strong>
         </div>
         <div class="commandReadout">
-          <span>Output</span>
-          <strong><?= count($posts) ?> packets</strong>
+          <span>Loaded</span>
+          <strong><?= count($posts) ?> posts</strong>
         </div>
       </div>
       <div class="inlineHeader__meta">
@@ -107,7 +107,7 @@ require_once __DIR__ . '/_header.php';
       <section class="timelineFrame">
         <div class="timelineFrame__head">
           <div>
-            <span class="timelineFrame__eyebrow"><?= $feedMode === 'following' ? 'Following' : 'Discovery' ?></span>
+            <span class="timelineFrame__eyebrow"><?= $feedMode === 'following' ? 'Following' : 'For you' ?></span>
             <h3><?= $feedMode === 'following' ? 'Recent posts from your network' : 'Live timeline' ?></h3>
           </div>
           <div class="timelineFrame__actions">
@@ -175,19 +175,28 @@ require_once __DIR__ . '/_header.php';
     </div>
 
     <?php if ($feedMode === 'all'): ?>
-      <aside class="feedScene__rail">
+      <aside class="feedScene__rail" data-feed-utility-rail>
+        <div class="feedRailControls">
+          <button
+            class="shellButton shellButton--ghost feedRailControls__toggle"
+            type="button"
+            data-feed-rail-toggle="1"
+            aria-expanded="true">
+            Hide suggestions
+          </button>
+        </div>
         <section class="utilityPanel">
           <div class="utilityPanel__head">
-            <span class="utilityPanel__eyebrow">Signals</span>
-            <h3>Discovery radar</h3>
-            <p class="muted">Trending topics and people worth opening next.</p>
+            <span class="utilityPanel__eyebrow">Explore</span>
+            <h3>Suggestions</h3>
+            <p class="muted">Trending topics and people worth checking out next.</p>
           </div>
 
           <div class="utilityPanel__stack">
             <section class="utilityBand">
               <div class="utilityBand__head">
                 <div>
-                  <span class="utilityBand__eyebrow">Topic radar</span>
+                  <span class="utilityBand__eyebrow">Topics</span>
                   <h4>Trending hashtags</h4>
                 </div>
                 <span><?= count($trendingHashtags) ?> live</span>
@@ -219,7 +228,7 @@ require_once __DIR__ . '/_header.php';
             <section class="utilityBand">
               <div class="utilityBand__head">
                 <div>
-                  <span class="utilityBand__eyebrow">Identity radar</span>
+                  <span class="utilityBand__eyebrow">People</span>
                   <h4><?= $me ? 'Who to follow' : 'Suggested creators' ?></h4>
                 </div>
                 <span><?= count($suggestedUsers) ?> suggestions</span>

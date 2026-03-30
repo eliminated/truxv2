@@ -25,6 +25,26 @@
   min-width: 0;
 }
 
+.feedRailControls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: var(--space-3);
+}
+
+.feedRailControls__toggle {
+  min-height: 2.4rem;
+  padding: 0.45rem 0.85rem;
+  font-size: 0.82rem;
+}
+
+body.feed-rail-collapsed .feedScene {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+body.feed-rail-collapsed .feedScene__rail {
+  display: none;
+}
+
 .pageFrame--focus {
   justify-items: start;
 }

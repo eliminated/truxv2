@@ -122,3 +122,74 @@ body {
   background-color: var(--ink-0);
   color: var(--text-main);
 }
+
+/* Default preset: Soft Aurora */
+:root {
+  --ink-0: #070b13;
+  --ink-1: #0c1220;
+  --ink-2: #111a2b;
+  --ink-3: #172236;
+  --ink-4: #1e2b42;
+  --ink-5: #253550;
+
+  --surface-0: rgba(12, 18, 30, 0.95);
+  --surface-1: rgba(17, 24, 39, 0.97);
+  --surface-2: rgba(22, 31, 47, 0.98);
+  --surface-3: rgba(28, 40, 58, 0.985);
+
+  --text-strong: #f7fbff;
+  --text-main: #d4deef;
+  --text-soft: #a2b2cf;
+  --text-faint: #7f8faa;
+
+  --line-soft: rgba(255, 255, 255, 0.075);
+  --line-mid: rgba(160, 186, 232, 0.16);
+  --line-strong: rgba(98, 156, 255, 0.24);
+  --line-accent: rgba(126, 211, 255, 0.34);
+
+  --accent: #76beff;
+  --accent-strong: #b0dbff;
+  --accent-soft: rgba(118, 190, 255, 0.16);
+  --accent-mint: #77ead4;
+  --accent-mint-soft: rgba(119, 234, 212, 0.13);
+
+  --shadow-xs: 0 8px 26px rgba(0, 0, 0, 0.16);
+  --shadow-sm: 0 14px 36px rgba(0, 0, 0, 0.24);
+  --shadow-md: 0 22px 62px rgba(0, 0, 0, 0.32);
+  --shadow-lg: 0 34px 98px rgba(0, 0, 0, 0.38);
+
+  --focus-ring:
+    0 0 0 1px rgba(126, 211, 255, 0.4),
+    0 0 0 4px rgba(126, 211, 255, 0.12);
+}
+
+/* Optional preset: Graphite Electric */
+html.theme-graphite {
+  --ink-0: #05060a;
+  --ink-1: #090a10;
+  --ink-2: #10111a;
+  --ink-3: #151523;
+  --ink-4: #1d1b2d;
+  --ink-5: #241f38;
+
+  --surface-0: rgba(12, 11, 18, 0.94);
+  --surface-1: rgba(17, 15, 27, 0.96);
+  --surface-2: rgba(22, 19, 36, 0.98);
+  --surface-3: rgba(30, 25, 48, 0.985);
+
+  --text-strong: #fbf9ff;
+  --text-main: #ddd8ef;
+  --text-soft: #9b93bc;
+  --text-faint: #736b92;
+
+  --line-soft: rgba(255, 255, 255, 0.08);
+  --line-mid: rgba(167, 149, 255, 0.16);
+  --line-strong: rgba(255, 79, 216, 0.24);
+  --line-accent: rgba(89, 243, 255, 0.3);
+
+  --accent: #ff4fd8;
+  --accent-strong: #ff92ee;
+  --accent-soft: rgba(255, 79, 216, 0.16);
+  --accent-mint: #59f3ff;
+  --accent-mint-soft: rgba(89, 243, 255, 0.13);
+}
