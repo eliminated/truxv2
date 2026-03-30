@@ -13,7 +13,7 @@ if ($uid > 0 && $token !== '') {
     $verificationResult = trux_verify_email_token($uid, $token);
     if ($verificationResult['ok'] ?? false) {
         trux_flash_set('success', 'Your email address is now verified.');
-        trux_redirect('/');
+        trux_redirect(trux_is_logged_in() ? '/settings.php?section=account' : '/login.php');
     }
 
     $errorCode = (string)($verificationResult['error'] ?? 'invalid');

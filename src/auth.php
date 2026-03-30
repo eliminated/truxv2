@@ -5,6 +5,10 @@ function trux_normalize_email_address(string $email): string {
     return strtolower(trim($email));
 }
 
+function trux_current_app_datetime(): string {
+    return date('Y-m-d H:i:s');
+}
+
 function trux_email_verification_ttl_seconds(): int {
     return 5 * 60;
 }
@@ -253,21 +257,23 @@ function trux_issue_email_verification_token(int $userId, bool $respectCooldown 
         return ['ok' => false, 'error' => 'token_generation_failed', 'user' => $user];
     }
 
+    $issuedAt = trux_current_app_datetime();
+
     try {
         $db = trux_db();
         $stmt = $db->prepare(
             'UPDATE users
-             SET email_verify_token = ?, email_verify_sent_at = NOW()
+             SET email_verify_token = ?, email_verify_sent_at = ?
              WHERE id = ? AND email_verified = 0'
         );
-        $stmt->execute([$token, $userId]);
+        $stmt->execute([$token, $issuedAt, $userId]);
     } catch (PDOException) {
         return ['ok' => false, 'error' => 'update_failed', 'user' => $user];
     }
 
     $user['email'] = $email;
     $user['email_verify_token'] = $token;
-    $user['email_verify_sent_at'] = date('Y-m-d H:i:s');
+    $user['email_verify_sent_at'] = $issuedAt;
 
     return [
         'ok' => true,
@@ -346,6 +352,8 @@ function trux_register_user(string $username, string $email, string $password): 
         return ['ok' => false, 'errors' => ['Could not generate verification token.']];
     }
 
+    $issuedAt = trux_current_app_datetime();
+
     $db = trux_db();
     try {
         $stmt = $db->prepare(
@@ -357,9 +365,9 @@ function trux_register_user(string $username, string $email, string $password): 
                 email_verified,
                 email_verify_token,
                 email_verify_sent_at
-             ) VALUES (?, ?, ?, ?, 0, ?, NOW())'
+             ) VALUES (?, ?, ?, ?, 0, ?, ?)'
         );
-        $stmt->execute([$username, $email, $hash, $emailDomainUnrecognized, $verifyToken]);
+        $stmt->execute([$username, $email, $hash, $emailDomainUnrecognized, $verifyToken, $issuedAt]);
         $userId = (int)$db->lastInsertId();
         return [
             'ok' => true,
@@ -410,6 +418,8 @@ function trux_update_account_email(int $userId, string $email): array {
         return ['ok' => false, 'errors' => ['Could not generate a new verification token right now.']];
     }
 
+    $issuedAt = trux_current_app_datetime();
+
     $emailDomainUnrecognized = !($domainValidation['recognized'] ?? false) ? 1 : 0;
 
     try {
@@ -420,10 +430,10 @@ function trux_update_account_email(int $userId, string $email): array {
                  email_domain_unrecognized = ?,
                  email_verified = 0,
                  email_verify_token = ?,
-                 email_verify_sent_at = NOW()
+                 email_verify_sent_at = ?
              WHERE id = ?'
         );
-        $stmt->execute([$email, $emailDomainUnrecognized, $token, $userId]);
+        $stmt->execute([$email, $emailDomainUnrecognized, $token, $issuedAt, $userId]);
     } catch (PDOException $e) {
         if ((string)$e->getCode() === '23000') {
             return ['ok' => false, 'errors' => ['That email address is already in use.']];
