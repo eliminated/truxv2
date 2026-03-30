@@ -114,6 +114,20 @@ function trux_str_param(string $name, string $default = ''): string {
     return $v;
 }
 
+function trux_safe_local_redirect_path($candidate, string $default = '/'): string {
+    $path = is_string($candidate) ? trim($candidate) : '';
+    if (
+        $path === ''
+        || !str_starts_with($path, '/')
+        || str_starts_with($path, '//')
+        || preg_match('/[\r\n]/', $path)
+    ) {
+        return $default;
+    }
+
+    return $path;
+}
+
 function trux_parse_datetime(string $dbTs): ?DateTimeImmutable {
     try {
         // MySQL TIMESTAMP typically returns "YYYY-MM-DD HH:MM:SS"

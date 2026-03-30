@@ -4,6 +4,7 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . '/src/config.php';
 require_once dirname(__DIR__) . '/src/db.php';
 require_once dirname(__DIR__) . '/src/helpers.php';
+require_once dirname(__DIR__) . '/src/email_helpers.php';
 require_once dirname(__DIR__) . '/src/csrf.php';
 require_once dirname(__DIR__) . '/src/auth.php';
 require_once dirname(__DIR__) . '/src/moderation.php';

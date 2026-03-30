@@ -8,6 +8,10 @@ CREATE TABLE IF NOT EXISTS users (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   username VARCHAR(32) NOT NULL,
   email VARCHAR(255) NOT NULL,
+  email_domain_unrecognized TINYINT(1) NOT NULL DEFAULT 0,
+  email_verified TINYINT(1) NOT NULL DEFAULT 0,
+  email_verify_token VARCHAR(255) NULL DEFAULT NULL,
+  email_verify_sent_at DATETIME NULL DEFAULT NULL,
   display_name VARCHAR(80) NULL DEFAULT NULL,
   bio VARCHAR(280) NULL DEFAULT NULL,
   about_me TEXT NULL DEFAULT NULL,
@@ -48,6 +52,20 @@ WHERE NOT EXISTS (
   WHERE username = 'report_system_updates_bot'
      OR email = 'report-system-updates@system.invalid'
 );
+
+CREATE TABLE IF NOT EXISTS linked_accounts (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  user_id BIGINT UNSIGNED NOT NULL,
+  provider ENUM('google', 'facebook', 'x') NOT NULL,
+  provider_user_id VARCHAR(255) NULL DEFAULT NULL,
+  linked_at DATETIME NULL DEFAULT NULL,
+  PRIMARY KEY (id),
+  UNIQUE KEY unique_user_provider (user_id, provider),
+  KEY idx_linked_accounts_provider (provider),
+  CONSTRAINT fk_linked_accounts_user FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB;
 
 CREATE TABLE IF NOT EXISTS posts (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,

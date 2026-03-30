@@ -75,3 +75,36 @@
   color: var(--text-soft);
   font-size: 0.95rem;
 }
+
+.emailDomainHint {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  margin-top: 0.15rem;
+}
+
+.emailDomainHint__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1.8rem;
+  padding: 0.3rem 0.65rem;
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-pill);
+  font-size: 0.72rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.emailDomainHint.is-recognized .emailDomainHint__badge {
+  border-color: rgba(97, 221, 255, 0.24);
+}
+
+.emailDomainHint.is-unrecognized .emailDomainHint__badge {
+  border-color: rgba(255, 0, 170, 0.18);
+}
+
+.emailDomainHint__text {
+  flex: 1 1 18rem;
+}

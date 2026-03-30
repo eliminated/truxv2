@@ -17,6 +17,18 @@
   background: rgba(115, 245, 210, 0.1);
 }
 
+.flash--info {
+  color: #d8f6ff;
+  border-color: rgba(97, 221, 255, 0.22);
+  background: rgba(97, 221, 255, 0.1);
+}
+
+.flash--warning {
+  color: #ffe6f6;
+  border-color: rgba(255, 0, 170, 0.18);
+  background: rgba(255, 0, 170, 0.08);
+}
+
 .moderationBadge {
   min-height: 1.75rem;
   display: inline-flex;

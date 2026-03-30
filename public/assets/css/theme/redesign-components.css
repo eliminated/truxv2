@@ -24,6 +24,18 @@
   color: #dffff0;
 }
 
+.flash--info,
+.toast--info {
+  border-color: rgba(89, 243, 255, 0.22);
+  color: #dcf9ff;
+}
+
+.flash--warning,
+.toast--warning {
+  border-color: rgba(255, 0, 170, 0.22);
+  color: #ffe2f4;
+}
+
 .field,
 .reportModal__field,
 .entityEditModal__field,

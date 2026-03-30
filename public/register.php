@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/_bootstrap.php';
+require_once dirname(__DIR__) . '/src/mailer.php';
 
 $pageKey = 'register';
 $pageLayout = 'auth';
@@ -12,6 +13,8 @@ if (trux_is_logged_in()) {
 $username = '';
 $email = '';
 $errors = [];
+$emailProviderCatalogJson = json_encode(trux_email_provider_domains(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+$emailProviderCatalogJson = is_string($emailProviderCatalogJson) ? $emailProviderCatalogJson : '{}';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   $username = is_string($_POST['username'] ?? null) ? trim((string)$_POST['username']) : '';
@@ -20,8 +23,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   $res = trux_register_user($username, $email, $password);
   if ($res['ok'] ?? false) {
-    trux_login_user((int)$res['user_id']);
-    trux_flash_set('success', 'Account created. Welcome to TruX!');
+    $userId = (int)($res['user_id'] ?? 0);
+    $verificationToken = (string)($res['verification_token'] ?? '');
+    $registeredEmail = (string)($res['email'] ?? '');
+    $registeredUsername = (string)($res['username'] ?? $username);
+    $domainValidation = is_array($res['email_domain'] ?? null) ? $res['email_domain'] : validate_email_domain($registeredEmail);
+
+    $sentVerification = false;
+    if ($userId > 0 && $verificationToken !== '' && $registeredEmail !== '') {
+      $sentVerification = trux_send_email_verification_email($registeredEmail, $registeredUsername, $userId, $verificationToken);
+    }
+
+    trux_login_user($userId);
+    trux_flash_set('success', $sentVerification
+      ? 'Account created. Welcome to TruX! Check your inbox to verify your email address.'
+      : 'Account created. Welcome to TruX!');
+    if (!$sentVerification) {
+      trux_flash_set('error', 'Your account was created, but we could not send the verification email yet. Use the resend action from the verification banner or account settings.');
+    }
+    if (!($domainValidation['recognized'] ?? false)) {
+      trux_flash_set('info', 'Your email domain is not in our recognized-provider list. For account recovery, consider switching to a mainstream provider later.');
+    }
     trux_redirect('/');
   } else {
     $errors = $res['errors'] ?? ['Registration failed.'];
@@ -106,9 +128,23 @@ require_once __DIR__ . '/_header.php';
             <small class="muted">3-32 chars, letters/numbers/underscore.</small>
           </label>
 
-          <label class="field">
+          <label
+            class="field"
+            data-email-domain-field="1"
+            data-email-provider-catalog="<?= trux_e($emailProviderCatalogJson) ?>">
             <span>Email</span>
-            <input type="email" name="email" value="<?= trux_e($email) ?>" maxlength="255" required autocomplete="email">
+            <input
+              type="email"
+              name="email"
+              value="<?= trux_e($email) ?>"
+              maxlength="255"
+              required
+              autocomplete="email"
+              data-email-domain-input="1">
+            <div class="emailDomainHint" data-email-domain-hint="1" hidden>
+              <span class="emailDomainHint__badge" data-email-domain-badge="1">Domain</span>
+              <small class="emailDomainHint__text muted" data-email-domain-message="1">Provider status appears here.</small>
+            </div>
           </label>
 
           <label class="field">

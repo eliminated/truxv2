@@ -1,4 +1,42 @@
 # Omnicus Updates
+## Omnicus v0.6.0 - Account Trust And Verification
+
+**Branch**: Production
+**Date**: 2026-03-30
+
+***
+
+### Added
+
+- Email-domain recognition with curated mainstream-provider validation, live registration/settings hints, and persistent account warnings for unrecognized domains
+- Full email verification flow with stored verification token metadata, HTML verification mail delivery, verification-resend handling, and the new `/verify-email.php` plus `/resend-verification.php` routes
+- New `Account` settings section covering email verification status, verified-only password changes, and linked-account scaffolding for Google, Facebook, and X
+- Placeholder linked-account endpoints under `public/settings/` plus database scaffolding for `linked_accounts`
+- New account-trust migrations:
+  `database/migrations/20260330_add_email_domain_flag.sql`,
+  `database/migrations/20260330_add_email_verification.sql`,
+  and `database/migrations/20260330_create_linked_accounts.sql`
+
+***
+
+### Changed
+
+- Registration now creates unverified accounts, immediately issues a verification token, sends a verification email when mail delivery is available, and preserves login-on-register behavior
+- Logged-in unverified users now see a persistent shell banner on app pages until they verify their email address
+- Settings now gate password changes and linked-account actions behind email verification while still allowing normal browsing and posting
+- Account email changes now recalculate the domain-recognition flag, reset verification, and send a fresh verification email
+
+***
+
+### Technical
+
+- Added `src/email_helpers.php` as the single source of truth for recognized email-provider domains
+- Expanded `src/auth.php` with account-state, verification-token, password-change, and linked-account helpers instead of scattering account logic across unrelated modules
+- Extended `src/mailer.php` to share SMTP setup between password-reset and email-verification delivery
+- Updated `database/schema.sql` so fresh installs include the new users-table trust columns and linked-accounts table
+
+***
+
 ## Omnicus v0.5.6 - Hard Visual Replacement
 
 **Branch**: Production

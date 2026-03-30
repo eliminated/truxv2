@@ -14,7 +14,8 @@ function trux_csrf_field(): string {
 }
 
 function trux_csrf_verify(): void {
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') return;
+    $requestMethod = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+    if ($requestMethod !== 'POST') return;
 
     $sent = $_POST['_csrf'] ?? '';
     $sess = $_SESSION['_csrf'] ?? '';

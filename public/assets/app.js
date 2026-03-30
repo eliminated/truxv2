@@ -81,6 +81,115 @@
 })();
 
 (() => {
+  const FIELD_SELECTOR = "[data-email-domain-field='1']";
+  const INPUT_SELECTOR = "[data-email-domain-input='1']";
+
+  const parseCatalog = (field) => {
+    if (!(field instanceof HTMLElement)) return {};
+    const raw = field.getAttribute("data-email-provider-catalog") || "{}";
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" ? parsed : {};
+    } catch (error) {
+      return {};
+    }
+  };
+
+  const applyState = (field, recognized, badgeText, messageText) => {
+    if (!(field instanceof HTMLElement)) return;
+    const hint = field.querySelector("[data-email-domain-hint='1']");
+    const badge = field.querySelector("[data-email-domain-badge='1']");
+    const message = field.querySelector("[data-email-domain-message='1']");
+    if (!(hint instanceof HTMLElement) || !(badge instanceof HTMLElement) || !(message instanceof HTMLElement)) {
+      return;
+    }
+
+    hint.hidden = false;
+    hint.classList.toggle("is-recognized", recognized);
+    hint.classList.toggle("is-unrecognized", !recognized);
+    badge.textContent = badgeText;
+    message.textContent = messageText;
+  };
+
+  const clearState = (field) => {
+    if (!(field instanceof HTMLElement)) return;
+    const hint = field.querySelector("[data-email-domain-hint='1']");
+    if (!(hint instanceof HTMLElement)) return;
+    hint.hidden = true;
+    hint.classList.remove("is-recognized", "is-unrecognized");
+  };
+
+  const updateField = (input) => {
+    if (!(input instanceof HTMLInputElement)) return;
+    const field = input.closest(FIELD_SELECTOR);
+    if (!(field instanceof HTMLElement)) return;
+
+    const email = String(input.value || "").trim().toLowerCase();
+    if (!email.includes("@")) {
+      clearState(field);
+      return;
+    }
+
+    const segments = email.split("@");
+    const domain = String(segments[segments.length - 1] || "").trim();
+    if (!domain || !/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain)) {
+      applyState(field, false, "Check domain", "Enter a full email address to check the provider.");
+      return;
+    }
+
+    const catalog = parseCatalog(field);
+    const provider = typeof catalog[domain] === "string" ? catalog[domain] : "";
+    if (provider) {
+      applyState(field, true, provider, `${provider} is a recognized provider.`);
+      return;
+    }
+
+    applyState(
+      field,
+      false,
+      "Unrecognized",
+      "This domain is not in the recognized-provider list. You can continue, but a mainstream provider is recommended."
+    );
+  };
+
+  document.addEventListener("input", (event) => {
+    const target = event.target;
+    if (target instanceof HTMLInputElement && target.matches(INPUT_SELECTOR)) {
+      updateField(target);
+    }
+  });
+
+  document.addEventListener("focusout", (event) => {
+    const target = event.target;
+    if (target instanceof HTMLInputElement && target.matches(INPUT_SELECTOR)) {
+      updateField(target);
+    }
+  });
+
+  document.querySelectorAll(INPUT_SELECTOR).forEach((input) => {
+    if (input instanceof HTMLInputElement) {
+      updateField(input);
+    }
+  });
+})();
+
+(() => {
+  document.addEventListener("click", (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+
+    const trigger = target.closest("[data-dismiss-parent='1']");
+    if (!(trigger instanceof HTMLElement)) return;
+
+    const dismissible = trigger.closest(".accountNotice, .flash, [data-dismissible-parent='1']");
+    if (!(dismissible instanceof HTMLElement)) return;
+
+    dismissible.hidden = true;
+    dismissible.style.display = "none";
+  });
+})();
+
+(() => {
   let stack = null;
   const removalTimers = new WeakMap();
 

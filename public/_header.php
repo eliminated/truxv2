@@ -94,6 +94,12 @@ if (is_string($rawRequestUri) && $rawRequestUri !== '') {
     $notificationRedirectPath = $candidateRedirect;
   }
 }
+$verificationBannerRedirectPath = trux_safe_local_redirect_path($notificationRedirectPath, '/');
+$verificationBannerVisible = $user !== null && empty($user['email_verified']);
+$verificationBannerCooldownRemaining = $verificationBannerVisible
+  ? trux_email_verification_cooldown_remaining_seconds((string)($user['email_verify_sent_at'] ?? ''))
+  : 0;
+$verificationBannerCanResend = $verificationBannerVisible && $verificationBannerCooldownRemaining === 0;
 $mainCssPath = __DIR__ . '/assets/css/main.css';
 $mainCssDir = dirname($mainCssPath);
 $styleSheetManifest = [];
@@ -524,6 +530,26 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
           </div>
         </header>
 
+        <?php if ($verificationBannerVisible): ?>
+          <section class="verificationBanner verificationBanner--ops" role="status" aria-live="polite">
+            <div class="verificationBanner__copy">
+              <strong>Verify your email to unlock password changes and linked-account actions.</strong>
+              <span>Posting stays available. Sensitive account controls remain locked until verification completes.</span>
+            </div>
+            <div class="verificationBanner__actions">
+              <form method="post" action="<?= TRUX_BASE_URL ?>/resend-verification.php" class="verificationBanner__form">
+                <?= trux_csrf_field() ?>
+                <input type="hidden" name="redirect" value="<?= trux_e($verificationBannerRedirectPath) ?>">
+                <button class="shellButton shellButton--accent" type="submit" <?= !$verificationBannerCanResend ? 'disabled' : '' ?>>Resend verification email</button>
+              </form>
+              <a class="shellButton shellButton--ghost" href="<?= TRUX_BASE_URL ?>/settings.php?section=account">Open account settings</a>
+            </div>
+            <?php if (!$verificationBannerCanResend): ?>
+              <small class="verificationBanner__meta"><?= trux_e(trux_email_verification_cooldown_text($verificationBannerCooldownRemaining)) ?></small>
+            <?php endif; ?>
+          </section>
+        <?php endif; ?>
+
         <main class="opsContent">
           <div class="opsCanvas">
   <?php else: ?>
@@ -784,6 +810,26 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
             <?php endif; ?>
           </div>
         </header>
+
+        <?php if ($verificationBannerVisible): ?>
+          <section class="verificationBanner" role="status" aria-live="polite">
+            <div class="verificationBanner__copy">
+              <strong>Verify your email to unlock password changes and linked-account actions.</strong>
+              <span>Posting stays available. Sensitive account controls remain locked until verification completes.</span>
+            </div>
+            <div class="verificationBanner__actions">
+              <form method="post" action="<?= TRUX_BASE_URL ?>/resend-verification.php" class="verificationBanner__form">
+                <?= trux_csrf_field() ?>
+                <input type="hidden" name="redirect" value="<?= trux_e($verificationBannerRedirectPath) ?>">
+                <button class="shellButton shellButton--accent" type="submit" <?= !$verificationBannerCanResend ? 'disabled' : '' ?>>Resend verification email</button>
+              </form>
+              <a class="shellButton shellButton--ghost" href="<?= TRUX_BASE_URL ?>/settings.php?section=account">Open account settings</a>
+            </div>
+            <?php if (!$verificationBannerCanResend): ?>
+              <small class="verificationBanner__meta"><?= trux_e(trux_email_verification_cooldown_text($verificationBannerCooldownRemaining)) ?></small>
+            <?php endif; ?>
+          </section>
+        <?php endif; ?>
 
         <main class="shellContent">
           <div class="sceneCanvas">
