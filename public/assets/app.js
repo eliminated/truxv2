@@ -5392,3 +5392,71 @@
     compactQuery.addListener(resetForViewport);
   }
 })();
+
+(() => {
+  const root = document.documentElement;
+  const themeButtons = Array.from(document.querySelectorAll("[data-theme-switch]"));
+  const THEME_KEY = "trux:theme";
+
+  const applyTheme = (theme) => {
+    const next = theme === "graphite" ? "graphite" : "aurora";
+    root.classList.toggle("theme-graphite", next === "graphite");
+    themeButtons.forEach((button) => {
+      const selected = button.getAttribute("data-theme-switch") === next;
+      button.classList.toggle("is-active", selected);
+      button.setAttribute("aria-pressed", selected ? "true" : "false");
+    });
+  };
+
+  try {
+    const stored = localStorage.getItem(THEME_KEY) || "aurora";
+    applyTheme(stored);
+  } catch (err) {
+    applyTheme("aurora");
+  }
+
+  document.addEventListener("click", (event) => {
+    if (!(event.target instanceof Element)) return;
+    const trigger = event.target.closest("[data-theme-switch]");
+    if (!(trigger instanceof HTMLButtonElement)) return;
+    const theme = trigger.getAttribute("data-theme-switch") || "aurora";
+    try {
+      localStorage.setItem(THEME_KEY, theme);
+    } catch (err) {
+      // no-op
+    }
+    applyTheme(theme);
+  });
+})();
+
+(() => {
+  const rail = document.querySelector("[data-feed-utility-rail]");
+  if (!(rail instanceof HTMLElement)) return;
+
+  const button = rail.querySelector("[data-feed-rail-toggle='1']");
+  if (!(button instanceof HTMLButtonElement)) return;
+
+  const storageKey = "trux:feed-rail-collapsed";
+  const setCollapsed = (collapsed) => {
+    document.body.classList.toggle("feed-rail-collapsed", collapsed);
+    button.textContent = collapsed ? "Show suggestions" : "Hide suggestions";
+    button.setAttribute("aria-expanded", collapsed ? "false" : "true");
+  };
+
+  try {
+    const stored = localStorage.getItem(storageKey) === "1";
+    setCollapsed(stored);
+  } catch (err) {
+    setCollapsed(false);
+  }
+
+  button.addEventListener("click", () => {
+    const collapsed = !document.body.classList.contains("feed-rail-collapsed");
+    setCollapsed(collapsed);
+    try {
+      localStorage.setItem(storageKey, collapsed ? "1" : "0");
+    } catch (err) {
+      // no-op
+    }
+  });
+})();
