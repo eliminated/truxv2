@@ -1,4 +1,39 @@
 # Omnicus Updates
+## Omnicus v0.6.1 - Linked Accounts System
+
+**Branch**: Production
+**Date**: 2026-03-30
+
+***
+
+### Added
+
+- Dedicated `Linked Accounts` settings section with responsive provider cards, provider-state badges, action controls, and inline connection details
+- New linked-account service layer in `src/linked_accounts.php` for provider registry metadata, linked-account persistence, audit logging, and provider-state presentation
+- Live-ready Discord, Google, Facebook, and X OAuth architecture with start/callback routes, provider-specific identity normalization, and duplicate-link protection
+- Nicholic Account as a first-party Nicholas Foundation placeholder provider within the same registry used by live and future providers
+- New v0.6.1 migration `database/migrations/20260330_upgrade_linked_accounts_v061.sql` to expand `linked_accounts` into a future-ready schema
+
+***
+
+### Changed
+
+- Linked accounts moved out of the generic account page block into a dedicated management surface while the `Account` section now provides a compact connection summary
+- Discord, Google, Facebook, and X now report truthful provider availability states: live-ready when environment variables and schema are present, otherwise `Pending setup`
+- Google, Facebook, and X now use the same live provider registry and callback lifecycle as Discord instead of placeholder cards
+- Link, relink, unlink, and callback flows now use real backend lifecycle handling, moderation activity logging, and ownership-conflict checks
+- Linked-account actions continue to respect email-verification gating so sensitive account changes stay locked until inbox ownership is confirmed
+
+***
+
+### Technical
+
+- Updated `database/schema.sql` so fresh installs use the upgraded linked-account table shape with provider profile fields, status fields, timestamps, and stronger uniqueness constraints
+- Added Discord, Google, Facebook, and X environment/config support through provider-specific client ID, client secret, redirect URI, and scope variables
+- Replaced the old placeholder-only `public/settings/link-account.php` and `public/settings/unlink-account.php` behavior with a structured provider-backed flow and added `public/settings/link-account-callback.php`
+
+***
+
 ## Omnicus v0.6.0 - Account Trust And Verification
 
 **Branch**: Production
@@ -15,13 +50,17 @@
 - New account-trust migrations:
   `database/migrations/20260330_add_email_domain_flag.sql`,
   `database/migrations/20260330_add_email_verification.sql`,
-  and `database/migrations/20260330_create_linked_accounts.sql`
+  `database/migrations/20260330_create_linked_accounts.sql`,
+  and `database/migrations/20260330_reset_all_email_verification.sql`
 
 ***
 
 ### Changed
 
+- Recognized domains now remain advisory only. `email_verified` is the only ownership signal, and a domain like Gmail or Outlook no longer implies inbox ownership in app copy
 - Registration now creates unverified accounts, immediately issues a verification token, sends a verification email when mail delivery is available, and preserves login-on-register behavior
+- Verification links now expire after 5 minutes, with resend staying aligned to the same 5-minute cooldown window
+- Existing accounts can be re-verified through the new manual reset migration without triggering a bulk verification email blast
 - Logged-in unverified users now see a persistent shell banner on app pages until they verify their email address
 - Settings now gate password changes and linked-account actions behind email verification while still allowing normal browsing and posting
 - Account email changes now recalculate the domain-recognition flag, reset verification, and send a fresh verification email

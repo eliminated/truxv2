@@ -133,14 +133,19 @@
     const segments = email.split("@");
     const domain = String(segments[segments.length - 1] || "").trim();
     if (!domain || !/^[a-z0-9.-]+\.[a-z]{2,}$/i.test(domain)) {
-      applyState(field, false, "Check domain", "Enter a full email address to check the provider.");
+      applyState(field, false, "Check domain", "Enter a full email address to check the domain pattern.");
       return;
     }
 
     const catalog = parseCatalog(field);
     const provider = typeof catalog[domain] === "string" ? catalog[domain] : "";
     if (provider) {
-      applyState(field, true, provider, `${provider} is a recognized provider.`);
+      applyState(
+        field,
+        true,
+        provider,
+        `${provider} is a recognized provider domain. Email ownership is still unverified until you click the verification link.`
+      );
       return;
     }
 
@@ -148,7 +153,7 @@
       field,
       false,
       "Unrecognized",
-      "This domain is not in the recognized-provider list. You can continue, but a mainstream provider is recommended."
+      "This domain is not in the recognized-provider list. You can continue, but email ownership is still unverified until you click the verification link."
     );
   };
 

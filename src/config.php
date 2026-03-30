@@ -67,3 +67,23 @@ define('TRUX_MAIL_PORT',      (int)trux_env('TRUX_MAIL_PORT',         '465'));
 define('TRUX_MAIL_USER',      (string)trux_env('TRUX_MAIL_USER',      ''));
 define('TRUX_MAIL_PASS',      (string)trux_env('TRUX_MAIL_PASS',      ''));
 define('TRUX_MAIL_FROM_NAME', (string)trux_env('TRUX_MAIL_FROM_NAME', 'TruX'));
+
+define('TRUX_DISCORD_CLIENT_ID',     (string)trux_env('TRUX_DISCORD_CLIENT_ID',     ''));
+define('TRUX_DISCORD_CLIENT_SECRET', (string)trux_env('TRUX_DISCORD_CLIENT_SECRET', ''));
+define('TRUX_DISCORD_REDIRECT_URI',  (string)trux_env('TRUX_DISCORD_REDIRECT_URI',  TRUX_BASE_URL . '/settings/link-account-callback.php'));
+define('TRUX_DISCORD_SCOPES',        (string)trux_env('TRUX_DISCORD_SCOPES',        'identify'));
+
+define('TRUX_GOOGLE_CLIENT_ID',      (string)trux_env('TRUX_GOOGLE_CLIENT_ID',      ''));
+define('TRUX_GOOGLE_CLIENT_SECRET',  (string)trux_env('TRUX_GOOGLE_CLIENT_SECRET',  ''));
+define('TRUX_GOOGLE_REDIRECT_URI',   (string)trux_env('TRUX_GOOGLE_REDIRECT_URI',   TRUX_BASE_URL . '/settings/link-account-callback.php'));
+define('TRUX_GOOGLE_SCOPES',         (string)trux_env('TRUX_GOOGLE_SCOPES',         'openid email profile'));
+
+define('TRUX_FACEBOOK_CLIENT_ID',     (string)trux_env('TRUX_FACEBOOK_CLIENT_ID',     ''));
+define('TRUX_FACEBOOK_CLIENT_SECRET', (string)trux_env('TRUX_FACEBOOK_CLIENT_SECRET', ''));
+define('TRUX_FACEBOOK_REDIRECT_URI',  (string)trux_env('TRUX_FACEBOOK_REDIRECT_URI',  TRUX_BASE_URL . '/settings/link-account-callback.php'));
+define('TRUX_FACEBOOK_SCOPES',        (string)trux_env('TRUX_FACEBOOK_SCOPES',        'public_profile,email'));
+
+define('TRUX_X_CLIENT_ID',      (string)trux_env('TRUX_X_CLIENT_ID',      ''));
+define('TRUX_X_CLIENT_SECRET',  (string)trux_env('TRUX_X_CLIENT_SECRET',  ''));
+define('TRUX_X_REDIRECT_URI',   (string)trux_env('TRUX_X_REDIRECT_URI',   TRUX_BASE_URL . '/settings/link-account-callback.php'));
+define('TRUX_X_SCOPES',         (string)trux_env('TRUX_X_SCOPES',         'users.read tweet.read'));

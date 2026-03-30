@@ -8,6 +8,7 @@ require_once dirname(__DIR__) . '/src/email_helpers.php';
 require_once dirname(__DIR__) . '/src/csrf.php';
 require_once dirname(__DIR__) . '/src/auth.php';
 require_once dirname(__DIR__) . '/src/moderation.php';
+require_once dirname(__DIR__) . '/src/linked_accounts.php';
 require_once dirname(__DIR__) . '/src/posts.php';
 require_once dirname(__DIR__) . '/src/bookmarks.php';
 require_once dirname(__DIR__) . '/src/messages.php';

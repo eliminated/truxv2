@@ -56,12 +56,24 @@ WHERE NOT EXISTS (
 CREATE TABLE IF NOT EXISTS linked_accounts (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   user_id BIGINT UNSIGNED NOT NULL,
-  provider ENUM('google', 'facebook', 'x') NOT NULL,
-  provider_user_id VARCHAR(255) NULL DEFAULT NULL,
+  provider VARCHAR(32) NOT NULL,
+  provider_user_id VARCHAR(191) NULL DEFAULT NULL,
+  provider_username VARCHAR(191) NULL DEFAULT NULL,
+  provider_display_name VARCHAR(191) NULL DEFAULT NULL,
+  provider_avatar_url VARCHAR(255) NULL DEFAULT NULL,
+  status VARCHAR(24) NOT NULL DEFAULT 'connected',
+  status_reason VARCHAR(255) NULL DEFAULT NULL,
+  metadata_json TEXT NULL,
   linked_at DATETIME NULL DEFAULT NULL,
+  last_verified_at DATETIME NULL DEFAULT NULL,
+  last_used_at DATETIME NULL DEFAULT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
   UNIQUE KEY unique_user_provider (user_id, provider),
-  KEY idx_linked_accounts_provider (provider),
+  UNIQUE KEY unique_provider_identity (provider, provider_user_id),
+  KEY idx_linked_accounts_user_status (user_id, status),
+  KEY idx_linked_accounts_provider_status (provider, status),
   CONSTRAINT fk_linked_accounts_user FOREIGN KEY (user_id) REFERENCES users(id)
     ON DELETE CASCADE
     ON UPDATE CASCADE

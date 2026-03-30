@@ -167,10 +167,10 @@ function trux_email_verification_email_html(string $name, string $verifyUrl, str
               <p style="margin:0 0 12px;color:#59f3ff;font-size:12px;font-weight:800;letter-spacing:.22em;text-transform:uppercase;">Identity handshake</p>
               <h1 style="margin:0 0 8px;color:#f5f7ff;font-size:28px;font-weight:900;">Verify your TruX email address</h1>
               <p style="margin:0 0 24px;color:#a9b4c7;font-size:15px;line-height:1.7;">
-                Hi {$safeName}, finish verifying your {$safeAppName} account to unlock sensitive account controls and recovery protections.
+                Hi {$safeName}, click the verification link below to prove that you control this inbox and unlock sensitive account controls in {$safeAppName}.
               </p>
               <div style="margin:0 0 24px;padding:18px 20px;border:1px solid rgba(255,0,170,.18);border-radius:16px;background:linear-gradient(135deg,rgba(89,243,255,.08),rgba(255,0,170,.08));color:#dbe7ff;font-size:14px;line-height:1.7;">
-                This verification link stays active for <strong style="color:#ffffff;">24 hours</strong>. If it expires, you can request a new one from your TruX account settings.
+                A recognized domain like Gmail or Outlook only tells us the domain is known. It does <strong style="color:#ffffff;">not</strong> prove that you own this inbox. This link expires in <strong style="color:#ffffff;">5 minutes</strong>.
               </div>
               <a href="{$safeUrl}" style="display:inline-block;padding:14px 26px;border-radius:14px;border:1px solid rgba(89,243,255,.4);background:linear-gradient(135deg,rgba(89,243,255,.22),rgba(255,0,170,.16));color:#f5f7ff;text-decoration:none;font-weight:900;font-size:15px;">
                 Verify email address
@@ -180,7 +180,7 @@ function trux_email_verification_email_html(string $name, string $verifyUrl, str
                 <a href="{$safeUrl}" style="color:#59f3ff;">{$safeUrl}</a>
               </p>
               <p style="margin:18px 0 0;color:#8c95a8;font-size:12px;line-height:1.7;">
-                If you did not create this account, you can ignore this email.
+                If the link expires, request a fresh verification email from your TruX account settings. If you did not create this account, you can ignore this email.
               </p>
             </td>
           </tr>
@@ -194,7 +194,7 @@ HTML;
 }
 
 function trux_email_verification_email_text(string $name, string $verifyUrl, string $appName): string {
-    return "Hi {$name},\n\nVerify your {$appName} email address by opening the link below:\n{$verifyUrl}\n\nThis link expires in 24 hours.\n\nIf you did not create this account, you can ignore this email.\n\n- The {$appName} team";
+    return "Hi {$name},\n\nOpen the link below to verify that you control this {$appName} inbox:\n{$verifyUrl}\n\nA recognized email domain does not prove inbox ownership.\nThis link expires in 5 minutes.\n\nIf the link expires, request a fresh verification email from account settings. If you did not create this account, you can ignore this email.\n\n- The {$appName} team";
 }
 
 function trux_create_password_reset_token(string $email): ?string {

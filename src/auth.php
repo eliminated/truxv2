@@ -6,7 +6,7 @@ function trux_normalize_email_address(string $email): string {
 }
 
 function trux_email_verification_ttl_seconds(): int {
-    return 24 * 60 * 60;
+    return 5 * 60;
 }
 
 function trux_email_verification_resend_cooldown_seconds(): int {
@@ -75,7 +75,7 @@ function trux_current_user(): ?array {
                     avatar_path, banner_path, show_likes_public, show_bookmarks_public,
                     notify_report_updates_default, staff_role,
                     0 AS email_domain_unrecognized,
-                    1 AS email_verified,
+                    0 AS email_verified,
                     NULL AS email_verify_sent_at,
                     created_at
              FROM users
@@ -132,7 +132,7 @@ function trux_fetch_user_by_email(string $email): ?array {
             $stmt = $db->prepare(
                 'SELECT id, username, email, display_name,
                         0 AS email_domain_unrecognized,
-                        1 AS email_verified,
+                        0 AS email_verified,
                         NULL AS email_verify_sent_at
                  FROM users
                  WHERE email = ?
@@ -182,7 +182,7 @@ function trux_fetch_account_user_by_id(int $userId, bool $includePasswordHash = 
             'username',
             'email',
             '0 AS email_domain_unrecognized',
-            '1 AS email_verified',
+            '0 AS email_verified',
             'NULL AS email_verify_token',
             'NULL AS email_verify_sent_at',
         ];
@@ -455,7 +455,7 @@ function trux_change_password(int $userId, string $currentPassword, string $newP
     }
 
     if (empty($user['email_verified'])) {
-        return ['ok' => false, 'errors' => ['Verify your email before changing your password.']];
+        return ['ok' => false, 'errors' => ['Verify control of your email address by opening the email link before changing your password.']];
     }
 
     $hash = (string)($user['password_hash'] ?? '');
@@ -485,101 +485,6 @@ function trux_change_password(int $userId, string $currentPassword, string $newP
         $stmt->execute([$nextHash, $userId]);
     } catch (PDOException) {
         return ['ok' => false, 'errors' => ['Could not update your password right now.']];
-    }
-
-    return ['ok' => true];
-}
-
-function trux_linked_account_providers(): array {
-    return [
-        'google' => ['label' => 'Google'],
-        'facebook' => ['label' => 'Facebook'],
-        'x' => ['label' => 'X'],
-    ];
-}
-
-function trux_normalize_linked_account_provider(string $provider): string {
-    $provider = strtolower(trim($provider));
-    return array_key_exists($provider, trux_linked_account_providers()) ? $provider : '';
-}
-
-function trux_fetch_linked_accounts(int $userId): array {
-    if ($userId <= 0) {
-        return [];
-    }
-
-    try {
-        $db = trux_db();
-        $stmt = $db->prepare(
-            'SELECT id, provider, provider_user_id, linked_at
-             FROM linked_accounts
-             WHERE user_id = ?
-             ORDER BY provider ASC'
-        );
-        $stmt->execute([$userId]);
-        $rows = $stmt->fetchAll();
-    } catch (PDOException) {
-        return [];
-    }
-
-    $linked = [];
-    foreach ($rows as $row) {
-        $provider = trux_normalize_linked_account_provider((string)($row['provider'] ?? ''));
-        if ($provider === '') {
-            continue;
-        }
-        $linked[$provider] = $row;
-    }
-
-    return $linked;
-}
-
-function trux_count_linked_accounts(int $userId): int {
-    if ($userId <= 0) {
-        return 0;
-    }
-
-    try {
-        $db = trux_db();
-        $stmt = $db->prepare('SELECT COUNT(*) FROM linked_accounts WHERE user_id = ?');
-        $stmt->execute([$userId]);
-        return (int)$stmt->fetchColumn();
-    } catch (PDOException) {
-        return 0;
-    }
-}
-
-function trux_user_has_password_method(int $userId): bool {
-    $user = trux_fetch_account_user_by_id($userId, true);
-    return $user !== null && trim((string)($user['password_hash'] ?? '')) !== '';
-}
-
-function trux_unlink_linked_account(int $userId, string $provider): array {
-    $provider = trux_normalize_linked_account_provider($provider);
-    if ($userId <= 0) {
-        return ['ok' => false, 'error' => 'not_found'];
-    }
-    if ($provider === '') {
-        return ['ok' => false, 'error' => 'invalid_provider'];
-    }
-
-    if (!trux_user_has_password_method($userId) && trux_count_linked_accounts($userId) <= 1) {
-        return ['ok' => false, 'error' => 'last_auth_method'];
-    }
-
-    try {
-        $db = trux_db();
-        $stmt = $db->prepare(
-            'DELETE FROM linked_accounts
-             WHERE user_id = ? AND provider = ?
-             LIMIT 1'
-        );
-        $stmt->execute([$userId, $provider]);
-        if ($stmt->rowCount() < 1) {
-            return ['ok' => false, 'error' => 'not_linked'];
-        }
-    } catch (PDOException) {
-        return ['ok' => false, 'error' => 'delete_failed'];
     }
 
     return ['ok' => true];

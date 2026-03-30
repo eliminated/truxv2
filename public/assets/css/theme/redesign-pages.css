@@ -438,6 +438,34 @@
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.linkedAccountsStat {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem 0.28rem 1rem 0.28rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.014)),
+    rgba(9, 8, 14, 0.9);
+  box-shadow: var(--shadow-sm);
+}
+
+.linkedAccountFact,
+.linkedAccountDetails__grid dt {
+  color: rgba(215, 224, 255, 0.72);
+}
+
+.linkedAccountIdentity,
+.linkedAccountDetails > summary,
+.linkedAccountDetails__grid dd {
+  color: var(--text-strong);
+}
+
+.linkedAccountStatusNote {
+  color: rgba(255, 215, 239, 0.82);
+}
+
+.linkedAccountDetails__body {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
 .pageFrame--studio .editorStage {
   grid-template-columns: minmax(0, 1fr);
 }

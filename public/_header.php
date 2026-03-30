@@ -534,7 +534,7 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
           <section class="verificationBanner verificationBanner--ops" role="status" aria-live="polite">
             <div class="verificationBanner__copy">
               <strong>Verify your email to unlock password changes and linked-account actions.</strong>
-              <span>Posting stays available. Sensitive account controls remain locked until verification completes.</span>
+              <span>A recognized domain does not prove inbox ownership. Posting stays available until you click the verification link we sent.</span>
             </div>
             <div class="verificationBanner__actions">
               <form method="post" action="<?= TRUX_BASE_URL ?>/resend-verification.php" class="verificationBanner__form">
@@ -815,7 +815,7 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
           <section class="verificationBanner" role="status" aria-live="polite">
             <div class="verificationBanner__copy">
               <strong>Verify your email to unlock password changes and linked-account actions.</strong>
-              <span>Posting stays available. Sensitive account controls remain locked until verification completes.</span>
+              <span>A recognized domain does not prove inbox ownership. Posting stays available until you click the verification link we sent.</span>
             </div>
             <div class="verificationBanner__actions">
               <form method="post" action="<?= TRUX_BASE_URL ?>/resend-verification.php" class="verificationBanner__form">

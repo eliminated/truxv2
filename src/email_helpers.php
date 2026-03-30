@@ -65,7 +65,7 @@ function validate_email_domain(string $email): array {
         return [
             'recognized' => false,
             'provider' => null,
-            'warning' => 'We could not validate this email domain. Please double-check the address before continuing.',
+            'warning' => 'We could not validate this email domain pattern. Please double-check the address before continuing.',
         ];
     }
 
@@ -82,6 +82,6 @@ function validate_email_domain(string $email): array {
     return [
         'recognized' => false,
         'provider' => null,
-        'warning' => 'This email domain is not in our list of recognized providers. You can continue, but we recommend using Gmail, Outlook, Yahoo, iCloud, Proton, or another mainstream provider.',
+        'warning' => 'This email domain is not in our list of recognized provider domains. You can continue, but we recommend a mainstream mailbox provider. Domain recognition does not verify inbox ownership.',
     ];
 }

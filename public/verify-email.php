@@ -23,7 +23,7 @@ if ($uid > 0 && $token !== '') {
     }
 
     $errorMessage = $errorCode === 'expired'
-        ? 'This verification link has expired. Request a new verification email below.'
+        ? 'This verification link expired after 5 minutes. Request a new verification email below.'
         : 'This verification link is invalid. Request a new verification email below or resend from account settings after you log in.';
 } else {
     $errorMessage = 'This verification link is incomplete or invalid.';
@@ -40,7 +40,7 @@ require_once __DIR__ . '/_header.php';
       <div class="authGateway__signalHead">
         <span class="authGateway__eyebrow">Verification relay</span>
         <h1 class="authGateway__title">Email verification needs a fresh handshake.</h1>
-        <p class="authGateway__copy">Your account stays active, but sensitive account controls remain locked until this address is verified.</p>
+        <p class="authGateway__copy">A recognized provider domain is advisory only. Your account stays active, but sensitive account controls remain locked until you click the verification link and prove you control this inbox.</p>
       </div>
 
       <div class="authReadoutGrid" aria-hidden="true">
@@ -54,25 +54,25 @@ require_once __DIR__ . '/_header.php';
         </div>
         <div class="authReadout">
           <span>Window</span>
-          <strong>24 hours</strong>
+          <strong>5 minutes</strong>
         </div>
       </div>
     </div>
 
-    <div class="authGateway__stats">
-      <div class="authStat">
-        <strong>Account access</strong>
-        <span>You can still browse and post while this address is unverified.</span>
+      <div class="authGateway__stats">
+        <div class="authStat">
+          <strong>Account access</strong>
+          <span>You can still browse and post while this address is unverified.</span>
+        </div>
+        <div class="authStat">
+          <strong>Ownership</strong>
+          <span>A known domain like Gmail or Outlook does not prove you own the inbox. Clicking the email link does.</span>
+        </div>
+        <div class="authStat">
+          <strong>Expiry</strong>
+          <span>Verification links expire after 5 minutes. When that happens, request a fresh email and continue from your inbox.</span>
+        </div>
       </div>
-      <div class="authStat">
-        <strong>Security</strong>
-        <span>Password changes and linked-account actions stay locked until verification succeeds.</span>
-      </div>
-      <div class="authStat">
-        <strong>Recovery</strong>
-        <span>Use a mainstream mailbox provider when possible for more reliable recovery mail delivery.</span>
-      </div>
-    </div>
   </div>
 
   <div class="authGateway__lane">
@@ -81,7 +81,7 @@ require_once __DIR__ . '/_header.php';
         <div class="authSlab__head">
           <span class="authSlab__eyebrow">Verification</span>
           <h2>Verification issue</h2>
-          <p class="muted">Request a fresh message and continue from your inbox.</p>
+          <p class="muted">Request a fresh message and use the link within 5 minutes to confirm inbox ownership.</p>
         </div>
 
         <div class="authSlab__status" aria-hidden="true">

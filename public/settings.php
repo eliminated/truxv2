@@ -14,12 +14,14 @@ if (!$me) {
 }
 
 $accountRedirectPath = '/settings.php?section=account';
+$linkedAccountsRedirectPath = '/settings.php?section=linked-accounts';
 $emailProviderCatalogJson = json_encode(trux_email_provider_domains(), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
 $emailProviderCatalogJson = is_string($emailProviderCatalogJson) ? $emailProviderCatalogJson : '{}';
 
 $settingsSectionIcon = static function (string $key): string {
   return match ($key) {
     'account' => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4.75 7.25h14.5v9.5H4.75z" fill="none" stroke="currentColor" stroke-width="1.7" rx="1.8"/><path d="m5.5 8 6.5 5 6.5-5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M12 15.5v3.75M9.75 17.5h4.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
+    'linked-accounts' => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M8.5 8.5h-1.5a3 3 0 1 0 0 6H8.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M15.5 8.5H17a3 3 0 1 1 0 6h-1.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><path d="M9.5 12h5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>',
     'notifications' => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4.75a4 4 0 0 0-4 4v1.35c0 1.12-.37 2.21-1.05 3.1L5.8 14.75h12.4l-1.15-1.55A5.4 5.4 0 0 1 16 10.1V8.75a4 4 0 0 0-4-4Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /><path d="M9.75 17.5a2.25 2.25 0 0 0 4.5 0" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>',
     'privacy' => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4.5c3.75 0 6.98 2.24 8.5 5.45-1.52 3.21-4.75 5.45-8.5 5.45S5.02 13.16 3.5 9.95C5.02 6.74 8.25 4.5 12 4.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /><circle cx="12" cy="9.95" r="2.2" fill="none" stroke="currentColor" stroke-width="1.7" /></svg>',
     'muted' => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 10.5h3.25L13 6.75v10.5l-4.75-3.75H5v-3Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" /><path d="m16.5 9.25 4 5.5M20.5 9.25l-4 5.5" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" /></svg>',
@@ -29,19 +31,16 @@ $settingsSectionIcon = static function (string $key): string {
   };
 };
 
-$linkedAccountIcon = static function (string $provider): string {
-  return match ($provider) {
-    'google' => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M21.6 12.2c0-.7-.1-1.4-.2-2H12v4h5.4a4.7 4.7 0 0 1-2 3.1v2.6h3.2c1.9-1.7 3-4.3 3-7.7Z"/><path fill="currentColor" d="M12 22c2.7 0 4.9-.9 6.5-2.4l-3.2-2.6c-.9.6-2 .9-3.3.9-2.5 0-4.6-1.7-5.4-4H3.3v2.7A10 10 0 0 0 12 22Z"/><path fill="currentColor" d="M6.6 13.9a6 6 0 0 1 0-3.8V7.4H3.3a10 10 0 0 0 0 9.2l3.3-2.7Z"/><path fill="currentColor" d="M12 6a5.5 5.5 0 0 1 3.9 1.5l2.9-2.9A9.8 9.8 0 0 0 12 2 10 10 0 0 0 3.3 7.4l3.3 2.7c.8-2.3 2.9-4.1 5.4-4.1Z"/></svg>',
-    'facebook' => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M13.5 21v-7h2.8l.5-3.5h-3.3V8.3c0-1 .3-1.8 1.8-1.8H17V3.4c-.3 0-1.3-.2-2.5-.2-2.8 0-4.5 1.7-4.5 4.9v2.4H7v3.5h3V21h3.5Z"/></svg>',
-    default => '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M6.4 4h3.7l3 4.3L16.8 4H19l-4.9 5.9L19.6 20h-3.7l-3.3-4.8L8.4 20H6.2l5.3-6.4L6.4 4Z"/></svg>',
-  };
-};
-
 $settingsSections = [
   'account' => [
     'title' => 'Account',
-    'nav_description' => 'Email, password, linked accounts',
-    'hero_description' => 'Manage account trust, verification, password access, and linked-account scaffolding.',
+    'nav_description' => 'Email and password access',
+    'hero_description' => 'Manage email trust, verification, and password access.',
+  ],
+  'linked-accounts' => [
+    'title' => 'Linked Accounts',
+    'nav_description' => 'OAuth and service bridges',
+    'hero_description' => 'Manage external identities and Nicholas Foundation service connections.',
   ],
   'notifications' => [
     'title' => 'Notifications',
@@ -105,20 +104,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         (string)($emailResult['verification_token'] ?? '')
       );
       trux_flash_set('success', $sent
-        ? 'Email updated. Check your inbox to verify the new address.'
+        ? 'Email updated. Check your inbox and use the verification link within 5 minutes to confirm control of the new address.'
         : 'Email updated, but we could not send the verification email yet.');
       if (!$sent) {
-        trux_flash_set('error', 'Use the resend action after a short delay to send a fresh verification email.');
+        trux_flash_set('error', 'Use the resend action after the 5-minute timer to send a fresh verification email.');
       }
 
       $domainValidation = is_array($emailResult['email_domain'] ?? null) ? $emailResult['email_domain'] : validate_email_domain((string)($emailResult['email'] ?? ''));
       if (!($domainValidation['recognized'] ?? false)) {
-        trux_flash_set('info', 'This email domain is not in our recognized-provider list. Account recovery is safer with Gmail, Outlook, Yahoo, iCloud, Proton, or a similar mainstream provider.');
+        trux_flash_set('info', 'This email domain is not in our recognized-provider list. That is separate from ownership verification, which only happens after you click the verification email link.');
       }
     }
   } elseif ($action === 'change_password') {
     if (empty($me['email_verified'])) {
-      trux_flash_set('error', 'Verify your email before changing your password.');
+      trux_flash_set('error', 'Verify control of your email address before changing your password.');
     } else {
       $currentPassword = (string)($_POST['current_password'] ?? '');
       $newPassword = (string)($_POST['new_password'] ?? '');
@@ -188,8 +187,11 @@ if (!$accountState) {
   trux_flash_set('error', 'Account not found.');
   trux_redirect('/login.php');
 }
-$linkedAccounts = trux_fetch_linked_accounts((int)$me['id']);
-$linkedAccountProviders = trux_linked_account_providers();
+$linkedAccountCards = trux_linked_account_cards_for_user((int)$me['id']);
+$linkedAccountSummary = trux_linked_account_settings_summary((int)$me['id']);
+$linkedAccountsStorageReady = trux_linked_accounts_schema_supports_v061();
+$liveLinkedProviderLabels = trux_linked_account_live_provider_labels();
+$liveLinkedProviderText = $liveLinkedProviderLabels !== [] ? implode(', ', $liveLinkedProviderLabels) : '';
 $verificationCooldownRemaining = (int)($accountState['verification_cooldown_remaining'] ?? 0);
 $canResendVerification = !empty($accountState['verification_can_resend']);
 $isEmailVerified = !empty($accountState['email_verified']);
@@ -295,14 +297,14 @@ require_once __DIR__ . '/_header.php';
             <div class="settingSection__head">
               <span class="settingSection__eyebrow">Account</span>
               <h3>Email trust and access</h3>
-              <p class="muted">Verification protects recovery mail, password changes, and future linked-account sign-in.</p>
+              <p class="muted">Known provider domains are advisory only. Verification is what proves you control the inbox for recovery, password changes, and future linked-account sign-in.</p>
             </div>
 
             <div class="settingRow settingRow--stacked">
               <span class="settingRow__label">
                 <strong>Verification status</strong>
                 <small class="muted">
-                  <?= $isEmailVerified ? 'This address is trusted for recovery and sensitive account actions.' : 'Sensitive account actions stay locked until you verify this address.' ?>
+                  <?= $isEmailVerified ? 'This inbox was confirmed by the verification link and can be used for recovery and sensitive account actions.' : 'A recognized domain alone does not prove ownership. Sensitive account actions stay locked until you verify this inbox.' ?>
                 </small>
               </span>
               <span class="statusPill <?= trux_e($verificationStatusClass) ?>"><?= $verificationStatusLabel ?></span>
@@ -321,7 +323,7 @@ require_once __DIR__ . '/_header.php';
                   </span>
                 </small>
               <?php else: ?>
-                <small class="muted"><?= $isEmailVerified ? 'Trusted' : 'Awaiting verification' ?></small>
+                <small class="muted"><?= $isEmailVerified ? 'Inbox confirmed' : 'Awaiting email-link confirmation' ?></small>
               <?php endif; ?>
             </div>
 
@@ -329,7 +331,7 @@ require_once __DIR__ . '/_header.php';
               <div class="flash flash--warning accountNotice">
                 <div class="accountNotice__body">
                   <strong>Unrecognized email domain</strong>
-                  <p>For security and account recovery, we strongly recommend updating to a real email address like Gmail, Outlook, Yahoo, iCloud, or Proton. This is optional for now.</p>
+                  <p>This address uses a domain outside our recognized-provider list. That warning is separate from email verification, which still requires clicking the email link. Updating to a mainstream mailbox provider is optional but recommended.</p>
                 </div>
                 <button class="accountNotice__dismiss" type="button" data-dismiss-parent="1" aria-label="Dismiss warning">
                   <span aria-hidden="true">&times;</span>
@@ -340,7 +342,7 @@ require_once __DIR__ . '/_header.php';
             <?php if (!$isEmailVerified): ?>
               <div class="flash flash--info">
                 <strong>Email verification required</strong>
-                <div>Browse and post as usual, but password changes and linked-account actions stay locked until your email is verified.</div>
+                <div>Browse and post as usual, but password changes and linked-account actions stay locked until you click the verification link and prove control of this inbox.</div>
               </div>
             <?php endif; ?>
           </div>
@@ -354,7 +356,7 @@ require_once __DIR__ . '/_header.php';
               <div class="settingSection__head">
                 <span class="settingSection__eyebrow">Email &amp; verification</span>
                 <h3>Email address</h3>
-                <p class="muted">Changing your email resets verification and sends a fresh verification message.</p>
+                <p class="muted">Changing your email resets verification and sends a fresh verification message. Each verification link expires in 5 minutes.</p>
               </div>
 
               <label
@@ -372,7 +374,7 @@ require_once __DIR__ . '/_header.php';
                   data-email-domain-input="1">
                 <div class="emailDomainHint" data-email-domain-hint="1" hidden>
                   <span class="emailDomainHint__badge" data-email-domain-badge="1">Domain</span>
-                  <small class="emailDomainHint__text muted" data-email-domain-message="1">Provider status appears here.</small>
+                  <small class="emailDomainHint__text muted" data-email-domain-message="1">Domain recognition appears here. Ownership still requires email verification.</small>
                 </div>
               </label>
 
@@ -388,18 +390,18 @@ require_once __DIR__ . '/_header.php';
               <input type="hidden" name="redirect" value="<?= trux_e($accountRedirectPath) ?>">
 
               <div class="settingSection">
-                <div class="settingSection__head">
-                  <span class="settingSection__eyebrow">Verification delivery</span>
-                  <h3>Resend verification email</h3>
-                  <p class="muted">Use this when the original message expired or never reached your inbox.</p>
-                </div>
+              <div class="settingSection__head">
+                <span class="settingSection__eyebrow">Verification delivery</span>
+                <h3>Resend verification email</h3>
+                <p class="muted">Use this when the original message expired or never reached your inbox. Verification links stay valid for 5 minutes.</p>
+              </div>
 
                 <div class="settingsActions settingsActions--stacked">
                   <button class="shellButton shellButton--accent" type="submit" <?= !$canResendVerification ? 'disabled' : '' ?>>Resend verification email</button>
                   <?php if (!$canResendVerification): ?>
                     <small class="muted"><?= trux_e(trux_email_verification_cooldown_text($verificationCooldownRemaining)) ?></small>
                   <?php elseif (!empty($accountState['verification_expired'])): ?>
-                    <small class="muted">Your previous link expired. Sending a new message will issue a fresh token.</small>
+                    <small class="muted">Your previous link expired after 5 minutes. Sending a new message will issue a fresh token.</small>
                   <?php endif; ?>
                 </div>
               </div>
@@ -421,7 +423,7 @@ require_once __DIR__ . '/_header.php';
               <?php if (!$isEmailVerified): ?>
                 <div class="flash flash--warning">
                   <strong>Password changes are locked</strong>
-                  <div>Verify your email first. Password changes are restricted until this account has a trusted recovery address.</div>
+                  <div>Verify your email first. Password changes are restricted until you confirm control of this inbox through the email link.</div>
                 </div>
               <?php else: ?>
                 <label class="field">
@@ -449,61 +451,225 @@ require_once __DIR__ . '/_header.php';
           <div class="settingSection">
             <div class="settingSection__head">
               <span class="settingSection__eyebrow">Linked accounts</span>
-              <h3>Connected accounts</h3>
-              <p class="muted">Prepare your TruX account for future Google, Facebook, and X sign-in convenience.</p>
+              <h3>Connection center</h3>
+              <p class="muted">Discord, Google, Facebook, X, and future Nicholas Foundation identity bridges now live in a dedicated linked-accounts section.</p>
             </div>
 
-            <?php if (!$isEmailVerified): ?>
-              <div class="flash flash--info">
-                <strong>Linked accounts are locked</strong>
-                <div>Please verify your email before linking or unlinking OAuth providers.</div>
+            <div class="settingRow settingRow--stacked">
+              <span class="settingRow__label">
+                <strong><?= (int)$linkedAccountSummary['connected'] ?> active connection<?= (int)$linkedAccountSummary['connected'] === 1 ? '' : 's' ?></strong>
+                <small class="muted">
+                  <?php if (!$linkedAccountsStorageReady): ?>
+                    Apply the v0.6.1 linked-account migration before live provider linking can be enabled.
+                  <?php elseif ((int)$linkedAccountSummary['total'] > 0): ?>
+                    <?= (int)$linkedAccountSummary['connected'] ?> connected, <?= (int)$linkedAccountSummary['error'] ?> error, <?= (int)$linkedAccountSummary['revoked'] ?> revoked.
+                  <?php elseif ($liveLinkedProviderText !== ''): ?>
+                    No service identities are linked yet. Live linking is ready for <?= trux_e($liveLinkedProviderText) ?> from the Linked Accounts section.
+                  <?php else: ?>
+                    No service identities are linked yet. Configure provider credentials to unlock live linking.
+                  <?php endif; ?>
+                </small>
+              </span>
+              <a class="shellButton shellButton--ghost" href="<?= TRUX_BASE_URL . $linkedAccountsRedirectPath ?>">Open linked accounts</a>
+            </div>
+
+          </div>
+        </section>
+      <?php elseif ($activeSection === 'linked-accounts'): ?>
+        <section class="settingsSectionCard" id="settings-linked-accounts" data-settings-section="linked-accounts">
+          <a class="settingsSectionBack shellButton shellButton--ghost" href="<?= TRUX_BASE_URL ?>/settings.php">All sections</a>
+
+          <div class="settingSection">
+            <div class="settingSection__head">
+              <span class="settingSection__eyebrow">Linked accounts</span>
+              <h3>Service connections</h3>
+              <p class="muted">Connect Discord, Google, Facebook, and X identities for notifications, support tools, and Nicholas Foundation ecosystem access without relying on a fake placeholder flow.</p>
+            </div>
+
+            <?php if (!$linkedAccountsStorageReady): ?>
+              <div class="flash flash--warning">
+                <strong>Migration required</strong>
+                <div>The v0.6.1 linked-account migration has not been applied yet. Existing rows still display, but live provider linking stays locked until the upgraded table shape is available.</div>
               </div>
             <?php endif; ?>
 
-            <div class="linkedAccountsGrid">
-              <?php foreach ($linkedAccountProviders as $providerKey => $providerMeta): ?>
+            <?php if (!$isEmailVerified): ?>
+              <div class="flash flash--info">
+                <strong>Email verification required</strong>
+                <div>View provider details freely, but linking, relinking, and unlinking stay locked until you verify control of your TruX email address.</div>
+              </div>
+            <?php endif; ?>
+
+            <div class="linkedAccountsStats" aria-label="Linked account summary">
+              <div class="linkedAccountsStat">
+                <span>Connected</span>
+                <strong><?= (int)$linkedAccountSummary['connected'] ?></strong>
+              </div>
+              <div class="linkedAccountsStat">
+                <span>Needs attention</span>
+                <strong><?= (int)$linkedAccountSummary['error'] + (int)$linkedAccountSummary['revoked'] ?></strong>
+              </div>
+              <div class="linkedAccountsStat">
+                <span>Providers</span>
+                <strong><?= count($linkedAccountCards) ?></strong>
+              </div>
+            </div>
+
+            <div class="linkedAccountsGrid linkedAccountsGrid--rich">
+              <?php foreach ($linkedAccountCards as $providerKey => $card): ?>
                 <?php
-                $linkedAccount = $linkedAccounts[$providerKey] ?? null;
+                $providerMeta = is_array($card['meta'] ?? null) ? $card['meta'] : [];
+                $linkedAccount = is_array($card['account'] ?? null) ? $card['account'] : null;
+                $presenter = is_array($card['presenter'] ?? null) ? $card['presenter'] : ['label' => 'Unknown', 'class' => 'is-muted', 'summary' => ''];
                 $providerLabel = (string)($providerMeta['label'] ?? ucfirst($providerKey));
+                $availability = (string)($providerMeta['availability'] ?? 'coming_soon');
+                $availabilityNote = trim((string)($providerMeta['availability_note'] ?? ''));
+                $providerBrand = trim((string)($providerMeta['brand'] ?? ''));
+                $identifier = trim((string)($card['identifier'] ?? ''));
                 $linkedAt = trim((string)($linkedAccount['linked_at'] ?? ''));
                 $linkedAtExact = $linkedAt !== '' ? trux_format_exact_time($linkedAt) : '';
+                $updatedAt = trim((string)($linkedAccount['updated_at'] ?? ''));
+                $updatedAtExact = $updatedAt !== '' ? trux_format_exact_time($updatedAt) : '';
+                $verifiedAt = trim((string)($linkedAccount['last_verified_at'] ?? ''));
+                $verifiedAtExact = $verifiedAt !== '' ? trux_format_exact_time($verifiedAt) : '';
+                $lastUsedAt = trim((string)($linkedAccount['last_used_at'] ?? ''));
+                $lastUsedAtExact = $lastUsedAt !== '' ? trux_format_exact_time($lastUsedAt) : '';
+                $providerUserId = trim((string)($linkedAccount['provider_user_id'] ?? ''));
+                $providerAvatarUrl = trim((string)($linkedAccount['provider_avatar_url'] ?? ''));
+                $statusReason = trim((string)($linkedAccount['status_reason'] ?? ''));
+                $showLiveAction = $availability === 'available';
+                $actionsLocked = !$isEmailVerified || !$linkedAccountsStorageReady;
+                $primaryActionLabel = $linkedAccount ? 'Relink' : 'Link';
+                $disabledActionLabel = $availability === 'pending_setup' ? 'Pending setup' : 'Coming soon';
                 ?>
-                <article class="linkedAccountCard">
+                <article class="linkedAccountCard linkedAccountCard--detailed" id="linked-account-<?= trux_e($providerKey) ?>">
                   <div class="linkedAccountCard__identity">
-                    <span class="linkedAccountCard__icon" aria-hidden="true"><?= $linkedAccountIcon($providerKey) ?></span>
+                    <span class="linkedAccountCard__icon" aria-hidden="true">
+                      <?php if ($providerAvatarUrl !== ''): ?>
+                        <img class="linkedAccountAvatar" src="<?= trux_e($providerAvatarUrl) ?>" alt="">
+                      <?php else: ?>
+                        <?= trux_linked_account_provider_icon_svg($providerKey) ?>
+                      <?php endif; ?>
+                    </span>
                     <span class="linkedAccountCard__copy">
                       <strong><?= trux_e($providerLabel) ?></strong>
-                      <small class="muted">
-                        <?php if ($linkedAccount): ?>
-                          Connected
-                          <?php if ($linkedAt !== ''): ?>
-                            <span data-time-ago="1" data-time-source="<?= trux_e($linkedAt) ?>" title="<?= trux_e($linkedAtExact) ?>">
-                              <?= trux_e(trux_time_ago($linkedAt)) ?>
-                            </span>
-                            <span> · linked <?= trux_e($linkedAtExact) ?></span>
-                          <?php endif; ?>
-                        <?php else: ?>
-                          Not linked
-                        <?php endif; ?>
-                      </small>
+                      <?php if ($providerBrand !== ''): ?>
+                        <small class="muted"><?= trux_e($providerBrand) ?></small>
+                      <?php endif; ?>
+                      <?php if ($identifier !== ''): ?>
+                        <small class="linkedAccountIdentity"><?= trux_e($identifier) ?></small>
+                      <?php endif; ?>
                     </span>
                   </div>
 
-                  <div class="linkedAccountCard__meta">
-                    <span class="statusPill <?= $linkedAccount ? 'is-success' : 'is-muted' ?>"><?= $linkedAccount ? 'Connected' : 'Not linked' ?></span>
+                  <p class="muted linkedAccountCard__description"><?= trux_e((string)($providerMeta['description'] ?? '')) ?></p>
 
-                    <?php if ($linkedAccount): ?>
-                      <form method="post" action="<?= TRUX_BASE_URL ?>/settings/unlink-account.php?provider=<?= urlencode($providerKey) ?>" data-confirm="Unlink <?= trux_e($providerLabel) ?> from your TruX account?">
-                        <?= trux_csrf_field() ?>
-                        <button class="shellButton shellButton--ghost" type="submit" <?= !$isEmailVerified ? 'disabled' : '' ?>>Unlink</button>
-                      </form>
-                    <?php else: ?>
-                      <form method="post" action="<?= TRUX_BASE_URL ?>/settings/link-account.php?provider=<?= urlencode($providerKey) ?>">
-                        <?= trux_csrf_field() ?>
-                        <button class="shellButton shellButton--ghost" type="submit" <?= !$isEmailVerified ? 'disabled' : '' ?>>Link account</button>
-                      </form>
+                  <?php if ($statusReason !== ''): ?>
+                    <p class="linkedAccountStatusNote muted"><?= trux_e($statusReason) ?></p>
+                  <?php endif; ?>
+
+                  <div class="linkedAccountCard__facts">
+                    <span class="statusPill <?= trux_e((string)$presenter['class']) ?>"><?= trux_e((string)$presenter['label']) ?></span>
+                    <?php if ($linkedAt !== ''): ?>
+                      <span class="linkedAccountFact">
+                        Linked
+                        <span data-time-ago="1" data-time-source="<?= trux_e($linkedAt) ?>" title="<?= trux_e($linkedAtExact) ?>">
+                          <?= trux_e(trux_time_ago($linkedAt)) ?>
+                        </span>
+                      </span>
+                    <?php endif; ?>
+                    <?php if ($verifiedAt !== '' && $verifiedAt !== $linkedAt): ?>
+                      <span class="linkedAccountFact">
+                        Verified
+                        <span data-time-ago="1" data-time-source="<?= trux_e($verifiedAt) ?>" title="<?= trux_e($verifiedAtExact) ?>">
+                          <?= trux_e(trux_time_ago($verifiedAt)) ?>
+                        </span>
+                      </span>
+                    <?php endif; ?>
+                    <?php if ($updatedAt !== '' && $updatedAt !== $linkedAt): ?>
+                      <span class="linkedAccountFact">
+                        Updated
+                        <span data-time-ago="1" data-time-source="<?= trux_e($updatedAt) ?>" title="<?= trux_e($updatedAtExact) ?>">
+                          <?= trux_e(trux_time_ago($updatedAt)) ?>
+                        </span>
+                      </span>
                     <?php endif; ?>
                   </div>
+
+                  <div class="linkedAccountCard__meta">
+                    <div class="linkedAccountActions">
+                      <?php if ($showLiveAction): ?>
+                        <form method="post" action="<?= TRUX_BASE_URL ?>/settings/link-account.php?provider=<?= urlencode($providerKey) ?>">
+                          <?= trux_csrf_field() ?>
+                          <button class="shellButton shellButton--ghost" type="submit" <?= $actionsLocked ? 'disabled' : '' ?>><?= trux_e($primaryActionLabel) ?></button>
+                        </form>
+                      <?php else: ?>
+                        <button class="shellButton shellButton--ghost" type="button" disabled><?= trux_e($disabledActionLabel) ?></button>
+                      <?php endif; ?>
+
+                      <?php if ($linkedAccount): ?>
+                        <form method="post" action="<?= TRUX_BASE_URL ?>/settings/unlink-account.php?provider=<?= urlencode($providerKey) ?>" data-confirm="Unlink <?= trux_e($providerLabel) ?> from your TruX account?">
+                          <?= trux_csrf_field() ?>
+                          <button class="shellButton shellButton--ghost" type="submit" <?= $actionsLocked ? 'disabled' : '' ?>>Unlink</button>
+                        </form>
+                      <?php endif; ?>
+                    </div>
+
+                    <?php if ($actionsLocked && $showLiveAction): ?>
+                      <small class="muted linkedAccountCard__helper"><?= !$isEmailVerified ? 'Verify your email to manage this connection.' : 'Apply the v0.6.1 linked-account migration to unlock live provider linking.' ?></small>
+                    <?php endif; ?>
+                  </div>
+
+                  <details class="linkedAccountDetails">
+                    <summary>View details</summary>
+                    <div class="linkedAccountDetails__body">
+                      <p class="muted"><?= trux_e((string)($presenter['summary'] ?? '')) ?></p>
+                      <?php if ($availabilityNote !== ''): ?>
+                        <p class="muted"><?= trux_e($availabilityNote) ?></p>
+                      <?php endif; ?>
+                      <dl class="linkedAccountDetails__grid">
+                        <div>
+                          <dt>Availability</dt>
+                          <dd><?= trux_e(ucwords(str_replace('_', ' ', $availability))) ?></dd>
+                        </div>
+                        <div>
+                          <dt>Status</dt>
+                          <dd><?= trux_e((string)($presenter['label'] ?? 'Unknown')) ?></dd>
+                        </div>
+                        <div>
+                          <dt>Identifier</dt>
+                          <dd><?= $identifier !== '' ? trux_e($identifier) : 'Not linked yet' ?></dd>
+                        </div>
+                        <div>
+                          <dt>Provider user ID</dt>
+                          <dd><?= $providerUserId !== '' ? trux_e($providerUserId) : 'Not stored yet' ?></dd>
+                        </div>
+                        <div>
+                          <dt>Linked at</dt>
+                          <dd><?= $linkedAtExact !== '' ? trux_e($linkedAtExact) : 'Not linked yet' ?></dd>
+                        </div>
+                        <div>
+                          <dt>Updated at</dt>
+                          <dd><?= $updatedAtExact !== '' ? trux_e($updatedAtExact) : 'Not available yet' ?></dd>
+                        </div>
+                        <div>
+                          <dt>Last verified</dt>
+                          <dd><?= $verifiedAtExact !== '' ? trux_e($verifiedAtExact) : 'Not available yet' ?></dd>
+                        </div>
+                        <div>
+                          <dt>Last used</dt>
+                          <dd><?= $lastUsedAtExact !== '' ? trux_e($lastUsedAtExact) : 'Not tracked yet' ?></dd>
+                        </div>
+                      </dl>
+
+                      <?php if ($statusReason !== ''): ?>
+                        <div class="linkedAccountDetails__note">
+                          <strong>Status note</strong>
+                          <p class="muted"><?= trux_e($statusReason) ?></p>
+                        </div>
+                      <?php endif; ?>
+                    </div>
+                  </details>
                 </article>
               <?php endforeach; ?>
             </div>

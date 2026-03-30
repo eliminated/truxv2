@@ -36,13 +36,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     trux_login_user($userId);
     trux_flash_set('success', $sentVerification
-      ? 'Account created. Welcome to TruX! Check your inbox to verify your email address.'
+      ? 'Account created. Welcome to TruX! Check your inbox and click the verification link within 5 minutes to prove you control this email address.'
       : 'Account created. Welcome to TruX!');
     if (!$sentVerification) {
-      trux_flash_set('error', 'Your account was created, but we could not send the verification email yet. Use the resend action from the verification banner or account settings.');
+      trux_flash_set('error', 'Your account was created, but we could not send the verification email yet. Use the resend action from the verification banner or account settings after the 5-minute timer if needed.');
     }
     if (!($domainValidation['recognized'] ?? false)) {
-      trux_flash_set('info', 'Your email domain is not in our recognized-provider list. For account recovery, consider switching to a mainstream provider later.');
+      trux_flash_set('info', 'Your email domain is not in our recognized-provider list. That does not block registration, but email ownership still must be verified through the email link either way.');
     }
     trux_redirect('/');
   } else {
@@ -59,7 +59,7 @@ require_once __DIR__ . '/_header.php';
       <div class="authGateway__signalHead">
         <span class="authGateway__eyebrow">New account</span>
         <h1 class="authGateway__title">Create your TruX identity in one clean step.</h1>
-        <p class="authGateway__copy">Join the network with the same existing validation, account creation, and authentication behavior behind a fully rebuilt gateway.</p>
+        <p class="authGateway__copy">Known email domains are advisory only. Your inbox is treated as unverified until you click the verification link we send.</p>
       </div>
 
       <div class="authReadoutGrid" aria-hidden="true">
@@ -143,7 +143,7 @@ require_once __DIR__ . '/_header.php';
               data-email-domain-input="1">
             <div class="emailDomainHint" data-email-domain-hint="1" hidden>
               <span class="emailDomainHint__badge" data-email-domain-badge="1">Domain</span>
-              <small class="emailDomainHint__text muted" data-email-domain-message="1">Provider status appears here.</small>
+              <small class="emailDomainHint__text muted" data-email-domain-message="1">Domain recognition appears here. Ownership still requires email verification.</small>
             </div>
           </label>
 

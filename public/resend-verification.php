@@ -55,8 +55,8 @@ if (trux_is_logged_in()) {
     );
 
     trux_flash_set($sent ? 'success' : 'error', $sent
-        ? 'A new verification email has been sent.'
-        : 'We generated a new verification link, but email delivery failed. Please try again shortly.');
+        ? 'A new verification email has been sent. Use the link within 5 minutes to confirm ownership of this inbox.'
+        : 'We generated a new verification link, but email delivery failed. Please try again after the 5-minute timer.');
     trux_redirect($redirectPath);
 }
 
@@ -103,6 +103,6 @@ $sent = trux_send_email_verification_email(
 );
 
 trux_flash_set($sent ? 'success' : 'error', $sent
-    ? 'A new verification email has been sent. Check your inbox and then sign in.'
-    : 'We generated a new verification link, but email delivery failed. Please try again later from account settings.');
+    ? 'A new verification email has been sent. Check your inbox and use the link within 5 minutes before signing in again.'
+    : 'We generated a new verification link, but email delivery failed. Please try again later from account settings after the 5-minute timer.');
 trux_redirect($loginRedirect);
