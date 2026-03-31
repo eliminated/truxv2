@@ -1146,10 +1146,16 @@
     const menuRects = [];
 
     if (menuTrigger instanceof HTMLElement) {
-      menuRects.push(menuTrigger.getBoundingClientRect());
+      menuRects.push({
+        rect: menuTrigger.getBoundingClientRect(),
+        weight: 4,
+      });
     }
     if (menuPanel instanceof HTMLElement && menu?.classList.contains("is-open")) {
-      menuRects.push(menuPanel.getBoundingClientRect());
+      menuRects.push({
+        rect: menuPanel.getBoundingClientRect(),
+        weight: 16,
+      });
     }
 
     if (options.mobile) {
@@ -1162,43 +1168,89 @@
 
       bubble.dataset.quickActionsPlacement = "above";
       bar.style.setProperty("--quick-actions-shift-x", `${shiftX}px`);
+      bar.style.setProperty("--quick-actions-shift-y", "0px");
       return;
     }
 
-    const getPlacementRect = (placement) => {
+    const getPlacementRect = (placement, shiftY = 0) => {
+      const centerTop = bubbleRect.top + bubbleRect.height / 2 - barHeight / 2 + shiftY;
       if (placement === "left") {
         return {
           left: bubbleRect.left - gap - barWidth,
           right: bubbleRect.left - gap,
-          top: bubbleRect.top + bubbleRect.height / 2 - barHeight / 2,
-          bottom: bubbleRect.top + bubbleRect.height / 2 + barHeight / 2,
+          top: centerTop,
+          bottom: centerTop + barHeight,
         };
       }
 
       return {
         left: bubbleRect.right + gap,
         right: bubbleRect.right + gap + barWidth,
-        top: bubbleRect.top + bubbleRect.height / 2 - barHeight / 2,
-        bottom: bubbleRect.top + bubbleRect.height / 2 + barHeight / 2,
+        top: centerTop,
+        bottom: centerTop + barHeight,
       };
     };
 
-    const placementOverflows = (placement) => {
-      const rect = getPlacementRect(placement);
+    const scorePlacement = (placement, shiftY = 0) => {
+      const rect = getPlacementRect(placement, shiftY);
+      let score = 0;
+
       if (rect.left < threadRect.left + 4 || rect.right > threadRect.right - 4) {
-        return true;
+        score += 100;
+      }
+      if (rect.top < threadRect.top + 4 || rect.bottom > threadRect.bottom - 4) {
+        score += 18;
       }
 
-      return menuRects.some((menuRect) => rectsIntersect(rect, menuRect));
+      menuRects.forEach((menuRect) => {
+        if (rectsIntersect(rect, menuRect.rect)) {
+          score += menuRect.weight;
+        }
+      });
+
+      return { placement, shiftY, rect, score };
     };
 
-    let placement = isMine ? "left" : "right";
-    if (placementOverflows(placement)) {
-      placement = placement === "left" ? "right" : "left";
-    }
+    const evaluatePlacement = (placement) => {
+      const baseRect = getPlacementRect(placement, 0);
+      const shiftCandidates = [0];
 
-    bubble.dataset.quickActionsPlacement = placement;
+      menuRects.forEach((menuRect) => {
+        if (!rectsIntersect(baseRect, menuRect.rect)) {
+          return;
+        }
+        shiftCandidates.push(menuRect.rect.bottom - baseRect.top + 6);
+        shiftCandidates.push(menuRect.rect.top - baseRect.bottom - 6);
+      });
+
+      let best = null;
+      const maxDown = threadRect.bottom - 4 - baseRect.bottom;
+      const maxUp = threadRect.top + 4 - baseRect.top;
+
+      shiftCandidates.forEach((candidate) => {
+        const clampedShift = Math.max(maxUp, Math.min(maxDown, candidate));
+        const next = scorePlacement(placement, clampedShift);
+        if (!best || next.score < best.score) {
+          best = next;
+        }
+      });
+
+      return best || scorePlacement(placement, 0);
+    };
+
+    const preferredPlacement = isMine ? "left" : "right";
+    const fallbackPlacement = preferredPlacement === "left" ? "right" : "left";
+    const preferred = evaluatePlacement(preferredPlacement);
+    const fallback = evaluatePlacement(fallbackPlacement);
+    const resolved =
+      !fallback || preferred.score <= fallback.score ? preferred : fallback;
+
+    bubble.dataset.quickActionsPlacement = resolved.placement;
     bar.style.removeProperty("--quick-actions-shift-x");
+    bar.style.setProperty(
+      "--quick-actions-shift-y",
+      `${Math.round(resolved.shiftY)}px`
+    );
   };
 
   const clearQuickActionsHideTimer = () => {

@@ -1715,13 +1715,13 @@
 .page--messages .messageBubble[data-quick-actions-placement="left"] .messageBubble__hoverActions {
   right: calc(100% + 0.24rem);
   left: auto;
-  transform: translateY(-50%) translateX(-0.3rem);
+  transform: translateY(calc(-50% + var(--quick-actions-shift-y, 0px))) translateX(-0.3rem);
 }
 
 .page--messages .messageBubble[data-quick-actions-placement="right"] .messageBubble__hoverActions {
   left: calc(100% + 0.24rem);
   right: auto;
-  transform: translateY(-50%) translateX(0.3rem);
+  transform: translateY(calc(-50% + var(--quick-actions-shift-y, 0px))) translateX(0.3rem);
 }
 
 .page--messages .messageBubble[data-quick-actions-placement="above"] .messageBubble__hoverActions {
@@ -1744,7 +1744,7 @@
 
 .page--messages .messageBubble.is-quick-actions-open[data-quick-actions-placement="left"] .messageBubble__hoverActions,
 .page--messages .messageBubble.is-quick-actions-open[data-quick-actions-placement="right"] .messageBubble__hoverActions {
-  transform: translateY(-50%) translateX(0);
+  transform: translateY(calc(-50% + var(--quick-actions-shift-y, 0px))) translateX(0);
 }
 
 .page--messages .messageBubble.is-quick-actions-open[data-quick-actions-placement="above"] .messageBubble__hoverActions {
