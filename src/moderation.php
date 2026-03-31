@@ -559,6 +559,40 @@ function trux_moderation_clean_path(?string $value): ?string {
     return mb_substr($path, 0, 255);
 }
 
+function trux_moderation_clean_list(array $values): array {
+    $clean = [];
+
+    foreach ($values as $value) {
+        if (is_array($value)) {
+            $nested = array_is_list($value)
+                ? trux_moderation_clean_list($value)
+                : trux_moderation_clean_map($value);
+            if ($nested !== []) {
+                $clean[] = $nested;
+            }
+            continue;
+        }
+
+        if ($value === null) {
+            continue;
+        }
+
+        if (is_bool($value) || is_int($value) || is_float($value)) {
+            $clean[] = $value;
+            continue;
+        }
+
+        $stringValue = trim((string)$value);
+        if ($stringValue === '') {
+            continue;
+        }
+
+        $clean[] = mb_substr($stringValue, 0, 500);
+    }
+
+    return $clean;
+}
+
 function trux_moderation_clean_map(array $values): array {
     $clean = [];
 
@@ -568,7 +602,9 @@ function trux_moderation_clean_map(array $values): array {
         }
 
         if (is_array($value)) {
-            $nested = trux_moderation_clean_map($value);
+            $nested = array_is_list($value)
+                ? trux_moderation_clean_list($value)
+                : trux_moderation_clean_map($value);
             if ($nested !== []) {
                 $clean[$key] = $nested;
             }
@@ -705,6 +741,68 @@ function trux_moderation_target_label_from_snapshot(string $targetType, int $tar
     };
 }
 
+function trux_moderation_direct_message_attachment_url(int $attachmentId, bool $download = false): string {
+    $query = ['id' => $attachmentId];
+    if ($download) {
+        $query['download'] = '1';
+    }
+
+    return TRUX_BASE_URL . '/moderation/dm_attachment.php?' . http_build_query($query);
+}
+
+function trux_moderation_serialize_direct_message_attachment(array $attachment, bool $includeUrls = false): array {
+    $attachmentId = (int)($attachment['id'] ?? 0);
+    $mimeType = trim((string)($attachment['mime_type'] ?? ''));
+    $payload = [
+        'id' => $attachmentId,
+        'original_name' => (string)($attachment['original_name'] ?? ''),
+        'mime_type' => $mimeType,
+        'file_size' => (int)($attachment['file_size'] ?? 0),
+        'is_image' => trux_direct_message_is_image_mime($mimeType),
+        'image_width' => isset($attachment['image_width']) ? (int)$attachment['image_width'] : null,
+        'image_height' => isset($attachment['image_height']) ? (int)$attachment['image_height'] : null,
+    ];
+
+    if ($includeUrls && $attachmentId > 0) {
+        $payload['view_url'] = trux_moderation_direct_message_attachment_url($attachmentId, false);
+        $payload['download_url'] = trux_moderation_direct_message_attachment_url($attachmentId, true);
+    }
+
+    return $payload;
+}
+
+function trux_moderation_fetch_direct_message_attachment_row_map(array $messageIds): array {
+    return trux_direct_message_fetch_attachment_rows_by_message_ids($messageIds);
+}
+
+function trux_moderation_hydrate_message_context_row(array $message, array $attachmentRowMap = [], bool $includeAttachmentUrls = false): array {
+    $messageId = (int)($message['id'] ?? 0);
+    $rawAttachments = is_array($attachmentRowMap[$messageId] ?? null) ? $attachmentRowMap[$messageId] : [];
+    $attachments = array_map(
+        static fn (array $attachment): array => trux_moderation_serialize_direct_message_attachment($attachment, $includeAttachmentUrls),
+        $rawAttachments
+    );
+    $removedAt = trim((string)($message['deleted_for_everyone_at'] ?? ''));
+
+    return [
+        'id' => $messageId,
+        'conversation_id' => (int)($message['conversation_id'] ?? 0),
+        'sender_user_id' => (int)($message['sender_user_id'] ?? 0),
+        'sender_username' => (string)($message['sender_username'] ?? ''),
+        'sender_display_name' => (string)($message['sender_display_name'] ?? ''),
+        'recipient_user_id' => isset($message['recipient_user_id']) ? (int)$message['recipient_user_id'] : 0,
+        'recipient_username' => (string)($message['recipient_username'] ?? ''),
+        'recipient_display_name' => (string)($message['recipient_display_name'] ?? ''),
+        'body' => (string)($message['body'] ?? ''),
+        'created_at' => (string)($message['created_at'] ?? ''),
+        'is_removed' => $removedAt !== '',
+        'removed_at' => $removedAt,
+        'attachment_count' => count($attachments),
+        'attachments' => $attachments,
+        'is_reported_target' => !empty($message['is_reported_target']),
+    ];
+}
+
 function trux_moderation_fetch_message_conversation_context(int $conversationId, int $messageId, int $radius = 2): array {
     if ($conversationId <= 0 || $messageId <= 0) {
         return [];
@@ -713,7 +811,7 @@ function trux_moderation_fetch_message_conversation_context(int $conversationId,
     try {
         $db = trux_db();
         $stmt = $db->prepare(
-            'SELECT m.id, m.conversation_id, m.sender_user_id, m.body, m.created_at,
+            'SELECT m.id, m.conversation_id, m.sender_user_id, m.body, m.created_at, m.deleted_for_everyone_at,
                     u.username AS sender_username, u.display_name AS sender_display_name
              FROM direct_messages m
              JOIN users u ON u.id = m.sender_user_id
@@ -725,6 +823,7 @@ function trux_moderation_fetch_message_conversation_context(int $conversationId,
         if (!$messages) {
             return [];
         }
+        $attachmentRowMap = trux_moderation_fetch_direct_message_attachment_row_map(array_column($messages, 'id'));
 
         $targetIndex = null;
         foreach ($messages as $index => $message) {
@@ -746,7 +845,10 @@ function trux_moderation_fetch_message_conversation_context(int $conversationId,
         }
         unset($message);
 
-        return $slice;
+        return array_map(
+            static fn (array $message): array => trux_moderation_hydrate_message_context_row($message, $attachmentRowMap, true),
+            $slice
+        );
     } catch (PDOException) {
         return [];
     }
@@ -874,7 +976,7 @@ function trux_moderation_fetch_message_target(int $messageId): ?array {
     try {
         $db = trux_db();
         $stmt = $db->prepare(
-            'SELECT m.id, m.conversation_id, m.sender_user_id, m.body, m.created_at,
+            'SELECT m.id, m.conversation_id, m.sender_user_id, m.body, m.created_at, m.deleted_for_everyone_at,
                     c.user_one_id, c.user_two_id,
                     sender.username AS sender_username,
                     sender.display_name AS sender_display_name,
@@ -897,6 +999,9 @@ function trux_moderation_fetch_message_target(int $messageId): ?array {
             return null;
         }
 
+        $attachmentRowMap = trux_moderation_fetch_direct_message_attachment_row_map([$messageId]);
+        $snapshotMessage = trux_moderation_hydrate_message_context_row($message, $attachmentRowMap, false);
+        $liveMessage = trux_moderation_hydrate_message_context_row($message, $attachmentRowMap, true);
         $conversationId = (int)($message['conversation_id'] ?? 0);
         $senderUsername = trim((string)($message['sender_username'] ?? ''));
         return [
@@ -908,30 +1013,56 @@ function trux_moderation_fetch_message_target(int $messageId): ?array {
             'target_label' => $senderUsername !== '' ? 'Message #' . $messageId . ' from @' . $senderUsername : trux_moderation_target_label('message', $messageId),
             'snapshot' => [
                 'message_id' => $messageId,
-                'conversation_id' => $conversationId,
-                'sender_user_id' => (int)($message['sender_user_id'] ?? 0),
-                'sender_username' => $senderUsername,
-                'sender_display_name' => (string)($message['sender_display_name'] ?? ''),
-                'recipient_user_id' => (int)($message['recipient_user_id'] ?? 0),
-                'recipient_username' => (string)($message['recipient_username'] ?? ''),
-                'recipient_display_name' => (string)($message['recipient_display_name'] ?? ''),
-                'body' => (string)($message['body'] ?? ''),
-                'created_at' => (string)($message['created_at'] ?? ''),
+                'conversation_id' => (int)($snapshotMessage['conversation_id'] ?? $conversationId),
+                'sender_user_id' => (int)($snapshotMessage['sender_user_id'] ?? 0),
+                'sender_username' => (string)($snapshotMessage['sender_username'] ?? $senderUsername),
+                'sender_display_name' => (string)($snapshotMessage['sender_display_name'] ?? ''),
+                'recipient_user_id' => (int)($snapshotMessage['recipient_user_id'] ?? 0),
+                'recipient_username' => (string)($snapshotMessage['recipient_username'] ?? ''),
+                'recipient_display_name' => (string)($snapshotMessage['recipient_display_name'] ?? ''),
+                'body' => (string)($snapshotMessage['body'] ?? ''),
+                'created_at' => (string)($snapshotMessage['created_at'] ?? ''),
+                'is_removed' => !empty($snapshotMessage['is_removed']),
+                'removed_at' => (string)($snapshotMessage['removed_at'] ?? ''),
+                'attachment_count' => (int)($snapshotMessage['attachment_count'] ?? 0),
+                'attachments' => is_array($snapshotMessage['attachments'] ?? null) ? $snapshotMessage['attachments'] : [],
             ],
             'live_context' => [
-                'message' => [
-                    'id' => $messageId,
-                    'conversation_id' => $conversationId,
-                    'body' => (string)($message['body'] ?? ''),
-                    'created_at' => (string)($message['created_at'] ?? ''),
-                    'sender_user_id' => (int)($message['sender_user_id'] ?? 0),
-                    'sender_username' => $senderUsername,
-                    'recipient_user_id' => (int)($message['recipient_user_id'] ?? 0),
-                    'recipient_username' => (string)($message['recipient_username'] ?? ''),
-                ],
+                'message' => $liveMessage,
                 'conversation_messages' => trux_moderation_fetch_message_conversation_context($conversationId, $messageId),
             ],
         ];
+    } catch (PDOException) {
+        return null;
+    }
+}
+
+function trux_moderation_fetch_direct_message_attachment(int $attachmentId): ?array {
+    if ($attachmentId <= 0) {
+        return null;
+    }
+
+    try {
+        $db = trux_db();
+        $stmt = $db->prepare(
+            'SELECT a.id, a.message_id, a.file_path, a.original_name, a.mime_type, a.file_size,
+                    a.image_width, a.image_height, a.created_at,
+                    m.conversation_id, m.sender_user_id, m.deleted_for_everyone_at
+             FROM direct_message_attachments a
+             JOIN direct_messages m ON m.id = a.message_id
+             WHERE a.id = ?
+             LIMIT 1'
+        );
+        $stmt->execute([$attachmentId]);
+        $attachment = $stmt->fetch();
+        if (!$attachment) {
+            return null;
+        }
+        if (!trux_direct_message_attachment_is_safe_relative_path((string)($attachment['file_path'] ?? ''))) {
+            return null;
+        }
+
+        return $attachment;
     } catch (PDOException) {
         return null;
     }
@@ -2231,6 +2362,10 @@ function trux_moderation_submit_report(array $data): array {
         return ['ok' => false, 'status' => 400, 'error' => 'Message must be 2000 characters or fewer.'];
     }
 
+    if ($targetType === 'message' && !trux_fetch_direct_message_for_user($targetId, $reporterUserId)) {
+        return ['ok' => false, 'status' => 403, 'error' => 'You can only report messages from conversations you participate in.'];
+    }
+
     $target = trux_moderation_fetch_target_context($targetType, $targetId);
     if (!$target) {
         return [
@@ -2468,9 +2603,21 @@ function trux_moderation_delete_message_if_staff(int $messageId): bool {
 
     try {
         $db = trux_db();
-        $delete = $db->prepare('DELETE FROM direct_messages WHERE id = ?');
-        $delete->execute([$messageId]);
-        return $delete->rowCount() > 0;
+        $update = $db->prepare(
+            'UPDATE direct_messages
+             SET body = NULL,
+                 deleted_for_everyone_at = COALESCE(deleted_for_everyone_at, CURRENT_TIMESTAMP),
+                 read_at = COALESCE(read_at, CURRENT_TIMESTAMP)
+             WHERE id = ?'
+        );
+        $update->execute([$messageId]);
+        if ($update->rowCount() > 0) {
+            return true;
+        }
+
+        $exists = $db->prepare('SELECT 1 FROM direct_messages WHERE id = ? LIMIT 1');
+        $exists->execute([$messageId]);
+        return (bool)$exists->fetchColumn();
     } catch (PDOException) {
         return false;
     }
@@ -4399,6 +4546,14 @@ function trux_moderation_audit_log_summary(array $row): string {
             return 'Vote: ' . trux_moderation_label(trux_moderation_report_vote_options(), $vote);
         }
         return 'Vote recorded';
+    }
+
+    if ($actionType === 'moderation_dm_attachment_accessed') {
+        $attachmentId = (int)($details['attachment_id'] ?? 0);
+        $mode = !empty($details['download']) ? 'downloaded' : 'opened';
+        return $attachmentId > 0
+            ? 'DM attachment #' . $attachmentId . ' ' . $mode
+            : 'DM attachment accessed';
     }
 
     if ($actionType === 'staff_role_updated') {

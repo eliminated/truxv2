@@ -165,6 +165,7 @@ if ($user) {
     'icon' => 'messages',
     'active' => $isPage(['messages']),
     'badge' => $unreadMessageCount > 0 ? (string)$unreadMessageCount : '',
+    'message_badge' => true,
   ];
   $appRailItems[] = [
     'href' => TRUX_BASE_URL . '/notifications.php',
@@ -282,6 +283,7 @@ $renderAppRailItems = static function (array $items, string $surface = 'desktop'
     $itemMeta = trim((string)($item['meta'] ?? ''));
     $itemIconName = trim((string)($item['icon'] ?? 'home'));
     $itemBadge = trim((string)($item['badge'] ?? ''));
+    $itemIsMessageBadge = !empty($item['message_badge']);
     $itemKind = trim((string)($item['kind'] ?? 'link'));
     $itemIsActive = !empty($item['active']);
     $itemClasses = 'railNav__item' . ($itemIsActive ? ' is-active' : '');
@@ -298,8 +300,8 @@ $renderAppRailItems = static function (array $items, string $surface = 'desktop'
             <small><?= trux_e($itemMeta) ?></small>
           </span>
         </span>
-        <?php if ($itemBadge !== ''): ?>
-          <span class="railNav__badge"><?= trux_e($itemBadge) ?></span>
+        <?php if ($itemBadge !== '' || $itemIsMessageBadge): ?>
+          <span class="railNav__badge"<?= $itemIsMessageBadge ? ' data-message-unread-badge="rail"' : '' ?><?= $itemBadge === '' ? ' hidden' : '' ?>><?= trux_e($itemBadge) ?></span>
         <?php endif; ?>
       </button>
       <?php
@@ -321,8 +323,8 @@ $renderAppRailItems = static function (array $items, string $surface = 'desktop'
           <small><?= trux_e($itemMeta) ?></small>
         </span>
       </span>
-      <?php if ($itemBadge !== ''): ?>
-        <span class="railNav__badge"><?= trux_e($itemBadge) ?></span>
+      <?php if ($itemBadge !== '' || $itemIsMessageBadge): ?>
+        <span class="railNav__badge"<?= $itemIsMessageBadge ? ' data-message-unread-badge="rail"' : '' ?><?= $itemBadge === '' ? ' hidden' : '' ?>><?= trux_e($itemBadge) ?></span>
       <?php endif; ?>
     </a>
     <?php
@@ -416,6 +418,9 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
     <link rel="stylesheet" href="<?= TRUX_BASE_URL ?>/assets/css/main.css?v=<?= (int)(filemtime($mainCssPath) ?: 0) ?>">
   <?php endif; ?>
   <script defer src="<?= TRUX_BASE_URL ?>/assets/app.js?v=<?= filemtime(__DIR__ . '/assets/app.js') ?>"></script>
+  <?php if (($pageKey ?? '') === 'messages' && is_file(__DIR__ . '/assets/messages_v2.js')): ?>
+    <script defer src="<?= TRUX_BASE_URL ?>/assets/messages_v2.js?v=<?= filemtime(__DIR__ . '/assets/messages_v2.js') ?>"></script>
+  <?php endif; ?>
   <script>window.TRUX_BASE_URL = "<?= TRUX_BASE_URL ?>";</script>
 </head>
 
@@ -751,9 +756,7 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
                       <span class="menu__itemTitle">Messages</span>
                       <span class="menu__itemMeta">Inbox</span>
                     </span>
-                    <?php if ($unreadMessageCount > 0): ?>
-                      <span class="menuBadge"><?= (int)$unreadMessageCount ?></span>
-                    <?php endif; ?>
+                    <span class="menuBadge" data-message-unread-badge="menu"<?= $unreadMessageCount > 0 ? '' : ' hidden' ?>><?= (int)$unreadMessageCount ?></span>
                   </a>
                   <a class="menu__item" role="menuitem" href="<?= TRUX_BASE_URL ?>/bookmarks.php">
                     <span class="menu__itemIcon" aria-hidden="true">

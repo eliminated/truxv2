@@ -1,4 +1,139 @@
-# Omnicus Updates
+﻿# Omnicus Updates
+## Omnicus v0.7.1 - DMs Read Receipts, Thread Partials & Interaction Upgrade
+
+**Branch**: Production
+**Date**: 2026-03-31
+
+***
+
+### Added
+
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
+- Read status indicators on sent messages: single cyan tick (âœ“) for delivered, double magenta tick (âœ“âœ“) for read by recipient
+- Real-time read status updates via background polling so double ticks appear without a page reload
+- Auto-mark-as-read when opening a conversation thread (no button click required)
+
+***
+
+### Changed
+
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
+- Removed redundant "Mark as Read" button from the thread header (auto-read now handles this silently)
+- Compressed message composer to a single-line compact layout (~80â€“95px total height)
+- Replaced text "Attach" button with icon-only paperclip SVG; helper hint text is now inline and de-emphasised
+- Message bubbles now use cyberpunk palette: received bubbles are subtle cyan, sent bubbles are subtle magenta
+- Thread list items now use consistent 12px/16px padding, cyan hover highlight, and cyan left-border for active thread
+- Mobile composer hides helper text and collapses send button to icon-only under 576px
+
+***
+
+### Technical
+
+- Updated database/schema.sql and added database/migrations/20260331_upgrade_direct_messages_batch2.sql for DM reply threading and reaction storage
+- Expanded src/messages.php to serialize reply context, reaction summaries, deleted-message copy, and reply-aware send validation across all DM fetch paths
+- Added public/react_message.php and extended public/send_message.php so replies and reaction toggles use the existing JSON endpoint pattern
+- Reworked public/messages.php to serve both the full DM shell and thread-only partial HTML fragments for AJAX conversation swaps
+- Upgraded public/assets/messages_v2.js with partial-thread loading, retry overlays, a custom emoji picker, functional quick actions, reply state, and mobile long-press handling
+
+***
+
+### Fixed
+
+- Fixed full-page DM reloads when switching conversations from the sidebar
+- Fixed attachment-dropdown sizing so menu labels stay on one line and mobile width stays inside the viewport
+- Fixed received-message quick-action overlap by measuring thread boundaries and flipping action placement when required
+- Fixed deleted-message copy so quick delete, history reloads, and optimistic updates all render Message deleted. consistently
+- v0.7.0 noted read receipts as not shipped â€” they are now fully implemented
+- Removed visual clutter from thread header (single "View Profile" action remains)
+
+***
+
+## Omnicus v0.7.0 - DMs V2 Major Overhaul
+
+**Branch**: Production
+**Date**: 2026-03-30
+
+***
+
+### Added
+
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
+- Incremental DM thread refresh with background polling so active conversations receive new messages without a full page reload
+- AJAX DM sending with optimistic thread updates, attachment-aware composition, and clearer failed-send retry handling
+- Incremental older-message loading for long DM threads with preserved scroll position
+- Direct-message attachment support for images and PDFs with secure server-side validation plus authenticated attachment delivery
+- Inline direct-message editing within a sender grace window
+- Direct-message unsend support within a sender grace window while preserving audit-friendly message rows
+- Per-message action controls for copy, edit, unsend, timestamp, and moderation report flows
+- Live conversation-list refresh with updated previews, ordering, and unread badge synchronization
+- New DM attachment migration and schema support for edit metadata, unsend metadata, and richer message rendering state
+
+***
+
+### Changed
+
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
+- Upgraded the existing 1-to-1 DM workspace from the original MVP flow into a live conversation surface that no longer depends on full page reloads for normal send, receive, and read activity
+- Message threads now open on the newest slice first, keep the header and composer stable, and preserve viewport position when older history is prepended
+- DM previews now understand attachment-only messages and unsent messages instead of assuming every conversation update is plain text
+- Desktop and mobile DM layouts now keep thread actions, composer placement, and touch interactions more stable during active messaging
+- Active-thread unread state now clears in the background while viewing a conversation instead of relying on a manual page reload cycle
+
+***
+
+### Technical
+
+- Updated `database/schema.sql` and finalized `database/migrations/20260330_upgrade_direct_messages_v2.sql` for attachments plus DM edit and unsend metadata
+- Expanded `src/messages.php` with cursor-based fetch helpers, attachment storage and serialization helpers, preview generation, JSON-friendly message payloads, and sender-authorized edit and unsend workflows
+- Added or upgraded DM endpoints for asynchronous sending, polling, older-message retrieval, background mark-as-read, editing, unsending, and authenticated attachment access
+- Added a dedicated `public/assets/messages_v2.js` controller for DM polling, optimistic send state, inline edit and unsend actions, attachment selection, scroll preservation, and sidebar unread sync
+
+***
+
+### Technical
+
+- Updated database/schema.sql and added database/migrations/20260331_upgrade_direct_messages_batch2.sql for DM reply threading and reaction storage
+- Expanded src/messages.php to serialize reply context, reaction summaries, deleted-message copy, and reply-aware send validation across all DM fetch paths
+- Added public/react_message.php and extended public/send_message.php so replies and reaction toggles use the existing JSON endpoint pattern
+- Reworked public/messages.php to serve both the full DM shell and thread-only partial HTML fragments for AJAX conversation swaps
+- Upgraded public/assets/messages_v2.js with partial-thread loading, retry overlays, a custom emoji picker, functional quick actions, reply state, and mobile long-press handling
+
+***
+
+### Fixed
+
+- Fixed full-page DM reloads when switching conversations from the sidebar
+- Fixed attachment-dropdown sizing so menu labels stay on one line and mobile width stays inside the viewport
+- Fixed received-message quick-action overlap by measuring thread boundaries and flipping action placement when required
+- Fixed deleted-message copy so quick delete, history reloads, and optimistic updates all render Message deleted. consistently
+- Removed the need to reload the full messages page to see newly sent or newly received DMs in the active thread
+- Reduced stale unread badges and stale conversation previews by refreshing the active conversation and sidebar state in the background
+- Improved long-thread usability by preventing disruptive scroll jumps when older history is loaded above the current viewport
+- Improved DM composer reliability on mobile so the input, action buttons, and latest messages remain reachable during active thread use
+
+***
+
+### Notes
+
+- This release focuses on modernizing the existing 1-to-1 DM system and does not ship group chats, typing indicators, or read receipts.
+- Only authenticated conversation participants can access DM attachments, and unsent messages no longer expose their attachments through normal UI rendering.
+
+***
+
 ## Omnicus v0.6.1 - Linked Accounts System
 
 **Branch**: Production
@@ -8,6 +143,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - Dedicated `Linked Accounts` settings section with responsive provider cards, provider-state badges, action controls, and inline connection details
 - New linked-account service layer in `src/linked_accounts.php` for provider registry metadata, linked-account persistence, audit logging, and provider-state presentation
 - Live-ready Discord, Google, Facebook, and X OAuth architecture with start/callback routes, provider-specific identity normalization, and duplicate-link protection
@@ -18,6 +158,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Linked accounts moved out of the generic account page block into a dedicated management surface while the `Account` section now provides a compact connection summary
 - Discord, Google, Facebook, and X now report truthful provider availability states: live-ready when environment variables and schema are present, otherwise `Pending setup`
 - Google, Facebook, and X now use the same live provider registry and callback lifecycle as Discord instead of placeholder cards
@@ -43,6 +187,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - Email-domain recognition with curated mainstream-provider validation, live registration/settings hints, and persistent account warnings for unrecognized domains
 - Full email verification flow with stored verification token metadata, HTML verification mail delivery, verification-resend handling, and the new `/verify-email.php` plus `/resend-verification.php` routes
 - New `Account` settings section covering email verification status, verified-only password changes, and linked-account scaffolding for Google, Facebook, and X
@@ -57,6 +206,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Recognized domains now remain advisory only. `email_verified` is the only ownership signal, and a domain like Gmail or Outlook no longer implies inbox ownership in app copy
 - Registration now creates unverified accounts, immediately issues a verification token, sends a verification email when mail delivery is available, and preserves login-on-register behavior
 - Verification links now expire after 5 minutes, with resend staying aligned to the same 5-minute cooldown window
@@ -85,6 +238,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - New `public/assets/css/theme/` redesign layer with dedicated shell, navigation, components, pages, overlays, motion, tablet, and mobile files
 - New command-readout, telemetry, and gateway-frame structures across auth, feed, search, messages, settings, profile, and moderation surfaces
 - New post action internals, sidebar signal markers, search scope modules, and moderation dashboard readouts for the aerospace-style UI system
@@ -93,6 +251,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Hard-replaced the visual identity across app, auth, and moderation layouts with an obsidian, indigo, magenta-led command-surface language
 - Rebuilt shared rail, topbar, search, post action, DM, settings, notification, and moderation surfaces without changing backend routes or submission behavior
 - Refactored key page and partial markup so posts, utility modules, auth forms, message workspaces, and moderation dashboards no longer inherit the previous shell language
@@ -116,6 +278,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - New command-shell app foundation with a persistent desktop rail, sticky context topbar, fluid content canvas, and mobile bottom navigation
 - New full-screen account gateway for `login`, `register`, `forgot_password`, and `reset_password`
 - Mobile search sheet and account sheet for the new shell navigation model
@@ -126,6 +293,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Replaced the old centered-card UI paradigm with layered command-shell surfaces across feed, search, bookmarks, notifications, messages, profile, settings, composer, premium, and appeal pages
 - Rebuilt the shared header and footer templates into shell routers for `app`, `auth`, and `moderation` layouts
 - Rebuilt the shared post renderer so posts read as stream bands with a gutter, content lane, and inline action rail instead of generic cards
@@ -146,8 +317,22 @@
 
 ***
 
+### Technical
+
+- Updated database/schema.sql and added database/migrations/20260331_upgrade_direct_messages_batch2.sql for DM reply threading and reaction storage
+- Expanded src/messages.php to serialize reply context, reaction summaries, deleted-message copy, and reply-aware send validation across all DM fetch paths
+- Added public/react_message.php and extended public/send_message.php so replies and reaction toggles use the existing JSON endpoint pattern
+- Reworked public/messages.php to serve both the full DM shell and thread-only partial HTML fragments for AJAX conversation swaps
+- Upgraded public/assets/messages_v2.js with partial-thread loading, retry overlays, a custom emoji picker, functional quick actions, reply state, and mobile long-press handling
+
+***
+
 ### Fixed
 
+- Fixed full-page DM reloads when switching conversations from the sidebar
+- Fixed attachment-dropdown sizing so menu labels stay on one line and mobile width stays inside the viewport
+- Fixed received-message quick-action overlap by measuring thread boundaries and flipping action placement when required
+- Fixed deleted-message copy so quick delete, history reloads, and optimistic updates all render Message deleted. consistently
 - Restored working cropper apply flow by falling back to client-side image cropping when server-side GD cropping is unavailable
 - Fixed rail account presence to use the uploaded profile photo, truncate long usernames cleanly, and align moderation badges correctly
 - Fixed dropdown hover behavior so the profile menu stays open while moving the cursor from trigger to panel, and added SVG icons to profile menu items
@@ -168,6 +353,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - Staff-only moderation area with dashboard, reports queue, suspicious activity review, user review workspace, audit logs, and admin-only `Staff Access`
 - Real moderation modules for `Escalations`, `Rule Tuning`, and `Appeals`, plus the public `/appeal.php` route for account-action appeals
 - Full user-case lifecycle support with case status, priority, resolution fields, closure metadata, escalation linkage, linked notes, linked reports, linked suspicious events, linked enforcements, and linked appeals
@@ -191,6 +381,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Moderation dashboards, queues, and review tools now use a shared responsive moderation shell for desktop and mobile, with live queue badges instead of placeholder future-module cards
 - Report reviews now happen through the dedicated review popup instead of inline queue actions, and archived reports still require owner-only reopen before re-review
 - Reporter DMs now cover submitted, resolved, and dismissed report outcomes without pretending the per-report checkbox changed the global account preference
@@ -200,8 +394,22 @@
 
 ***
 
+### Technical
+
+- Updated database/schema.sql and added database/migrations/20260331_upgrade_direct_messages_batch2.sql for DM reply threading and reaction storage
+- Expanded src/messages.php to serialize reply context, reaction summaries, deleted-message copy, and reply-aware send validation across all DM fetch paths
+- Added public/react_message.php and extended public/send_message.php so replies and reaction toggles use the existing JSON endpoint pattern
+- Reworked public/messages.php to serve both the full DM shell and thread-only partial HTML fragments for AJAX conversation swaps
+- Upgraded public/assets/messages_v2.js with partial-thread loading, retry overlays, a custom emoji picker, functional quick actions, reply state, and mobile long-press handling
+
+***
+
 ### Fixed
 
+- Fixed full-page DM reloads when switching conversations from the sidebar
+- Fixed attachment-dropdown sizing so menu labels stay on one line and mobile width stays inside the viewport
+- Fixed received-message quick-action overlap by measuring thread boundaries and flipping action placement when required
+- Fixed deleted-message copy so quick delete, history reloads, and optimistic updates all render Message deleted. consistently
 - Reports page filters now correctly show all matching reports when `All` is selected
 - Suspended and locked accounts are now forced out of active sessions instead of only being blocked on the next login attempt
 - DM-restricted accounts can no longer send outbound direct messages while still receiving moderation/system updates
@@ -228,8 +436,22 @@
 
 ***
 
+### Technical
+
+- Updated database/schema.sql and added database/migrations/20260331_upgrade_direct_messages_batch2.sql for DM reply threading and reaction storage
+- Expanded src/messages.php to serialize reply context, reaction summaries, deleted-message copy, and reply-aware send validation across all DM fetch paths
+- Added public/react_message.php and extended public/send_message.php so replies and reaction toggles use the existing JSON endpoint pattern
+- Reworked public/messages.php to serve both the full DM shell and thread-only partial HTML fragments for AJAX conversation swaps
+- Upgraded public/assets/messages_v2.js with partial-thread loading, retry overlays, a custom emoji picker, functional quick actions, reply state, and mobile long-press handling
+
+***
+
 ### Fixed
 
+- Fixed full-page DM reloads when switching conversations from the sidebar
+- Fixed attachment-dropdown sizing so menu labels stay on one line and mobile width stays inside the viewport
+- Fixed received-message quick-action overlap by measuring thread boundaries and flipping action placement when required
+- Fixed deleted-message copy so quick delete, history reloads, and optimistic updates all render Message deleted. consistently
 - Fixed the owner post action menu bookmark flow so clicking `Bookmark` on your own post no longer throws `setActionActive is not defined`
 - Owner and non-owner post bookmark toggles now keep the three-dot menu state and the main post action bar label/state in sync
 - New post publishing now redirects straight to the new post instead of leaving a static success message behind
@@ -241,6 +463,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - Posts now support click-to-open comments from the card itself, with pointer-style hover feedback across the feed cards
 - New shared post menu for all posts with working bookmark and copy-link actions, plus placeholder `Not interested`, `Mute user`, and `Report` actions for non-owner posts
 - Dedicated mobile override stylesheet at `public/assets/mobile.css` that loads automatically for smaller screens and tightens shared layouts across feed, profile, settings, messages, and the comment dock
@@ -255,6 +482,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Post media now uses a more restrained X-style presentation with capped image height so tall uploads do not dominate the viewport
 - Post body, media, and action rows now share a narrower readable width so large desktop cards feel more balanced
 - Post pages across `public/index.php`, `public/search.php`, `public/profile.php`, `public/bookmarks.php`, and `public/post.php` now use the same shared context-menu rendering
@@ -290,6 +521,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - Fixed-aspect crop workflow for profile photo and profile banner uploads on `public/edit_profile.php`
 - Reusable profile media crop modal with drag-to-position, zoom control, and live preview
 - Automatic crop flow that opens immediately after a user selects a new profile image from their library
@@ -299,6 +535,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Profile media cards now show local cropped previews before save and let users reopen the crop tool for the current pending selection
 - Profile media uploads now carry crop metadata so the server applies the same crop chosen in the browser
 - Profile media cropping now depends on PHP GD being enabled in the deployment environment so the server can process the selected crop safely
@@ -329,6 +569,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - New header notification dropdown with unread badge, recent activity preview, and quick access to the full notifications page
 - Quick `Mark all as read` action inside the header notification menu
 - Automatic loading of older posts while scrolling on the home feed, search results, profile post sections, and bookmarked posts
@@ -338,6 +583,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Header search now uses an icon-first expanding button treatment instead of a plain text submit control
 - Mark-all-read notification flows now support safe in-app redirect targets so users can return to the page they were on
 - Profile masthead styling now groups hero, stats, and tabs into a more unified card layout
@@ -364,6 +613,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - New profile section tabs on `public/profile.php`: `Posts`, `Replies`, `Liked`, `Bookmarks`, and `About Me`
 - Long-form `About Me` profile field with support for up to 5 affiliated links
 - Automatic social/platform icon rendering for supported profile links such as Reddit, Instagram, GitHub, YouTube, Discord, and more
@@ -375,6 +629,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Profile pages now render user-authored replies/comments in a dedicated `Replies` section
 - Profile pages now render liked posts and liked comments/replies in a dedicated `Liked` section
 - Profile pages now render bookmarked posts and bookmarked comments/replies in a dedicated `Bookmarks` section
@@ -403,6 +661,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - New dedicated Discovery module layout on the home feed
 - Purpose-built Discovery style components in `public/assets/style.css` (`discoveryBlock`, `discoveryGrid`, `discoveryPane`)
 - New `discoveryTag` card presentation for trending hashtags
@@ -413,6 +676,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Discovery 1.0 section no longer uses settings-style list rendering
 - Trending hashtags and suggested users now render in two structured content panes
 - Follow actions in Discovery suggestions are now visually aligned and easier to scan
@@ -437,6 +704,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - New discovery helper layer: `src/discovery.php`
 - Trending hashtags module on the home feed
 - Suggested users ("Who to follow") module on the home feed
@@ -446,6 +718,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - The `For You` feed now uses Discovery Algorithm 1.0 instead of pure reverse-chronological order
 - Discovery ranking now combines freshness, engagement, and social-proximity signals
 - Home feed hero text and empty state now reflect discovery behavior
@@ -469,6 +745,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - Public production deployment announcement for TruX Social
 - Official live URL reference: `https://truxsocial.org/`
 
@@ -476,6 +757,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Release status promoted from beta iteration to a fully deployed public website
 - Changelog now tracks the first live production milestone as `v0.4.0`
 
@@ -494,6 +779,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - New endpoint: `public/mark_conversation_read.php`
 - Comment dock "Load older comments" control
 - Cursor-based comment paging metadata in `public/post_comments.php` (`before`, `next_before`, `has_more`, `total_count`)
@@ -502,6 +792,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Notifications are no longer marked read on `GET /notifications.php`; they now use explicit POST action (`mark_all_read`)
 - Conversation read state is no longer mutated during `GET /messages.php`; reads now flow through POST
 - Comment dock now uses paged loading with stable scroll behavior when prepending older comments
@@ -509,8 +803,22 @@
 
 ***
 
+### Technical
+
+- Updated database/schema.sql and added database/migrations/20260331_upgrade_direct_messages_batch2.sql for DM reply threading and reaction storage
+- Expanded src/messages.php to serialize reply context, reaction summaries, deleted-message copy, and reply-aware send validation across all DM fetch paths
+- Added public/react_message.php and extended public/send_message.php so replies and reaction toggles use the existing JSON endpoint pattern
+- Reworked public/messages.php to serve both the full DM shell and thread-only partial HTML fragments for AJAX conversation swaps
+- Upgraded public/assets/messages_v2.js with partial-thread loading, retry overlays, a custom emoji picker, functional quick actions, reply state, and mobile long-press handling
+
+***
+
 ### Fixed
 
+- Fixed full-page DM reloads when switching conversations from the sidebar
+- Fixed attachment-dropdown sizing so menu labels stay on one line and mobile width stays inside the viewport
+- Fixed received-message quick-action overlap by measuring thread boundaries and flipping action placement when required
+- Fixed deleted-message copy so quick delete, history reloads, and optimistic updates all render Message deleted. consistently
 - Apostrophes no longer get broken into accidental hashtag links (`#039`) when posts include hashtags/mentions
 - Comment dock no longer shows truncated/incorrect comment totals on large threads
 - Reply threads no longer lose hierarchy when parent comments are outside the initial page window
@@ -545,6 +853,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - Advanced profile editing page at `public/edit_profile.php`
 - Real profile fields for display name, bio, location, website, avatar, and banner
 - Profile media upload support for avatar and banner images
@@ -556,6 +869,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Profile pages now render saved profile banner and avatar when available
 - Profile headers now show display name, bio, location, and website metadata
 - Self profile action now links directly to Edit Profile
@@ -587,6 +904,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - Functional private bookmarks for posts, comments, and replies
 - New bookmarks page at `public/bookmarks.php`
 - Initial 1-to-1 DM inbox and thread view at `public/messages.php`
@@ -600,6 +922,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Post action bars now support live bookmark toggles
 - Owner action menus for posts and comments now expose working bookmark actions instead of placeholders
 - Bookmark menus and buttons now keep their `Bookmark` / `Saved` labels in sync
@@ -632,6 +958,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - User mute and unmute support
 - New endpoint: `public/mute_user.php`
 - Muted users section in Settings
@@ -641,6 +972,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Notifications from muted users are no longer created
 - Existing notifications from a user are cleared when that user is muted
 - Profile pages now expose a mute toggle alongside follow controls
@@ -668,6 +1003,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - Working notifications feed at `public/notifications.php`
 - Notification delivery for post likes, comment votes, mentions, follows, new post comments, and replies
 - Notification preferences section in Settings
@@ -677,6 +1017,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Profile menu notifications entry now links to the live notifications page
 - Settings now stores per-user notification preferences instead of showing only placeholders
 - Post and comment mention detection now feeds the notifications system
@@ -694,7 +1038,7 @@
 
 ### Notes
 
-- Comment vote notifications currently fire on upvotes only, which matches the app’s closest equivalent to comment likes.
+- Comment vote notifications currently fire on upvotes only, which matches the appâ€™s closest equivalent to comment likes.
 
 ## Omnicus v0.3.5 - Mention Autocomplete
 
@@ -705,6 +1049,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - Inline mention autocomplete while typing in post and comment textareas
 - New JSON endpoint: `public/mention_suggestions.php`
 - Clickable `@username` links in rendered posts and comment bodies
@@ -713,6 +1062,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Comment payloads now include rendered rich-text HTML so mentions and hashtags display consistently in the live comment dock
 - Compose forms now show a suggestion list above the textarea when a username mention prefix is detected
 
@@ -739,6 +1092,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - Hashtag extraction and storage for posts
 - Clickable hashtag links inside post bodies
 - Hashtag-only search filter on the search page
@@ -748,6 +1106,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Post create and post edit flows now sync hashtag records automatically
 - Search now supports exact hashtag matching instead of plain text-only lookup
 - Hashtag searches also fall back to raw post body matching so older posts remain discoverable
@@ -775,6 +1137,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - Upvote and downvote controls for comments and replies
 - SVG-based vote icons for comment voting UI
 - Negative score display when downvotes exceed upvotes
@@ -785,6 +1152,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Comment API responses now include per-comment vote score and the current viewer's vote state
 - Comment dock actions now support live AJAX vote toggles without page reload
 - Comment and reply action rows now show vote controls alongside reply actions
@@ -812,6 +1183,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - The application now runs on a fixed classic, reduced-motion interface across all pages
 - Animated loading overlays, futuristic border effects, and optional visual modes are no longer part of the active UI
 - The Settings page remains available as an account/settings placeholder, but visual controls have been removed
@@ -840,6 +1215,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - Owner-only action menus for posts, comments, and replies
 - Edit and delete controls for authored posts, comments, and replies
 - Bookmark action placeholder in owner menus
@@ -850,14 +1230,32 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Owner actions now use shared SVG-based menu controls instead of delete-only buttons
 - Edited timestamp markers are rendered only for items that have actually been edited
 - README setup and migration notes now reflect the current interaction system
 
 ***
 
+### Technical
+
+- Updated database/schema.sql and added database/migrations/20260331_upgrade_direct_messages_batch2.sql for DM reply threading and reaction storage
+- Expanded src/messages.php to serialize reply context, reaction summaries, deleted-message copy, and reply-aware send validation across all DM fetch paths
+- Added public/react_message.php and extended public/send_message.php so replies and reaction toggles use the existing JSON endpoint pattern
+- Reworked public/messages.php to serve both the full DM shell and thread-only partial HTML fragments for AJAX conversation swaps
+- Upgraded public/assets/messages_v2.js with partial-thread loading, retry overlays, a custom emoji picker, functional quick actions, reply state, and mobile long-press handling
+
+***
+
 ### Fixed
 
+- Fixed full-page DM reloads when switching conversations from the sidebar
+- Fixed attachment-dropdown sizing so menu labels stay on one line and mobile width stays inside the viewport
+- Fixed received-message quick-action overlap by measuring thread boundaries and flipping action placement when required
+- Fixed deleted-message copy so quick delete, history reloads, and optimistic updates all render Message deleted. consistently
 - Post owner action menu clipping against card borders
 - Post owner action menu stacking over neighboring feed/profile cards
 
@@ -885,6 +1283,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - Functional post interactions
 - Like toggle per post
 - Share toggle per post
@@ -912,6 +1315,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Replaced placeholder Like/Comment/Share buttons with live actions
 - Added per-post interaction counters (likes/comments/shares)
 - Added active states for liked/shared buttons
@@ -925,8 +1332,22 @@
 
 ***
 
+### Technical
+
+- Updated database/schema.sql and added database/migrations/20260331_upgrade_direct_messages_batch2.sql for DM reply threading and reaction storage
+- Expanded src/messages.php to serialize reply context, reaction summaries, deleted-message copy, and reply-aware send validation across all DM fetch paths
+- Added public/react_message.php and extended public/send_message.php so replies and reaction toggles use the existing JSON endpoint pattern
+- Reworked public/messages.php to serve both the full DM shell and thread-only partial HTML fragments for AJAX conversation swaps
+- Upgraded public/assets/messages_v2.js with partial-thread loading, retry overlays, a custom emoji picker, functional quick actions, reply state, and mobile long-press handling
+
+***
+
 ### Fixed
 
+- Fixed full-page DM reloads when switching conversations from the sidebar
+- Fixed attachment-dropdown sizing so menu labels stay on one line and mobile width stays inside the viewport
+- Fixed received-message quick-action overlap by measuring thread boundaries and flipping action placement when required
+- Fixed deleted-message copy so quick delete, history reloads, and optimistic updates all render Message deleted. consistently
 - Normal UI mode comment submit no longer leaves page transition/loading overlay stuck
 - Transition FX now skips JS-handled/no-navigation comment form submissions
 
@@ -956,7 +1377,7 @@
 
 - This release turns core social actions from placeholder to functional interaction loops while keeping in-context commenting via split dock UX.
 
-## Omnicus v0.2.0 — UI Overhaul & Follow System
+## Omnicus v0.2.0 â€” UI Overhaul & Follow System
 
 **Branch**: Beta
 **Date**: 2026-02-28
@@ -966,6 +1387,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - Follow / Unfollow system
 
 - follows table (composite PK, indexed, FK constraints)
@@ -988,6 +1414,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Complete navbar redesign
 
 - Username link replaced with profile icon
@@ -1010,8 +1440,22 @@
 
 ***
 
+### Technical
+
+- Updated database/schema.sql and added database/migrations/20260331_upgrade_direct_messages_batch2.sql for DM reply threading and reaction storage
+- Expanded src/messages.php to serialize reply context, reaction summaries, deleted-message copy, and reply-aware send validation across all DM fetch paths
+- Added public/react_message.php and extended public/send_message.php so replies and reaction toggles use the existing JSON endpoint pattern
+- Reworked public/messages.php to serve both the full DM shell and thread-only partial HTML fragments for AJAX conversation swaps
+- Upgraded public/assets/messages_v2.js with partial-thread loading, retry overlays, a custom emoji picker, functional quick actions, reply state, and mobile long-press handling
+
+***
+
 ### Fixed
 
+- Fixed full-page DM reloads when switching conversations from the sidebar
+- Fixed attachment-dropdown sizing so menu labels stay on one line and mobile width stays inside the viewport
+- Fixed received-message quick-action overlap by measuring thread boundaries and flipping action placement when required
+- Fixed deleted-message copy so quick delete, history reloads, and optimistic updates all render Message deleted. consistently
 - Profile link redirecting to wrong user
 
 - Login button visible while authenticated
@@ -1059,6 +1503,11 @@
 
 ### Added
 
+- AJAX conversation switching with messages.php?partial=thread, thread-local loading/error states, history-aware back/forward navigation, and preserved sidebar scroll
+- Custom in-house DM emoji picker with category tabs, search, recent emoji memory, and caret insertion without external dependencies
+- Inline DM reply support with composer reply context, reply references in bubbles, and jump-to-original navigation
+- Direct-message like reactions with live like toggles and in-thread count badges
+- Quick-delete flow for eligible sent messages using inline confirmation and the existing DM grace window
 - New Settings page under Profile menu
 
 - Reduce motions toggle
@@ -1075,6 +1524,10 @@
 
 ### Changed
 
+- DM thread loads now replace only the active thread/mobile-thread/sheet fragments instead of reloading the full messages page shell
+- Message composer now includes reply context, a custom emoji surface, a Record Voice placeholder action, and a true content-width attachment dropdown
+- Message bubbles now render reply references, live reaction badges, and functional quick actions while keeping the existing cyberpunk palette
+- Quick-action placement now flips around message/menu boundaries and supports mobile long-press behavior under the <=768px thread layout
 - Default visual preset changed from `cyber--extreme` to `cyber--balanced`
 
 - Profile dropdown now includes direct Settings entry
@@ -1087,8 +1540,22 @@
 
 ***
 
+### Technical
+
+- Updated database/schema.sql and added database/migrations/20260331_upgrade_direct_messages_batch2.sql for DM reply threading and reaction storage
+- Expanded src/messages.php to serialize reply context, reaction summaries, deleted-message copy, and reply-aware send validation across all DM fetch paths
+- Added public/react_message.php and extended public/send_message.php so replies and reaction toggles use the existing JSON endpoint pattern
+- Reworked public/messages.php to serve both the full DM shell and thread-only partial HTML fragments for AJAX conversation swaps
+- Upgraded public/assets/messages_v2.js with partial-thread loading, retry overlays, a custom emoji picker, functional quick actions, reply state, and mobile long-press handling
+
+***
+
 ### Fixed
 
+- Fixed full-page DM reloads when switching conversations from the sidebar
+- Fixed attachment-dropdown sizing so menu labels stay on one line and mobile width stays inside the viewport
+- Fixed received-message quick-action overlap by measuring thread boundaries and flipping action placement when required
+- Fixed deleted-message copy so quick delete, history reloads, and optimistic updates all render Message deleted. consistently
 - Browser slowdown from duplicate `app.js` include (removed footer duplicate)
 
 - Mis-encoded text artifacts (mojibake) in auth/register/footer/README copy

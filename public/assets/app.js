@@ -2323,34 +2323,7 @@
 
 (() => {
   if (!window.location.href.includes("/messages.php")) return;
-
-  const layout = document.querySelector("[data-messages-active-conversation-id]");
-  if (!(layout instanceof HTMLElement)) return;
-
-  const conversationId = Number(
-    layout.getAttribute("data-messages-active-conversation-id") || "0"
-  );
-  if (!conversationId) return;
-
-  const csrfInput = document.querySelector("input[name='_csrf']");
-  if (!(csrfInput instanceof HTMLInputElement) || !csrfInput.value) return;
-
-  const payload = new URLSearchParams({
-    _csrf: csrfInput.value,
-    id: String(conversationId),
-  });
-
-  fetch(`${window.TRUX_BASE_URL || ""}/mark_conversation_read.php?format=json`, {
-    method: "POST",
-    headers: { Accept: "application/json" },
-    body: payload,
-  }).catch(() => {
-    // Ignore failures; message rendering should continue.
-  });
-})();
-
-(() => {
-  if (!window.location.href.includes("/messages.php")) return;
+  return;
 
   const layout = document.querySelector("[data-messages-layout='1']");
   if (!(layout instanceof HTMLElement)) return;

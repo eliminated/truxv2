@@ -3,9 +3,11 @@
 
 # User uploads
 public/uploads/*
+storage/dm_attachments/*
 
 # Keep the directory + htaccess
 !public/uploads/.htaccess
+!storage/dm_attachments/.gitignore
 
 # OS files
 .DS_Store

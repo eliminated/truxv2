@@ -255,6 +255,68 @@ $renderReportPreview = static function (array $report, ?string $userCaseUrl) use
     $liveContext = is_array($report['live_context'] ?? null) ? $report['live_context'] : [];
     $targetAvailable = !empty($report['target_available']);
     $sourceUrl = trux_public_url((string)($report['source_url'] ?? ''));
+    $formatAttachmentSize = static function (int $bytes): string {
+        if ($bytes >= 1024 * 1024) {
+            return number_format($bytes / (1024 * 1024), 1) . ' MB';
+        }
+        if ($bytes >= 1024) {
+            return number_format($bytes / 1024, 1) . ' KB';
+        }
+
+        return $bytes . ' B';
+    };
+    $renderMessageAttachments = static function (array $attachments) use ($formatAttachmentSize): string {
+        $attachments = array_values(array_filter($attachments, static fn ($attachment): bool => is_array($attachment)));
+        if ($attachments === []) {
+            return '';
+        }
+
+        ob_start();
+        ?>
+        <div class="messageBubble__attachments">
+            <?php foreach ($attachments as $attachment): ?>
+                <?php
+                $isImage = !empty($attachment['is_image']);
+                $viewUrl = trim((string)($attachment['view_url'] ?? ''));
+                $downloadUrl = trim((string)($attachment['download_url'] ?? $viewUrl));
+                $originalName = trim((string)($attachment['original_name'] ?? 'Attachment'));
+                $mimeType = trim((string)($attachment['mime_type'] ?? 'application/octet-stream'));
+                $fileSize = (int)($attachment['file_size'] ?? 0);
+                $sizeLabel = $fileSize > 0 ? $formatAttachmentSize($fileSize) : 'Size unavailable';
+                ?>
+                <?php if ($isImage && $viewUrl !== ''): ?>
+                    <a class="messageBubble__attachment messageBubble__attachment--image" href="<?= trux_e($viewUrl) ?>" target="_blank" rel="noopener">
+                        <img src="<?= trux_e($viewUrl) ?>" alt="<?= trux_e($originalName) ?>" loading="lazy" decoding="async">
+                    </a>
+                <?php else: ?>
+                    <div class="messageBubble__attachment messageBubble__attachment--file">
+                        <div class="messageBubble__fileMeta">
+                            <strong><?= trux_e($originalName !== '' ? $originalName : ($isImage ? 'Image attachment' : 'Attachment')) ?></strong>
+                            <span class="muted">
+                                <?= trux_e($isImage ? 'Image' : strtoupper($mimeType === 'application/pdf' ? 'pdf' : $mimeType)) ?>
+                                <?php if ($sizeLabel !== ''): ?>
+                                    &middot; <?= trux_e($sizeLabel) ?>
+                                <?php endif; ?>
+                            </span>
+                        </div>
+                        <div class="messageBubble__fileActions">
+                            <?php if ($viewUrl !== ''): ?>
+                                <a class="shellButton shellButton--ghost" href="<?= trux_e($viewUrl) ?>" target="_blank" rel="noopener">Open</a>
+                            <?php endif; ?>
+                            <?php if ($downloadUrl !== ''): ?>
+                                <a class="shellButton shellButton--ghost" href="<?= trux_e($downloadUrl) ?>">Download</a>
+                            <?php elseif ($viewUrl === ''): ?>
+                                <span class="muted">Stored snapshot only</span>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            <?php endforeach; ?>
+        </div>
+        <?php
+
+        return trim((string)ob_get_clean());
+    };
 
     ob_start();
     ?>
@@ -347,6 +409,12 @@ $renderReportPreview = static function (array $report, ?string $userCaseUrl) use
         $recipientUsername = trim((string)($message['recipient_username'] ?? ($snapshot['recipient_username'] ?? '')));
         $conversationId = (int)($message['conversation_id'] ?? ($snapshot['conversation_id'] ?? 0));
         $createdAt = trim((string)($message['created_at'] ?? ($snapshot['created_at'] ?? '')));
+        $isRemoved = !empty($message['is_removed']) || !empty($snapshot['is_removed']);
+        $removedAt = trim((string)($message['removed_at'] ?? ($snapshot['removed_at'] ?? '')));
+        $attachments = is_array($message['attachments'] ?? null)
+            ? $message['attachments']
+            : (is_array($snapshot['attachments'] ?? null) ? $snapshot['attachments'] : []);
+        $attachmentCount = (int)($message['attachment_count'] ?? ($snapshot['attachment_count'] ?? count($attachments)));
         ?>
         <div class="reviewModalPost__meta muted">
           <span>Message #<?= (int)($report['target_id'] ?? 0) ?></span>
@@ -359,17 +427,29 @@ $renderReportPreview = static function (array $report, ?string $userCaseUrl) use
           <?php if ($conversationId > 0): ?>
             <span>Conversation #<?= $conversationId ?></span>
           <?php endif; ?>
+          <?php if ($attachmentCount > 0): ?>
+            <span><?= $attachmentCount ?> attachment<?= $attachmentCount === 1 ? '' : 's' ?></span>
+          <?php endif; ?>
+          <?php if ($isRemoved): ?>
+            <span class="moderationBadge is-warning">Removed</span>
+          <?php endif; ?>
           <?php if ($createdAt !== ''): ?>
             <span title="<?= trux_e(trux_format_exact_time($createdAt)) ?>"><?= trux_e(trux_time_ago($createdAt)) ?></span>
           <?php endif; ?>
         </div>
+        <?php if ($isRemoved): ?>
+          <div class="reviewModal__note">
+            This message has been removed from participant view<?= $removedAt !== '' ? ' at ' . trux_e(trux_format_exact_time($removedAt)) : '' ?>.
+          </div>
+        <?php endif; ?>
         <?php if ($body !== ''): ?>
           <div class="reviewModalPost__body"><?= trux_render_rich_text($body) ?></div>
-        <?php else: ?>
+        <?php elseif ($attachments === []): ?>
           <div class="reviewModal__empty reviewModal__empty--compact">
             <p class="muted">No message body was available.</p>
           </div>
         <?php endif; ?>
+        <?= $renderMessageAttachments($attachments) ?>
         <?php if ($conversationMessages !== []): ?>
           <div class="reviewModal__sectionHead">
             <strong>Nearby Conversation Context</strong>
@@ -382,6 +462,8 @@ $renderReportPreview = static function (array $report, ?string $userCaseUrl) use
               $conversationUsername = trim((string)($conversationMessage['sender_username'] ?? ''));
               $conversationCreatedAt = trim((string)($conversationMessage['created_at'] ?? ''));
               $isReportedTarget = !empty($conversationMessage['is_reported_target']);
+              $conversationAttachments = is_array($conversationMessage['attachments'] ?? null) ? $conversationMessage['attachments'] : [];
+              $conversationIsRemoved = !empty($conversationMessage['is_removed']);
               ?>
               <article class="reviewModalDiscussion__item<?= $isReportedTarget ? ' reviewModalDiscussion__item--target' : '' ?>">
                 <div class="reviewModalDiscussion__meta">
@@ -389,13 +471,20 @@ $renderReportPreview = static function (array $report, ?string $userCaseUrl) use
                   <?php if ($isReportedTarget): ?>
                     <span class="moderationBadge is-danger">Reported message</span>
                   <?php endif; ?>
+                  <?php if ($conversationIsRemoved): ?>
+                    <span class="moderationBadge is-warning">Removed</span>
+                  <?php endif; ?>
                   <?php if ($conversationCreatedAt !== ''): ?>
                     <span class="muted" title="<?= trux_e(trux_format_exact_time($conversationCreatedAt)) ?>"><?= trux_e(trux_time_ago($conversationCreatedAt)) ?></span>
                   <?php endif; ?>
                 </div>
                 <div class="reviewModalDiscussion__body">
-                  <?= $conversationBody !== '' ? trux_render_rich_text($conversationBody) : '<span class="muted">No message body available.</span>' ?>
+                  <?php if ($conversationIsRemoved): ?>
+                    <div class="muted">Removed from participant view.</div>
+                  <?php endif; ?>
+                  <?= $conversationBody !== '' ? trux_render_rich_text($conversationBody) : ($conversationAttachments !== [] ? '<span class="muted">Attachment-only message.</span>' : '<span class="muted">No message body available.</span>') ?>
                 </div>
+                <?= $renderMessageAttachments($conversationAttachments) ?>
               </article>
             <?php endforeach; ?>
           </div>

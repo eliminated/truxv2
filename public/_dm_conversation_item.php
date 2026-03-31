@@ -12,7 +12,10 @@ $lastAt = (string)($conversation['last_message_created_at'] ?? $conversation['up
 $otherUsername = (string)($conversation['other_username'] ?? '');
 $otherDisplayName = (string)($conversation['other_display_name'] ?? '');
 $conversationLabel = trux_direct_message_actor_label($otherUsername, $otherDisplayName);
-$preview = trux_direct_message_preview((string)($conversation['last_message_body'] ?? ''));
+$preview = trim((string)($conversation['last_message_preview'] ?? ''));
+if ($preview === '') {
+  $preview = trux_direct_message_preview((string)($conversation['last_message_body'] ?? ''));
+}
 $conversationAvatarUrl = trux_public_url((string)($conversation['other_avatar_path'] ?? ''));
 ?>
 <a
@@ -21,6 +24,8 @@ $conversationAvatarUrl = trux_public_url((string)($conversation['other_avatar_pa
   <?= $isActive ? 'aria-current="page"' : '' ?>
   data-conversation-item="1"
   data-conversation-id="<?= $conversationId ?>"
+  data-last-message-id="<?= (int)($conversation['last_message_id'] ?? 0) ?>"
+  data-unread-count="<?= $unreadCount ?>"
   data-search-text="<?= trux_e(strtolower($conversationLabel . ' ' . $otherUsername . ' ' . $preview)) ?>">
   <span class="messagesList__signal" aria-hidden="true">CH</span>
   <?= trux_render_direct_message_avatar($otherUsername, $conversationAvatarUrl, 'messagesList__avatar', $conversationLabel) ?>

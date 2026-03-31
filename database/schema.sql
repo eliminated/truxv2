@@ -258,17 +258,59 @@ CREATE TABLE IF NOT EXISTS direct_messages (
   id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
   conversation_id BIGINT UNSIGNED NOT NULL,
   sender_user_id BIGINT UNSIGNED NOT NULL,
-  body VARCHAR(2000) NOT NULL,
+  body VARCHAR(2000) NULL DEFAULT NULL,
+  reply_to_message_id BIGINT UNSIGNED NULL DEFAULT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
   read_at DATETIME NULL DEFAULT NULL,
+  edited_at DATETIME NULL DEFAULT NULL,
+  edit_window_expires_at DATETIME NULL DEFAULT NULL,
+  deleted_for_everyone_at DATETIME NULL DEFAULT NULL,
+  delete_window_expires_at DATETIME NULL DEFAULT NULL,
   PRIMARY KEY (id),
   KEY idx_direct_messages_conversation (conversation_id, id),
   KEY idx_direct_messages_sender (sender_user_id),
   KEY idx_direct_messages_read (conversation_id, read_at, id),
+  KEY idx_direct_messages_reply (reply_to_message_id),
   CONSTRAINT fk_direct_messages_conversation FOREIGN KEY (conversation_id) REFERENCES direct_conversations(id)
     ON DELETE CASCADE
     ON UPDATE CASCADE,
   CONSTRAINT fk_direct_messages_sender FOREIGN KEY (sender_user_id) REFERENCES users(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_direct_messages_reply FOREIGN KEY (reply_to_message_id) REFERENCES direct_messages(id)
+    ON DELETE SET NULL
+    ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS direct_message_reactions (
+  message_id BIGINT UNSIGNED NOT NULL,
+  user_id BIGINT UNSIGNED NOT NULL,
+  reaction VARCHAR(24) NOT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (message_id, user_id, reaction),
+  KEY idx_dm_reactions_user (user_id, created_at),
+  KEY idx_dm_reactions_lookup (message_id, reaction),
+  CONSTRAINT fk_dm_reactions_message FOREIGN KEY (message_id) REFERENCES direct_messages(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE,
+  CONSTRAINT fk_dm_reactions_user FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE CASCADE
+    ON UPDATE CASCADE
+) ENGINE=InnoDB;
+
+CREATE TABLE IF NOT EXISTS direct_message_attachments (
+  id BIGINT UNSIGNED NOT NULL AUTO_INCREMENT,
+  message_id BIGINT UNSIGNED NOT NULL,
+  file_path VARCHAR(255) NOT NULL,
+  original_name VARCHAR(255) NOT NULL DEFAULT '',
+  mime_type VARCHAR(100) NOT NULL DEFAULT '',
+  file_size INT UNSIGNED NOT NULL DEFAULT 0,
+  image_width SMALLINT UNSIGNED NULL DEFAULT NULL,
+  image_height SMALLINT UNSIGNED NULL DEFAULT NULL,
+  created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY idx_dm_attachments_message (message_id),
+  CONSTRAINT fk_dm_attachments_message FOREIGN KEY (message_id) REFERENCES direct_messages(id)
     ON DELETE CASCADE
     ON UPDATE CASCADE
 ) ENGINE=InnoDB;

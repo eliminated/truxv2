@@ -8,7 +8,7 @@ $respond = static function (bool $ok, int $statusCode, string $message, array $p
     if ($isJson) {
         header('Content-Type: application/json; charset=utf-8');
         http_response_code($statusCode);
-        echo json_encode(array_merge(['ok' => $ok], $payload, [$ok ? 'message' : 'error' => $message]));
+        echo json_encode(array_merge(['ok' => $ok], $payload, $ok ? ['notice' => $message] : ['error' => $message]));
         exit;
     }
 
@@ -47,11 +47,23 @@ if (!$me) {
 
 $viewerId = (int)$me['id'];
 $body = trim((string)($_POST['body'] ?? ''));
+$attachments = trux_direct_message_normalize_uploaded_files(is_array($_FILES['attachments'] ?? null) ? $_FILES['attachments'] : []);
 $conversationIdRaw = $_POST['conversation_id'] ?? null;
 $recipientIdRaw = $_POST['recipient_id'] ?? null;
+$replyToMessageId = (int)($_POST['reply_to_message_id'] ?? 0);
 
-if ($body === '' || mb_strlen($body) > 2000) {
-    $respond(false, 400, 'Message must be 1-2000 characters.');
+if ($body === '' && $attachments === []) {
+    $respond(false, 400, 'Message must contain text or attachments.');
+    $redirectTo('/messages.php');
+}
+
+if (mb_strlen($body) > trux_direct_message_body_limit()) {
+    $respond(false, 400, 'Message must be 1-2000 characters or include attachments.');
+    $redirectTo('/messages.php');
+}
+
+if (count($attachments) > trux_direct_message_max_attachments()) {
+    $respond(false, 400, 'You can attach up to 10 files per message.');
     $redirectTo('/messages.php');
 }
 
@@ -96,9 +108,15 @@ if (trux_moderation_is_user_dm_restricted($viewerId)) {
     $redirectTo($redirectPath);
 }
 
-$sendResult = trux_send_direct_message_record($viewerId, (int)$recipientUser['id'], $body);
-if (!$sendResult) {
-    $respond(false, 500, 'Could not send message.');
+$sendResult = trux_send_direct_message_record(
+    $viewerId,
+    (int)$recipientUser['id'],
+    $body,
+    $attachments,
+    $replyToMessageId
+);
+if (!($sendResult['ok'] ?? false)) {
+    $respond(false, 400, (string)($sendResult['error'] ?? 'Could not send message.'));
     $redirectTo('/messages.php?with=' . rawurlencode($recipientUsername));
 }
 
@@ -127,32 +145,30 @@ trux_moderation_record_activity_event('direct_message_sent', $viewerId, [
         'recipient_user_id' => (int)$recipientUser['id'],
         'recipient_username' => $recipientUsername,
         'body_length' => mb_strlen($body),
+        'attachment_count' => count((array)($message['attachments'] ?? [])),
         'link_count' => trux_moderation_link_count($body),
-        'body_hash' => trux_moderation_text_fingerprint($body),
+        'body_hash' => $body !== '' ? trux_moderation_text_fingerprint($body) : '',
     ],
 ]);
 
+$messageHtml = trux_render_direct_message_bubble($message, $viewerId, $savedConversationId);
+$conversationItemHtml = trux_render_direct_conversation_item($conversationSummary, $savedConversationId);
+$unreadTotal = trux_count_unread_direct_messages($viewerId);
+
 if ($isJson) {
-    $messageHtml = trux_render_direct_message_bubble($message, $viewerId, $savedConversationId);
-    $conversationItemHtml = trux_render_direct_conversation_item($conversationSummary, $savedConversationId);
     if ($messageHtml === '' || $conversationItemHtml === '') {
         $respond(false, 500, 'Could not render the new message.');
     }
 
-    $createdAt = (string)($message['created_at'] ?? '');
     $respond(true, 200, 'Message sent.', [
         'conversation_id' => $savedConversationId,
         'conversation_url' => TRUX_BASE_URL . '/messages.php?id=' . $savedConversationId,
         'created_conversation' => $createdConversation,
+        'message' => $message,
         'message_html' => $messageHtml,
+        'conversation_summary' => $conversationSummary,
         'conversation_item_html' => $conversationItemHtml,
-        'message' => [
-            'id' => $messageId,
-            'body' => (string)($message['body'] ?? $body),
-            'created_at' => $createdAt,
-            'time_ago' => $createdAt !== '' ? trux_time_ago($createdAt) : 'just now',
-            'exact_time' => $createdAt !== '' ? trux_format_exact_time($createdAt) : '',
-        ],
+        'unread_total' => $unreadTotal,
     ]);
 }
 

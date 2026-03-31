@@ -81,3 +81,96 @@
     border-bottom: 1px solid var(--line-soft);
   }
 }
+
+@media (max-width: 1024px) {
+  .page--messages .messagesLayout {
+    grid-template-columns: minmax(280px, 312px) minmax(0, 1fr);
+  }
+
+  .page--messages .messagesSidebar,
+  .page--messages .messagesThread {
+    padding: var(--space-4);
+  }
+
+  .page--messages .messagesComposer__cell {
+    min-height: 3.15rem;
+    padding: 0.4rem 0.48rem;
+  }
+
+  .page--messages .messagesComposer__cell--input {
+    padding-inline: 0.58rem;
+  }
+
+  .page--messages .messagesComposer__attachMenu {
+    max-width: min(calc(100vw - 3rem), 17rem);
+  }
+
+  .page--messages .messageBubble {
+    max-width: 78%;
+    gap: 0.24rem;
+    padding: 0.62rem 0.76rem;
+  }
+
+  .page--messages .messageBubble--mine {
+    padding-right: 1.9rem;
+  }
+
+  .page--messages .messageBubble__meta {
+    gap: 0.32rem;
+  }
+
+  .page--messages .messageBubble__metaMain {
+    gap: 0.16rem 0.44rem;
+  }
+
+  .page--messages .messageBubble__body {
+    line-height: 1.28;
+  }
+
+  .page--messages .messageBubble__content,
+  .page--messages .messageBubble__attachments {
+    gap: 0.2rem;
+  }
+
+  .page--messages .messageBubble__readStatus {
+    right: 0.68rem;
+    bottom: 0.52rem;
+  }
+
+  .page--messages .messageBubble__menu {
+    top: 0.38rem;
+  }
+
+  .page--messages .messageBubble--mine .messageBubble__menu {
+    right: calc(100% + 0.28rem);
+  }
+
+  .page--messages .messageBubble:not(.messageBubble--mine) .messageBubble__menu {
+    left: calc(100% + 0.28rem);
+  }
+
+  .page--messages .messageBubble--mine .messageBubble__menu .contentMenu__panel {
+    right: calc(100% + 0.34rem);
+  }
+
+  .page--messages .messageBubble:not(.messageBubble--mine) .messageBubble__menu .contentMenu__panel {
+    left: calc(100% + 0.34rem);
+  }
+
+  .page--messages .messagesThread__transportState {
+    width: min(calc(100% - 2rem), 22rem);
+  }
+
+  .page--messages .messagesComposer__attachMenu {
+    max-width: calc(100vw - 48px);
+  }
+
+  .page--messages .messagesComposer__emojiPanel {
+    width: min(320px, calc(100vw - 48px));
+  }
+
+  .page--messages .messagesComposer__replyContext {
+    margin-bottom: 0.55rem;
+    padding: 0.66rem 0.78rem;
+  }
+}

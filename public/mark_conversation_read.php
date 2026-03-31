@@ -64,12 +64,16 @@ if (!$conversation) {
 }
 
 trux_mark_direct_conversation_read($conversationId, $viewerId);
+$conversationSummary = trux_fetch_direct_conversation_summary($conversationId, $viewerId);
 
 if ($isJson) {
     header('Content-Type: application/json; charset=utf-8');
     echo json_encode([
         'ok' => true,
         'conversation_id' => $conversationId,
+        'conversation_summary' => $conversationSummary,
+        'conversation_item_html' => $conversationSummary ? trux_render_direct_conversation_item($conversationSummary, $conversationId) : '',
+        'unread_total' => trux_count_unread_direct_messages($viewerId),
     ]);
     exit;
 }
