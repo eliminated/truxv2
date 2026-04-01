@@ -20,11 +20,17 @@ if (!$post) {
 }
 
 $me = trux_current_user();
+$viewerId = $me ? (int)$me['id'] : null;
 $interactionMap = trux_fetch_post_interactions(
   [(int)$post['id']],
-  $me ? (int)$me['id'] : null
+  $viewerId
 );
 $postStats = $interactionMap[(int)$post['id']] ?? ['likes' => 0, 'comments' => 0, 'shares' => 0, 'liked' => false, 'shared' => false, 'bookmarked' => false];
+
+$_qId = (int)($post['quoted_post_id'] ?? 0);
+$quotedPostMap = $_qId > 0 ? trux_fetch_quoted_posts_batch([$_qId]) : [];
+$pollMap = trux_fetch_polls_for_posts([(int)$post['id']], $viewerId);
+unset($_qId, $viewerId);
 
 require_once __DIR__ . '/_header.php';
 ?>

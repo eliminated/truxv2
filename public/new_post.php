@@ -61,6 +61,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       }
 
       if ($error === null) {
+        // Create poll if at least 2 options provided
+        $pollOptions = [];
+        for ($i = 1; $i <= 4; $i++) {
+          $opt = isset($_POST['poll_option_' . $i]) ? trim((string)$_POST['poll_option_' . $i]) : '';
+          if ($opt !== '') {
+            $pollOptions[] = $opt;
+          }
+        }
+        if (count($pollOptions) >= 2) {
+          $pollExpiresAt = null;
+          $rawDuration = isset($_POST['poll_duration']) ? (string)$_POST['poll_duration'] : '';
+          if (in_array($rawDuration, ['1440', '4320', '10080', '20160'], true)) {
+            $pollExpiresAt = date('Y-m-d H:i:s', time() + ((int)$rawDuration * 60));
+          }
+          trux_create_poll($postId, $pollOptions, $pollExpiresAt);
+        }
+
         trux_moderation_record_activity_event('post_created', (int)$user['id'], [
           'subject_type' => 'post',
           'subject_id' => $postId,
@@ -169,7 +186,14 @@ require_once __DIR__ . '/_header.php';
         <div class="flash flash--error"><?= trux_e($error) ?></div>
       <?php endif; ?>
 
-      <form method="post" action="<?= TRUX_BASE_URL ?>/new_post.php" enctype="multipart/form-data" class="form" data-ajax-new-post="1" data-no-fx="1">
+      <form
+        method="post"
+        action="<?= TRUX_BASE_URL ?>/new_post.php"
+        enctype="multipart/form-data"
+        class="form"
+        data-ajax-compose="1"
+        data-ajax-compose-error="Could not create post."
+        data-no-fx="1">
         <?= trux_csrf_field() ?>
 
         <label class="field">
@@ -183,6 +207,38 @@ require_once __DIR__ . '/_header.php';
           <input type="file" name="image" accept="image/*">
           <small class="muted">GIFs are re-encoded as PNG for safety.</small>
         </label>
+
+        <details class="pollComposer">
+          <summary>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="15" height="15">
+              <path d="M4 17h4v3H4v-3ZM10 11h4v9h-4v-9ZM16 4h4v16h-4V4Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+            </svg>
+            Add a poll
+          </summary>
+          <div class="pollComposer__body">
+            <?php for ($i = 1; $i <= 4; $i++): ?>
+              <div class="pollComposer__option">
+                <span class="pollComposer__optLabel"><?= $i ?></span>
+                <input
+                  type="text"
+                  name="poll_option_<?= $i ?>"
+                  maxlength="120"
+                  placeholder="Option <?= $i ?><?= $i <= 2 ? ' (required)' : ' (optional)' ?>"
+                  <?= $i <= 2 ? '' : '' ?>
+                  value="<?= trux_e((string)($_POST['poll_option_' . $i] ?? '')) ?>">
+              </div>
+            <?php endfor; ?>
+            <div class="pollComposer__footer">
+              <label for="poll_duration">Duration</label>
+              <select name="poll_duration" id="poll_duration">
+                <option value="1440">1 day</option>
+                <option value="4320">3 days</option>
+                <option value="10080" selected>1 week</option>
+                <option value="20160">2 weeks</option>
+              </select>
+            </div>
+          </div>
+        </details>
 
         <div class="editorStage__actions">
           <button class="shellButton shellButton--accent" type="submit">Post</button>

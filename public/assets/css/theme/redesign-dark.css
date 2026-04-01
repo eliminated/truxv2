@@ -1,0 +1,69 @@
+/* ─── Light mode overrides ───────────────────────────────────────────────────
+   Applied when data-theme="light" is set on <html>.
+   The default (:root) tokens in redesign-tokens.css define dark mode values.
+   This file inverts key tokens to produce a light theme.
+   ─────────────────────────────────────────────────────────────────────────── */
+[data-theme="light"] {
+  color-scheme: light;
+
+  /* Void / ink surface scale — inverted */
+  --void-900:  #f8f9fc;
+  --void-800:  #f0f2f7;
+  --void-700:  #e4e8f0;
+  --void-600:  #d4dae8;
+  --void-500:  #c0c8dc;
+  --void-400:  #a8b4cc;
+
+  --ink-0: #f8f9fc;
+  --ink-1: #f0f2f7;
+  --ink-2: #e4e8f0;
+  --ink-3: #d4dae8;
+  --ink-4: #c0c8dc;
+  --ink-5: #a8b4cc;
+
+  /* Surfaces */
+  --surface-0:       rgba(248, 249, 252, 0.95);
+  --surface-1:       rgba(240, 242, 247, 0.97);
+  --surface-2:       rgba(228, 232, 240, 0.99);
+  --surface-3:       rgba(212, 218, 232, 0.99);
+  --surface-band:    rgba(0, 0, 0, 0.025);
+  --surface-frost:   rgba(0, 0, 0, 0.03);
+  --surface-overlay: rgba(240, 242, 247, 0.88);
+  --bg-panel:        rgba(248, 249, 252, 0.94);
+  --bg-panel-strong: rgba(240, 242, 247, 0.98);
+  --bg-panel-soft:   rgba(0, 0, 0, 0.025);
+
+  /* Typography */
+  --text-strong: #0a0b14;
+  --text-main:   #1e2035;
+  --text-soft:   #4a5070;
+  --text-faint:  #7080a0;
+
+  /* Lines */
+  --line-soft:   rgba(0, 0, 0, 0.08);
+  --line-mid:    rgba(80, 60, 180, 0.14);
+  --line-strong: rgba(180, 0, 120, 0.18);
+  --line-accent: rgba(0, 140, 200, 0.20);
+
+  /* Shadows — lighter in light mode */
+  --shadow-xs: 0 8px 24px rgba(0, 0, 0, 0.07);
+  --shadow-sm: 0 14px 36px rgba(0, 0, 0, 0.10);
+  --shadow-md: 0 24px 60px rgba(0, 0, 0, 0.13);
+  --shadow-lg: 0 38px 100px rgba(0, 0, 0, 0.18);
+
+  /* Atmosphere orbs — more subtle */
+  --orb-opacity: 0.06;
+}
+
+[data-theme="light"] body {
+  background-color: var(--ink-0);
+  color: var(--text-main);
+}
+
+[data-theme="light"] .shellAtmosphere__orb {
+  opacity: var(--orb-opacity, 0.06);
+}
+
+/* Theme toggle icon visibility */
+[data-theme="dark"]  .themeToggle__sun  { display: none; }
+[data-theme="light"] .themeToggle__moon { display: none; }

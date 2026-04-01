@@ -926,6 +926,56 @@
   gap: var(--space-3);
 }
 
+.quoteComposer__quotedBlock {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.quoteComposer__quotedHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+}
+
+.quoteComposer__quotedEyebrow {
+  color: var(--rx-cyan-strong);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.quoteComposer__quotedLink {
+  color: var(--text-strong);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.quoteComposer__quotedLink:hover,
+.quoteComposer__quotedLink:focus-visible {
+  color: var(--rx-cyan-strong);
+}
+
+.quoteComposer__preview {
+  margin-top: 0;
+}
+
+.composeCounter {
+  justify-self: end;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--text-soft);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
 .profileScene {
   display: grid;
   gap: var(--space-5);

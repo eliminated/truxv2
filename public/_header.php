@@ -397,12 +397,22 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
 }
 ?>
 <!doctype html>
-<html lang="en">
+<?php
+$_serverTheme = 'dark';
+if ($user) {
+    $tp = (string)($user['theme_preference'] ?? 'system');
+    if ($tp === 'light') $_serverTheme = 'light';
+    elseif ($tp === 'dark') $_serverTheme = 'dark';
+    // 'system' → JS/localStorage will override, default to dark
+}
+?>
+<html lang="en" data-theme="<?= trux_e($_serverTheme) ?>">
 
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title><?= trux_e($pageTitle) ?></title>
+  <script>(function(){var t=localStorage.getItem('trux_theme');if(t==='light'||t==='dark'){document.documentElement.setAttribute('data-theme',t);}})()</script>
   <?php
   $faviconVersion = max(
     (int)(filemtime(__DIR__ . '/favicon.php') ?: 0),
@@ -712,6 +722,16 @@ if ($pageLayout === 'moderation' && isset($moderationMe, $moderationStaffRole)) 
                   <?php endif; ?>
                 </div>
               </div>
+
+              <button class="shellAction shellAction--icon shellAction--themeToggle" type="button" data-theme-toggle="1" aria-label="Toggle color theme" title="Toggle light/dark mode">
+                <svg class="themeToggle__moon" viewBox="0 0 24 24" focusable="false" width="18" height="18">
+                  <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" />
+                </svg>
+                <svg class="themeToggle__sun" viewBox="0 0 24 24" focusable="false" width="18" height="18">
+                  <circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.7" />
+                  <path d="M12 2v2M12 20v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M2 12h2M20 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" />
+                </svg>
+              </button>
 
               <div class="nav__menu shellMenu shellMenu--profile">
                 <button class="shellAction shellAction--profile" type="button" aria-label="Profile menu" aria-haspopup="menu" title="@<?= trux_e((string)$user['username']) ?>">

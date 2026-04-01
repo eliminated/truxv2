@@ -39,6 +39,12 @@
   padding: 0.95rem 0;
   border-top: 1px solid var(--line-soft);
   position: relative;
+  z-index: 1;
+}
+
+/* Raise post above siblings when its context menu is open */
+.streamItem.post--menuOpen {
+  z-index: 50;
 }
 
 .timeline > .streamItem:first-child {

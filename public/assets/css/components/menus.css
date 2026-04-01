@@ -115,9 +115,7 @@
 
 .nav__menu:hover > .menu__panel,
 .nav__menu:focus-within > .menu__panel,
-.contentMenu.is-open > .contentMenu__panel,
-.contentMenu:hover > .contentMenu__panel,
-.contentMenu:focus-within > .contentMenu__panel {
+.contentMenu.is-open > .contentMenu__panel {
   opacity: 1;
   visibility: visible;
   pointer-events: auto;
@@ -126,9 +124,7 @@
 
 .nav__menu:hover::after,
 .nav__menu:focus-within::after,
-.contentMenu.is-open::after,
-.contentMenu:hover::after,
-.contentMenu:focus-within::after {
+.contentMenu.is-open::after {
   opacity: 1;
   pointer-events: auto;
 }

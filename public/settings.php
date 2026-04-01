@@ -161,6 +161,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
       trux_flash_set('error', 'Could not update privacy settings right now.');
     }
+  } elseif ($action === 'save_theme_preference') {
+    $theme = trim((string)($_POST['theme_preference'] ?? 'system'));
+    if (!in_array($theme, ['light', 'dark', 'system'], true)) {
+      $theme = 'system';
+    }
+    $db = trux_db();
+    $stmt = $db->prepare('UPDATE users SET theme_preference = ? WHERE id = ?');
+    $stmt->execute([$theme, (int)$me['id']]);
+    trux_flash_set('success', 'Theme preference updated.');
   } else {
     $submitted = [];
     foreach (array_keys(trux_notification_defaults()) as $key) {
@@ -844,6 +853,32 @@ require_once __DIR__ . '/_header.php';
               </span>
               <strong class="muted">Unified</strong>
             </div>
+
+            <form method="post" action="<?= TRUX_BASE_URL ?>/settings.php" class="settingSection__form">
+              <?= trux_csrf_field() ?>
+              <input type="hidden" name="section" value="interface">
+              <input type="hidden" name="action" value="save_theme_preference">
+
+              <div class="settingRow settingRow--stacked">
+                <span class="settingRow__label">
+                  <strong>Color theme</strong>
+                  <small class="muted">Choose your preferred color scheme. The toggle button in the header switches instantly.</small>
+                </span>
+                <div class="radioGroup">
+                  <?php foreach (['system' => 'Follow system', 'dark' => 'Dark', 'light' => 'Light'] as $themeVal => $themeLabel): ?>
+                    <label class="radioGroup__item">
+                      <input type="radio" name="theme_preference" value="<?= trux_e($themeVal) ?>"
+                             <?= ($me['theme_preference'] ?? 'system') === $themeVal ? 'checked' : '' ?>>
+                      <span><?= trux_e($themeLabel) ?></span>
+                    </label>
+                  <?php endforeach; ?>
+                </div>
+              </div>
+
+              <div class="settingSection__actions">
+                <button class="shellButton shellButton--accent" type="submit">Save theme</button>
+              </div>
+            </form>
           </div>
         </section>
       <?php endif; ?>

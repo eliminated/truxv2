@@ -6,6 +6,8 @@ $postId = (int)($postRecord['id'] ?? 0);
 if ($postId <= 0) {
   return;
 }
+$quotedPostMap = is_array($quotedPostMap ?? null) ? $quotedPostMap : [];
+$pollMap = is_array($pollMap ?? null) ? $pollMap : [];
 
 $postViewer = is_array($postViewer ?? null) ? $postViewer : null;
 $postInteractionStats = is_array($postInteractionStats ?? null) ? $postInteractionStats : [];
@@ -42,6 +44,14 @@ $postCardClassAttr = trim('post streamItem ' . $postCardClasses);
   </div>
 
   <div class="post__band">
+    <?php if (!empty($postRecord['is_pinned'])): ?>
+      <div class="post__pinnedBadge" aria-label="Pinned post">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="13" height="13">
+          <path d="M12 2.5 9.5 8H5l3.5 5.5-1 6L12 17l4.5 2.5-1-6L19 8h-4.5L12 2.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+        </svg>
+        <span>Pinned</span>
+      </div>
+    <?php endif; ?>
     <header class="post__head">
       <div class="post__meta">
         <div class="post__nameRow">
@@ -87,6 +97,7 @@ $postCardClassAttr = trim('post streamItem ' . $postCardClasses);
         $isOwner = $postIsOwner;
         $isLoggedIn = (bool)$postViewer;
         $bookmarked = $postBookmarked;
+        $postIsPinned = !empty($postRecord['is_pinned']);
         require __DIR__ . '/_post_content_menu.php';
         ?>
       </div>
@@ -100,6 +111,64 @@ $postCardClassAttr = trim('post streamItem ' . $postCardClasses);
       <div class="post__media">
         <div class="post__image">
           <img src="<?= trux_e($postImageUrl) ?>" alt="Post image" loading="lazy" decoding="async">
+        </div>
+      </div>
+    <?php endif; ?>
+
+    <?php
+    // ── Quoted post embed ───────────────────────────────────────────────────────
+    $quotedPostId = (int)($postRecord['quoted_post_id'] ?? 0);
+    $quotedPostRecord = $quotedPostId > 0 ? ($quotedPostMap[$quotedPostId] ?? null) : null;
+    $quotedPreviewDeleted = $quotedPostId > 0 && !is_array($quotedPostRecord);
+    $quotedPreviewWrapperClass = '';
+    ?>
+    <?php require __DIR__ . '/_quoted_post_preview.php'; ?>
+
+    <?php
+    // ── Poll block ──────────────────────────────────────────────────────────────
+    $postPollData = $pollMap[$postId] ?? null;
+    if ($postPollData !== null):
+        $pollId        = (int)$postPollData['poll_id'];
+        $pollExpired   = (bool)$postPollData['expired'];
+        $pollExpiresAt = $postPollData['expires_at'] ?? null;
+        $pollTotal     = (int)$postPollData['total_votes'];
+        $viewerVoteId  = $postPollData['viewer_option_id'] ?? null;
+        $hasVoted      = $viewerVoteId !== null;
+        $showResults   = $hasVoted || $pollExpired || !$postViewer;
+    ?>
+      <div class="poll" data-poll-id="<?= $pollId ?>" data-post-id="<?= $postId ?>">
+        <?php foreach ($postPollData['options'] as $pollOpt): ?>
+          <?php
+          $optId    = (int)$pollOpt['id'];
+          $optVotes = (int)$pollOpt['vote_count'];
+          $optPct   = $pollTotal > 0 ? round($optVotes / $pollTotal * 100) : 0;
+          $isChosen = ((int)$viewerVoteId === $optId);
+          ?>
+          <?php if ($showResults): ?>
+            <div class="poll__result<?= $isChosen ? ' poll__result--chosen' : '' ?>">
+              <div class="poll__resultBar" style="width:<?= $optPct ?>%" aria-hidden="true"></div>
+              <span class="poll__resultLabel"><?= trux_e((string)$pollOpt['body']) ?></span>
+              <span class="poll__resultPct"><?= $optPct ?>%</span>
+            </div>
+          <?php else: ?>
+            <button
+              class="poll__option"
+              type="button"
+              data-poll-vote="1"
+              data-poll-id="<?= $pollId ?>"
+              data-option-id="<?= $optId ?>"
+              aria-label="Vote: <?= trux_e((string)$pollOpt['body']) ?>">
+              <?= trux_e((string)$pollOpt['body']) ?>
+            </button>
+          <?php endif; ?>
+        <?php endforeach; ?>
+        <div class="poll__meta muted">
+          <span><?= $pollTotal ?> vote<?= $pollTotal !== 1 ? 's' : '' ?></span>
+          <?php if ($pollExpired): ?>
+            <span>· Poll closed</span>
+          <?php elseif ($pollExpiresAt !== null): ?>
+            <span>· Closes <span data-time-ago="1" data-time-source="<?= trux_e((string)$pollExpiresAt) ?>"><?= trux_e(trux_time_ago((string)$pollExpiresAt)) ?></span></span>
+          <?php endif; ?>
         </div>
       </div>
     <?php endif; ?>

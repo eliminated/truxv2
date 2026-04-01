@@ -64,7 +64,7 @@ function trux_current_user(): ?array {
     try {
         $stmt = $db->prepare(
             'SELECT id, username, email, display_name, bio, about_me, location, website_url, profile_links_json,
-                    avatar_path, banner_path, show_likes_public, show_bookmarks_public,
+                    avatar_path, banner_path, theme_preference, show_likes_public, show_bookmarks_public,
                     notify_report_updates_default, staff_role, email_domain_unrecognized,
                     email_verified, email_verify_sent_at, created_at
              FROM users
@@ -76,7 +76,8 @@ function trux_current_user(): ?array {
     } catch (PDOException) {
         $stmt = $db->prepare(
             'SELECT id, username, email, display_name, bio, about_me, location, website_url, profile_links_json,
-                    avatar_path, banner_path, show_likes_public, show_bookmarks_public,
+                    avatar_path, banner_path, \'system\' AS theme_preference,
+                    show_likes_public, show_bookmarks_public,
                     notify_report_updates_default, staff_role,
                     0 AS email_domain_unrecognized,
                     0 AS email_verified,

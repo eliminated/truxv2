@@ -123,15 +123,31 @@ $hasMoreBookmarkedComments = false;
 
 if ($blockedTab === null) {
   if ($tab === 'posts') {
+    $pinnedPost = null;
+    $pinnedPostInteractions = [];
+    if ($before <= 0) {
+      $pinnedPost = trux_fetch_pinned_post((int)$profileUser['id'], $me ? (int)$me['id'] : null);
+      if ($pinnedPost) {
+        $pinnedPostInteractions = $pinnedPost['_interactions'] ?? [];
+      }
+    }
     $posts = trux_fetch_posts_by_user((int)$profileUser['id'], 21, $before > 0 ? $before : null);
     $hasMorePosts = count($posts) > 20;
     if ($hasMorePosts) {
       array_pop($posts);
     }
+    if ($pinnedPost && $before <= 0) {
+      $pinnedId = (int)$pinnedPost['id'];
+      $posts = array_values(array_filter($posts, static fn($p) => (int)$p['id'] !== $pinnedId));
+    }
     if ($posts) {
       $nextBefore = (int)$posts[count($posts) - 1]['id'];
     }
     $postInteractionMap = trux_fetch_post_interactions(trux_collect_post_ids($posts), $me ? (int)$me['id'] : null);
+    $_quotedIds = array_filter(array_unique(array_map(static fn($p) => (int)($p['quoted_post_id'] ?? 0), $posts)));
+    $postQuotedMap = $_quotedIds ? trux_fetch_quoted_posts_batch(array_values($_quotedIds)) : [];
+    $postPollMap = trux_fetch_polls_for_posts(trux_collect_post_ids($posts), $me ? (int)$me['id'] : null);
+    unset($_quotedIds);
   } elseif ($tab === 'replies') {
     $replyItems = trux_fetch_comments_by_user((int)$profileUser['id'], 16, ($repliesPage - 1) * 15);
     $hasMoreReplies = count($replyItems) > 15;
@@ -152,6 +168,10 @@ if ($blockedTab === null) {
     }
     $likedInteractionMap = trux_fetch_post_interactions(trux_collect_post_ids($likedPosts), $me ? (int)$me['id'] : null);
     $likedCommentVoteMap = trux_fetch_comment_vote_stats(trux_collect_comment_ids($likedComments), $me ? (int)$me['id'] : null);
+    $_quotedIds = array_filter(array_unique(array_map(static fn($p) => (int)($p['quoted_post_id'] ?? 0), $likedPosts)));
+    $likedQuotedMap = $_quotedIds ? trux_fetch_quoted_posts_batch(array_values($_quotedIds)) : [];
+    $likedPollMap = trux_fetch_polls_for_posts(trux_collect_post_ids($likedPosts), $me ? (int)$me['id'] : null);
+    unset($_quotedIds);
   } elseif ($tab === 'bookmarks') {
     $bookmarkedPosts = trux_fetch_user_bookmarked_posts((int)$profileUser['id'], 13, ($bookmarkPostsPage - 1) * 12);
     $hasMoreBookmarkedPosts = count($bookmarkedPosts) > 12;
@@ -165,6 +185,10 @@ if ($blockedTab === null) {
     }
     $bookmarkInteractionMap = trux_fetch_post_interactions(trux_collect_post_ids($bookmarkedPosts), $me ? (int)$me['id'] : null);
     $bookmarkCommentVoteMap = trux_fetch_comment_vote_stats(trux_collect_comment_ids($bookmarkedComments), $me ? (int)$me['id'] : null);
+    $_quotedIds = array_filter(array_unique(array_map(static fn($p) => (int)($p['quoted_post_id'] ?? 0), $bookmarkedPosts)));
+    $bookmarkQuotedMap = $_quotedIds ? trux_fetch_quoted_posts_batch(array_values($_quotedIds)) : [];
+    $bookmarkPollMap = trux_fetch_polls_for_posts(trux_collect_post_ids($bookmarkedPosts), $me ? (int)$me['id'] : null);
+    unset($_quotedIds);
   }
 }
 
@@ -221,7 +245,7 @@ $excerpt = static function (string $text, int $limit = 180): string {
   return rtrim(mb_substr($value, 0, $limit - 3)) . '...';
 };
 
-$renderPosts = static function (array $items, array $interactionMap, ?array $viewer, string $timeKey = '', string $timePrefix = ''): void {
+$renderPosts = static function (array $items, array $interactionMap, ?array $viewer, string $timeKey = '', string $timePrefix = '', array $quotedPostMap = [], array $pollMap = []): void {
   foreach ($items as $p) {
     $postRecord = $p;
     $postViewer = $viewer;
@@ -440,14 +464,28 @@ require_once __DIR__ . '/_header.php';
                 <h3>Published by @<?= trux_e((string)$profileUser['username']) ?></h3>
               </div>
             </div>
+            <?php if (!empty($pinnedPost)): ?>
+              <?php
+              $postRecord = $pinnedPost;
+              $postViewer = $me;
+              $postInteractionStats = $pinnedPostInteractions;
+              $postCardClasses = 'post--pinned';
+              $_pqId = (int)($pinnedPost['quoted_post_id'] ?? 0);
+              $quotedPostMap = ($postQuotedMap ?? []) + ($_pqId > 0 && !isset(($postQuotedMap ?? [])[$_pqId]) ? trux_fetch_quoted_posts_batch([$_pqId]) : []);
+              $pollMap = $postPollMap ?? [];
+              unset($_pqId);
+              require __DIR__ . '/_post_card.php';
+              unset($postCardClasses, $quotedPostMap, $pollMap);
+              ?>
+            <?php endif; ?>
             <div class="timeline" data-auto-pager-list="profile-posts">
-              <?php if (!$posts && $before <= 0): ?>
+              <?php if (!$posts && $before <= 0 && !$pinnedPost): ?>
                 <section class="bandSurface bandSurface--empty">
                   <strong>No posts yet</strong>
                   <p class="muted">@<?= trux_e((string)$profileUser['username']) ?> has not posted yet.</p>
                 </section>
               <?php else: ?>
-                <?php $renderPosts($posts, $postInteractionMap, $me); ?>
+                <?php $renderPosts($posts, $postInteractionMap, $me, '', '', $postQuotedMap ?? [], $postPollMap ?? []); ?>
               <?php endif; ?>
             </div>
             <?php if ($hasMorePosts && $nextBefore): ?>
@@ -489,7 +527,7 @@ require_once __DIR__ . '/_header.php';
               </section>
             <?php endif; ?>
             <div class="timeline" data-auto-pager-list="profile-liked-posts">
-              <?php $renderPosts($likedPosts, $likedInteractionMap, $me, 'liked_at', 'Liked '); ?>
+              <?php $renderPosts($likedPosts, $likedInteractionMap, $me, 'liked_at', 'Liked ', $likedQuotedMap ?? [], $likedPollMap ?? []); ?>
             </div>
             <?php if ($hasMoreLikedPosts): ?>
               <div class="pager" data-auto-pager="profile-liked-posts"><a class="shellButton shellButton--ghost" data-no-fx="1" href="<?= trux_e($profileUrl(['tab' => 'liked', 'liked_posts_page' => $likedPostsPage + 1])) ?>">Load more liked posts</a></div>
@@ -530,7 +568,7 @@ require_once __DIR__ . '/_header.php';
               </section>
             <?php endif; ?>
             <div class="timeline" data-auto-pager-list="profile-bookmarked-posts">
-              <?php $renderPosts($bookmarkedPosts, $bookmarkInteractionMap, $me, 'bookmarked_at', 'Saved '); ?>
+              <?php $renderPosts($bookmarkedPosts, $bookmarkInteractionMap, $me, 'bookmarked_at', 'Saved ', $bookmarkQuotedMap ?? [], $bookmarkPollMap ?? []); ?>
             </div>
             <?php if ($hasMoreBookmarkedPosts): ?>
               <div class="pager" data-auto-pager="profile-bookmarked-posts"><a class="shellButton shellButton--ghost" data-no-fx="1" href="<?= trux_e($profileUrl(['tab' => 'bookmarks', 'bookmark_posts_page' => $bookmarkPostsPage + 1])) ?>">Load more bookmarked posts</a></div>

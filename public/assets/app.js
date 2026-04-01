@@ -1066,7 +1066,24 @@
     }
   };
 
+  const returnPortaledPanel = (menu) => {
+    const portaledPanel = document.getElementById("contentMenuPortal");
+    if (!portaledPanel) return;
+    const panel = portaledPanel.firstElementChild;
+    if (!(panel instanceof HTMLElement)) return;
+    const ownerId = panel.getAttribute("data-portal-owner");
+    const owner = ownerId ? document.querySelector(`[data-content-menu='1'][data-menu-uid='${ownerId}']`) : null;
+    if (owner instanceof HTMLElement && (!menu || owner !== menu)) {
+      panel.style.cssText = "";
+      owner.appendChild(panel);
+      panel.removeAttribute("data-portal-owner");
+      owner.removeAttribute("data-menu-uid");
+    }
+    portaledPanel.remove();
+  };
+
   const closeAllContentMenus = (exceptMenu) => {
+    returnPortaledPanel(exceptMenu);
     document.querySelectorAll("[data-content-menu='1']").forEach((menu) => {
       if (!(menu instanceof HTMLElement)) return;
       if (exceptMenu && menu === exceptMenu) return;
@@ -1589,6 +1606,31 @@
       const willOpen = !menu.classList.contains("is-open");
       closeAllContentMenus(willOpen ? menu : null);
       menu.classList.toggle("is-open", willOpen);
+      if (willOpen) {
+        const panel = menu.querySelector(".contentMenu__panel");
+        if (panel instanceof HTMLElement) {
+          const triggerRect = menuTrigger.getBoundingClientRect();
+          const uid = "m" + Date.now();
+          menu.setAttribute("data-menu-uid", uid);
+          panel.setAttribute("data-portal-owner", uid);
+          let portal = document.getElementById("contentMenuPortal");
+          if (!portal) {
+            portal = document.createElement("div");
+            portal.id = "contentMenuPortal";
+            portal.style.cssText = "position:fixed;top:0;left:0;width:0;height:0;z-index:99999;pointer-events:none;";
+            document.body.appendChild(portal);
+          }
+          portal.appendChild(panel);
+          panel.style.position = "fixed";
+          panel.style.top = (triggerRect.bottom + 4) + "px";
+          panel.style.right = (window.innerWidth - triggerRect.right) + "px";
+          panel.style.left = "auto";
+          panel.style.zIndex = "99999";
+          panel.style.pointerEvents = "auto";
+          panel.style.opacity = "1";
+          panel.style.visibility = "visible";
+        }
+      }
       const post = menu.closest(".post");
       if (post instanceof HTMLElement) {
         post.classList.toggle("post--menuOpen", willOpen);
@@ -2257,9 +2299,6 @@
 })();
 
 (() => {
-  const form = document.querySelector("form[data-ajax-new-post='1']");
-  if (!(form instanceof HTMLFormElement)) return;
-
   const readJson = async (res) => {
     const text = await res.text();
     try {
@@ -2269,7 +2308,7 @@
     }
   };
 
-  const findOrCreateFlash = () => {
+  const findOrCreateFlash = (form) => {
     let flash = form.parentElement ? form.parentElement.querySelector("[data-ajax-flash='1']") : null;
     if (flash instanceof HTMLElement) return flash;
     flash = document.createElement("div");
@@ -2278,51 +2317,78 @@
     return flash;
   };
 
-  const setFlash = (type, html) => {
-    const flash = findOrCreateFlash();
+  const setFlash = (form, type, html) => {
+    const flash = findOrCreateFlash(form);
     flash.className = `flash flash--${type}`;
     flash.innerHTML = html;
   };
 
-  form.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const submitBtn = form.querySelector("button[type='submit']");
-    if (submitBtn instanceof HTMLButtonElement) {
-      submitBtn.disabled = true;
-      submitBtn.classList.add("is-loading");
-    }
+  const syncComposeCharCount = (form) => {
+    if (!(form instanceof HTMLFormElement)) return;
+    const counter = form.querySelector("[data-compose-char-count='1']");
+    const textarea = form.querySelector("textarea[name='body']");
+    if (!(counter instanceof HTMLElement) || !(textarea instanceof HTMLTextAreaElement)) return;
+    counter.textContent = String(textarea.value.length);
+  };
 
-    try {
-      const fd = new FormData(form);
-      const res = await fetch(`${form.action}?format=json`, {
-        method: "POST",
-        body: fd,
-        headers: { Accept: "application/json" },
+  document.querySelectorAll("form[data-ajax-compose='1']").forEach((form) => {
+    if (!(form instanceof HTMLFormElement)) return;
+
+    syncComposeCharCount(form);
+
+    const textarea = form.querySelector("textarea[name='body']");
+    if (textarea instanceof HTMLTextAreaElement) {
+      textarea.addEventListener("input", () => {
+        syncComposeCharCount(form);
       });
-      const data = await readJson(res);
-      if (!res.ok || !data.ok) {
-        throw new Error(data.error || "Could not create post.");
+    }
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const submitBtn = form.querySelector("button[type='submit']");
+      if (submitBtn instanceof HTMLButtonElement) {
+        submitBtn.disabled = true;
+        submitBtn.classList.add("is-loading");
       }
 
-      const postUrl = new URL(
-        String(data?.post?.url || `${window.TRUX_BASE_URL || ""}/`),
-        window.location.origin
-      ).toString();
-      window.location.assign(postUrl);
-      return;
-    } catch (err) {
-      setFlash("error", (err instanceof Error ? err.message : "Could not create post."));
-    } finally {
-      if (submitBtn instanceof HTMLButtonElement) {
-        submitBtn.disabled = false;
-        submitBtn.classList.remove("is-loading");
+      try {
+        const fd = new FormData(form);
+        const res = await fetch(`${form.action}?format=json`, {
+          method: "POST",
+          body: fd,
+          headers: { Accept: "application/json" },
+        });
+        const data = await readJson(res);
+        const fallbackError = form.dataset.ajaxComposeError || "Could not complete this request.";
+        if (!res.ok || !data.ok) {
+          throw new Error(data.error || fallbackError);
+        }
+
+        const postUrl = new URL(
+          String(data?.post?.url || `${window.TRUX_BASE_URL || ""}/`),
+          window.location.origin
+        ).toString();
+        window.location.assign(postUrl);
+        return;
+      } catch (err) {
+        setFlash(
+          form,
+          "error",
+          err instanceof Error ? err.message : (form.dataset.ajaxComposeError || "Could not complete this request.")
+        );
+      } finally {
+        if (submitBtn instanceof HTMLButtonElement) {
+          submitBtn.disabled = false;
+          submitBtn.classList.remove("is-loading");
+        }
       }
-    }
+    });
   });
 })();
 
 (() => {
   if (!window.location.href.includes("/messages.php")) return;
+  // Quote compose moved to a dedicated page.
   return;
 
   const layout = document.querySelector("[data-messages-layout='1']");
@@ -4961,6 +5027,21 @@
   };
 
   const closeAllContentMenus = () => {
+    const portaledPanel = document.getElementById("contentMenuPortal");
+    if (portaledPanel) {
+      const panel = portaledPanel.firstElementChild;
+      if (panel instanceof HTMLElement) {
+        const ownerId = panel.getAttribute("data-portal-owner");
+        const owner = ownerId ? document.querySelector(`[data-content-menu='1'][data-menu-uid='${ownerId}']`) : null;
+        if (owner instanceof HTMLElement) {
+          panel.style.cssText = "";
+          owner.appendChild(panel);
+          panel.removeAttribute("data-portal-owner");
+          owner.removeAttribute("data-menu-uid");
+        }
+      }
+      portaledPanel.remove();
+    }
     document.querySelectorAll("[data-content-menu='1']").forEach((menu) => {
       if (!(menu instanceof HTMLElement)) return;
       menu.classList.remove("is-open");
@@ -5478,4 +5559,297 @@
   } else if (typeof compactQuery.addListener === "function") {
     compactQuery.addListener(resetForViewport);
   }
+})();
+
+// ─── Dark Mode Toggle ─────────────────────────────────────────────────────────
+(function () {
+  const getCsrfToken = () => {
+    const input = document.querySelector("input[name='_csrf']");
+    return input instanceof HTMLInputElement ? input.value : "";
+  };
+
+  // Apply stored theme on load (also done inline in <head>, this syncs system pref)
+  const stored = localStorage.getItem("trux_theme");
+  if (stored === "light" || stored === "dark") {
+    document.documentElement.setAttribute("data-theme", stored);
+  } else {
+    // No stored preference — respect OS setting
+    const prefersDark = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches;
+    document.documentElement.setAttribute("data-theme", prefersDark ? "dark" : "light");
+  }
+
+  document.addEventListener("click", function (e) {
+    const btn = e.target.closest("[data-theme-toggle]");
+    if (!btn) return;
+    const current = document.documentElement.getAttribute("data-theme") || "dark";
+    const next = current === "dark" ? "light" : "dark";
+    document.documentElement.setAttribute("data-theme", next);
+    localStorage.setItem("trux_theme", next);
+
+    const csrf = getCsrfToken();
+    if (!csrf) return;
+    const fd = new FormData();
+    fd.append("theme", next);
+    fd.append("_csrf", csrf);
+    fetch((window.TRUX_BASE_URL || "") + "/set_theme_preference.php?format=json", {
+      method: "POST",
+      body: fd,
+    }).catch(() => {});
+  });
+})();
+
+// ─── Pin Post ─────────────────────────────────────────────────────────────────
+(function () {
+  const getCsrfToken = () => {
+    const input = document.querySelector("input[name='_csrf']");
+    return input instanceof HTMLInputElement ? input.value : "";
+  };
+
+  document.addEventListener("click", async function (e) {
+    const btn = e.target.closest("[data-pin-post]");
+    if (!btn) return;
+    e.preventDefault();
+    const postId = btn.dataset.postId;
+    if (!postId) return;
+
+    const csrf = getCsrfToken();
+    if (!csrf) return;
+
+    btn.disabled = true;
+    try {
+      const fd = new FormData();
+      fd.append("id", postId);
+      fd.append("_csrf", csrf);
+      const res = await fetch(
+        (window.TRUX_BASE_URL || "") + "/pin_post.php?format=json",
+        { method: "POST", body: fd }
+      );
+      const data = await res.json();
+      if (!data.ok) return;
+
+      // Update button label
+      const labelEl = btn.querySelector("span");
+      if (labelEl) labelEl.textContent = data.pinned ? "Unpin" : "Pin to profile";
+      btn.setAttribute("aria-label", data.pinned ? "Unpin from profile" : "Pin to profile");
+      btn.classList.toggle("is-active", data.pinned);
+
+      // Show/hide pin badge on the post card
+      const card = btn.closest("[data-post-id]");
+      if (card) {
+        let badge = card.querySelector(".post__pinnedBadge");
+        if (data.pinned && !badge) {
+          badge = document.createElement("div");
+          badge.className = "post__pinnedBadge";
+          badge.setAttribute("aria-label", "Pinned post");
+          badge.innerHTML =
+            '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" width="13" height="13"><path d="M12 2.5 9.5 8H5l3.5 5.5-1 6L12 17l4.5 2.5-1-6L19 8h-4.5L12 2.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg><span>Pinned</span>';
+          const band = card.querySelector(".post__band");
+          if (band) band.insertAdjacentElement("afterbegin", badge);
+        } else if (!data.pinned && badge) {
+          badge.remove();
+        }
+      }
+    } finally {
+      btn.disabled = false;
+    }
+  });
+})();
+
+// ─── Poll Voting ──────────────────────────────────────────────────────────────
+(function () {
+  const getCsrfToken = () => {
+    const input = document.querySelector("input[name='_csrf']");
+    return input instanceof HTMLInputElement ? input.value : "";
+  };
+
+  document.addEventListener("click", async function (e) {
+    const btn = e.target.closest("[data-poll-vote]");
+    if (!btn) return;
+    e.preventDefault();
+
+    const pollId = btn.dataset.pollId;
+    const optionId = btn.dataset.optionId;
+    if (!pollId || !optionId) return;
+
+    const csrf = getCsrfToken();
+    if (!csrf) return;
+
+    btn.disabled = true;
+    try {
+      const fd = new FormData();
+      fd.append("poll_id", pollId);
+      fd.append("option_id", optionId);
+      fd.append("_csrf", csrf);
+      const res = await fetch(
+        (window.TRUX_BASE_URL || "") + "/vote_poll.php?format=json",
+        { method: "POST", body: fd }
+      );
+      const data = await res.json();
+      if (!data.ok || !data.poll) return;
+
+      const poll = data.poll;
+      const pollContainer = btn.closest(".poll");
+      if (!pollContainer) return;
+
+      const totalVotes = poll.total_votes || 0;
+      const viewerVoteId = poll.viewer_option_id;
+
+      let newHtml = "";
+      for (const opt of poll.options) {
+        const pct = totalVotes > 0 ? Math.round((opt.vote_count / totalVotes) * 100) : 0;
+        const isChosen = viewerVoteId === opt.id;
+        newHtml += `<div class="poll__result${isChosen ? " poll__result--chosen" : ""}">` +
+          `<div class="poll__resultBar" style="width:${pct}%" aria-hidden="true"></div>` +
+          `<span class="poll__resultLabel">${opt.body.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>` +
+          `<span class="poll__resultPct">${pct}%</span>` +
+          `</div>`;
+      }
+
+      const metaEl = pollContainer.querySelector(".poll__meta");
+      const metaHtml = metaEl ? metaEl.outerHTML : "";
+
+      // Replace all option buttons with result bars, preserve meta
+      pollContainer.innerHTML = newHtml + metaHtml;
+      // Update vote count in meta
+      const metaCount = pollContainer.querySelector(".poll__meta span");
+      if (metaCount) metaCount.textContent = `${totalVotes} vote${totalVotes !== 1 ? "s" : ""}`;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+})();
+
+// ─── Quote Post Modal ─────────────────────────────────────────────────────────
+(function () {
+  const getCsrfToken = () => {
+    const input = document.querySelector("input[name='_csrf']");
+    return input instanceof HTMLInputElement ? input.value : "";
+  };
+
+  return;
+
+  function getOrCreateModal() {
+    let modal = document.getElementById(MODAL_ID);
+    if (modal) return modal;
+
+    modal = document.createElement("div");
+    modal.id = MODAL_ID;
+    modal.className = "overlay overlay--quote";
+    modal.setAttribute("role", "dialog");
+    modal.setAttribute("aria-modal", "true");
+    modal.setAttribute("aria-label", "Quote post");
+    modal.hidden = true;
+    modal.innerHTML = `
+      <div class="overlay__panel">
+        <div class="overlay__head">
+          <strong>Quote post</strong>
+          <button class="overlay__close" type="button" data-quote-modal-close="1" aria-label="Close">
+            <svg viewBox="0 0 24 24" focusable="false" width="18" height="18">
+              <path d="M18 6 6 18M6 6l12 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="overlay__body">
+          <textarea
+            id="quotePostBody"
+            class="field__input"
+            name="body"
+            placeholder="Add your comment…"
+            maxlength="2000"
+            rows="4"
+            data-autosize="1"></textarea>
+          <div class="quoteModal__charCount"><span id="quoteCharCount">0</span> / 2000</div>
+        </div>
+        <div class="overlay__actions">
+          <button class="shellButton shellButton--ghost" type="button" data-quote-modal-close="1">Cancel</button>
+          <button class="shellButton shellButton--accent" type="button" id="quoteSubmitBtn">Quote post</button>
+        </div>
+      </div>`;
+    document.body.appendChild(modal);
+    return modal;
+  }
+
+  let activeOriginalPostId = null;
+
+  document.addEventListener("click", async function (e) {
+    // Open modal
+    const openBtn = e.target.closest("[data-quote-open]");
+    if (openBtn) {
+      activeOriginalPostId = openBtn.dataset.postId || null;
+      if (!activeOriginalPostId) return;
+      const modal = getOrCreateModal();
+      const textarea = modal.querySelector("#quotePostBody");
+      if (textarea) { textarea.value = ""; }
+      const counter = modal.querySelector("#quoteCharCount");
+      if (counter) counter.textContent = "0";
+      modal.hidden = false;
+      if (textarea) textarea.focus();
+      return;
+    }
+
+    // Close modal
+    if (e.target.closest("[data-quote-modal-close]")) {
+      const modal = document.getElementById(MODAL_ID);
+      if (modal) modal.hidden = true;
+      activeOriginalPostId = null;
+      return;
+    }
+
+    // Submit quote
+    if (e.target.closest("#quoteSubmitBtn")) {
+      const modal = document.getElementById(MODAL_ID);
+      if (!modal || !activeOriginalPostId) return;
+      const textarea = modal.querySelector("#quotePostBody");
+      const body = textarea ? textarea.value.trim() : "";
+      if (body === "") {
+        if (textarea) textarea.focus();
+        return;
+      }
+
+      const csrf = getCsrfToken();
+      if (!csrf) return;
+
+      const submitBtn = modal.querySelector("#quoteSubmitBtn");
+      if (submitBtn) submitBtn.disabled = true;
+
+      try {
+        const fd = new FormData();
+        fd.append("original_post_id", activeOriginalPostId);
+        fd.append("body", body);
+        fd.append("_csrf", csrf);
+        const res = await fetch(
+          (window.TRUX_BASE_URL || "") + "/quote_post.php?format=json",
+          { method: "POST", body: fd }
+        );
+        const data = await res.json();
+        if (data.ok && data.post && data.post.url) {
+          modal.hidden = true;
+          activeOriginalPostId = null;
+          window.location.href = data.post.url;
+        } else if (!data.ok && data.error) {
+          alert(data.error);
+        }
+      } catch (_) {
+        // network error — leave modal open
+      } finally {
+        if (submitBtn) submitBtn.disabled = false;
+      }
+    }
+  });
+
+  // Character counter
+  document.addEventListener("input", function (e) {
+    if (e.target.id !== "quotePostBody") return;
+    const counter = document.getElementById("quoteCharCount");
+    if (counter) counter.textContent = String(e.target.value.length);
+  });
+
+  // Close on backdrop click
+  document.addEventListener("click", function (e) {
+    const modal = document.getElementById(MODAL_ID);
+    if (modal && !modal.hidden && e.target === modal) {
+      modal.hidden = true;
+      activeOriginalPostId = null;
+    }
+  });
 })();

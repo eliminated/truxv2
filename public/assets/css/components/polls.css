@@ -1,0 +1,227 @@
+/* ─── Poll Composer (new post form) ───────────────────────────────────── */
+
+.pollComposer {
+  margin-top: var(--space-4);
+  border: 1px solid var(--line-mid);
+  border-radius: var(--radius-3);
+  overflow: hidden;
+}
+
+.pollComposer summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-soft);
+  cursor: pointer;
+  user-select: none;
+  list-style: none;
+}
+
+.pollComposer summary::-webkit-details-marker {
+  display: none;
+}
+
+.pollComposer summary:hover {
+  color: var(--text-main);
+  background: var(--surface-band);
+}
+
+.pollComposer__body {
+  padding: var(--space-4);
+  display: grid;
+  gap: var(--space-3);
+  border-top: 1px solid var(--line-soft);
+}
+
+.pollComposer__option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.pollComposer__option input[type="text"] {
+  flex: 1;
+  padding: 0.55rem var(--space-3);
+  background: var(--ink-3);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-2);
+  color: var(--text-main);
+  font-size: 0.9rem;
+}
+
+.pollComposer__option input[type="text"]::placeholder {
+  color: var(--text-faint);
+}
+
+.pollComposer__option input[type="text"]:focus {
+  outline: none;
+  border-color: var(--line-mid);
+}
+
+.pollComposer__optLabel {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-faint);
+  min-width: 2rem;
+  text-align: right;
+}
+
+.pollComposer__footer {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding-top: var(--space-2);
+  border-top: 1px solid var(--line-soft);
+}
+
+.pollComposer__footer label {
+  font-size: 0.82rem;
+  color: var(--text-soft);
+  font-weight: 600;
+}
+
+.pollComposer__footer select {
+  padding: 0.4rem var(--space-3);
+  background: var(--ink-3);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-2);
+  color: var(--text-main);
+  font-size: 0.85rem;
+}
+
+/* ─── Poll Card Block ──────────────────────────────────────────────────── */
+
+.poll {
+  margin-top: var(--space-4);
+  display: grid;
+  gap: var(--space-2);
+}
+
+.poll__option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0.6rem var(--space-4);
+  background: var(--ink-3);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-2);
+  color: var(--text-main);
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.poll__option:hover {
+  border-color: var(--line-mid);
+  background: var(--ink-4);
+}
+
+.poll__option:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ─── Poll Results (after voting) ─────────────────────────────────────── */
+
+.poll__result {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 0.6rem var(--space-4);
+  border: 1px solid var(--line-soft);
+  border-radius: var(--radius-2);
+  overflow: hidden;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-main);
+  min-height: 2.4rem;
+}
+
+.poll__resultBar {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--accent-soft);
+  border-radius: var(--radius-2);
+  transition: width 0.4s ease;
+  pointer-events: none;
+}
+
+.poll__result--winner .poll__resultBar {
+  background: rgba(89, 243, 255, 0.18);
+}
+
+.poll__resultLabel {
+  position: relative;
+  flex: 1;
+  z-index: 1;
+}
+
+.poll__resultPct {
+  position: relative;
+  z-index: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--text-soft);
+  font-size: 0.82rem;
+  font-weight: 700;
+  min-width: 2.8rem;
+  text-align: right;
+}
+
+.poll__result--winner .poll__resultPct {
+  color: var(--accent-mint);
+}
+
+.poll__winnerMark {
+  position: relative;
+  z-index: 1;
+  font-size: 0.75rem;
+  color: var(--accent-mint);
+}
+
+/* ─── Poll Meta ────────────────────────────────────────────────────────── */
+
+.poll__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+  font-size: 0.8rem;
+  color: var(--text-faint);
+  margin-top: var(--space-1);
+}
+
+.poll__meta strong {
+  color: var(--text-soft);
+  font-weight: 700;
+}
+
+/* ─── Light mode overrides ─────────────────────────────────────────────── */
+
+[data-theme="light"] .pollComposer__option input[type="text"],
+[data-theme="light"] .pollComposer__footer select {
+  background: #f0f1f5;
+  border-color: rgba(0, 0, 0, 0.12);
+  color: #0a0b14;
+}
+
+[data-theme="light"] .poll__option {
+  background: #f0f1f5;
+  border-color: rgba(0, 0, 0, 0.12);
+  color: #0a0b14;
+}
+
+[data-theme="light"] .poll__option:hover {
+  background: #e4e5eb;
+  border-color: rgba(0, 0, 0, 0.2);
+}
+
+[data-theme="light"] .poll__result {
+  border-color: rgba(0, 0, 0, 0.12);
+  color: #0a0b14;
+}

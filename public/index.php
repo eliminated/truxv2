@@ -63,6 +63,11 @@ $interactionMap = trux_fetch_post_interactions(
   $me ? (int) $me['id'] : null
 );
 
+$_quotedIds = array_filter(array_unique(array_map(static fn($p) => (int)($p['quoted_post_id'] ?? 0), $posts)));
+$quotedPostMap = $_quotedIds ? trux_fetch_quoted_posts_batch(array_values($_quotedIds)) : [];
+$pollMap = trux_fetch_polls_for_posts(trux_collect_post_ids($posts), $me ? (int)$me['id'] : null);
+unset($_quotedIds);
+
 require_once __DIR__ . '/_header.php';
 ?>
 

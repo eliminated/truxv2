@@ -46,3 +46,6 @@
 @import url("./theme/redesign-motion.css");
 @import url("./theme/redesign-tablet.css");
 @import url("./theme/redesign-mobile.css");
+
+@import url("./theme/redesign-dark.css");
+@import url("./components/polls.css");

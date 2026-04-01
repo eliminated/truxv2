@@ -4,6 +4,7 @@ declare(strict_types=1);
 function trux_notification_defaults(): array {
     return [
         'notify_post_likes' => true,
+        'notify_post_quotes' => true,
         'notify_comment_votes' => true,
         'notify_mentions' => true,
         'notify_follows' => true,
@@ -18,6 +19,10 @@ function trux_notification_pref_labels(): array {
         'notify_post_likes' => [
             'title' => 'Post likes',
             'description' => 'When someone likes one of your posts.',
+        ],
+        'notify_post_quotes' => [
+            'title' => 'Quote posts',
+            'description' => 'When someone quotes one of your posts with commentary.',
         ],
         'notify_comment_votes' => [
             'title' => 'Comment and reply votes',
@@ -49,6 +54,7 @@ function trux_notification_pref_labels(): array {
 function trux_notification_pref_for_type(string $type): ?string {
     return match ($type) {
         'post_like' => 'notify_post_likes',
+        'post_quote' => 'notify_post_quotes',
         'comment_vote' => 'notify_comment_votes',
         'mention_post', 'mention_comment' => 'notify_mentions',
         'follow' => 'notify_follows',
@@ -73,8 +79,8 @@ function trux_fetch_notification_preferences(int $userId): array {
     try {
         $db = trux_db();
         $stmt = $db->prepare(
-            'SELECT notify_post_likes, notify_comment_votes, notify_mentions, notify_follows, notify_post_comments, notify_replies,
-                    notify_report_updates_default
+            'SELECT notify_post_likes, notify_post_quotes, notify_comment_votes, notify_mentions, notify_follows,
+                    notify_post_comments, notify_replies, notify_report_updates_default
              FROM users
              WHERE id = ?
              LIMIT 1'
@@ -114,6 +120,7 @@ function trux_update_notification_preferences(int $userId, array $submitted): bo
         $stmt = $db->prepare(
             'UPDATE users
              SET notify_post_likes = ?,
+                 notify_post_quotes = ?,
                  notify_comment_votes = ?,
                  notify_mentions = ?,
                  notify_follows = ?,
@@ -124,6 +131,7 @@ function trux_update_notification_preferences(int $userId, array $submitted): bo
         );
         $stmt->execute([
             $values['notify_post_likes'],
+            $values['notify_post_quotes'],
             $values['notify_comment_votes'],
             $values['notify_mentions'],
             $values['notify_follows'],
@@ -288,6 +296,19 @@ function trux_delete_notification(int $recipientUserId, int $actorUserId, string
     } catch (PDOException) {
         // Ignore when the table is unavailable.
     }
+}
+
+function trux_notify_post_quote(int $recipientUserId, int $actorUserId, int $quotePostId, int $originalPostId): void {
+    $targetUrl = trux_post_viewer_url($quotePostId);
+    trux_create_custom_notification(
+        $recipientUserId,
+        $actorUserId,
+        'post_quote',
+        'post_quote:' . $actorUserId . ':' . $originalPostId . ':' . $quotePostId,
+        $originalPostId,
+        null,
+        $targetUrl
+    );
 }
 
 function trux_notify_post_like(int $recipientUserId, int $actorUserId, int $postId): void {
@@ -493,6 +514,7 @@ function trux_notification_text(array $notification): string {
 
     return match ((string)($notification['type'] ?? '')) {
         'post_like' => $actor . ' liked your post.',
+        'post_quote' => $actor . ' quoted your post.',
         'comment_vote' => $actor . ' upvoted your comment or reply.',
         'mention_post' => $actor . ' mentioned you in a post.',
         'mention_comment' => $actor . ' mentioned you in a comment or reply.',

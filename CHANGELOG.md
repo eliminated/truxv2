@@ -1,4 +1,37 @@
 ﻿# Omnicus Updates
+## TruX v0.7.5 — Quote Posts, Post Polls, Dark Mode, Pinned Posts
+
+**Branch**: Production
+**Date**: 2026-03-31
+
+***
+
+### Added
+
+- **Quote Posts** — Create a new post with commentary on any existing post. Quote posts are first-class posts with a `quoted_post_id` FK; the original post renders as an embedded card inside the quoting post. Guests see a login prompt in place of the Quote button. Notification sent to the original post author on quote.
+- **Post Polls** — Attach a poll (2–4 options, optional expiry of 1 day / 3 days / 1 week / 2 weeks) to any new post via the "Add a poll" composer toggle. Voters see progress bars with percentages after voting. One vote per user; changing vote supported. Results shown to guests and after poll expiry without voting.
+- **Dark Mode Toggle** — Per-user `theme_preference` (light / dark / system) stored in the database. Toggle button in the top bar flips instantly; preference persists across sessions. FOUC prevention via an inline synchronous script in `<head>` that reads `localStorage` before CSS loads. Light mode tokens override the default dark palette under `[data-theme="light"]`.
+- **Pinned Posts** — Profile owners can pin one post to the top of their profile via the post context menu. Pinning a new post automatically unpins the previous one. Pinned posts show a pin badge and are filtered from the regular timeline to avoid duplication.
+
+### Changed
+
+- `posts` table: added `quoted_post_id BIGINT UNSIGNED NULL` (FK → posts, ON DELETE SET NULL) and `is_pinned TINYINT(1) NOT NULL DEFAULT 0`
+- `users` table: added `theme_preference ENUM('light','dark','system') NOT NULL DEFAULT 'system'` and `notify_post_quotes TINYINT(1) NOT NULL DEFAULT 1`
+- New tables: `polls`, `poll_options`, `poll_votes`
+- `trux_current_user()` now returns `theme_preference`
+- All main post SELECT queries now include `quoted_post_id`, `is_pinned`, and `display_name`
+- `_post_card.php` renders quoted-post embeds, poll blocks, and a pinned badge
+- `profile.php` `$renderPosts` closure now accepts and passes `$quotedPostMap` and `$pollMap`
+
+### Migrations
+
+- `database/migrations/20260331_add_pinned_posts.sql`
+- `database/migrations/20260331_add_theme_preference.sql`
+- `database/migrations/20260331_add_quote_posts.sql`
+- `database/migrations/20260331_create_polls_tables.sql`
+
+***
+
 ## Omnicus v0.7.1 - DMs Read Receipts, Thread Partials & Interaction Upgrade
 
 **Branch**: Production

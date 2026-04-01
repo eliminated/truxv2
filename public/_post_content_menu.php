@@ -7,6 +7,7 @@ $postUsername = isset($postUsername) ? trim((string)$postUsername) : '';
 $isOwner = !empty($isOwner);
 $isLoggedIn = !empty($isLoggedIn);
 $bookmarked = !empty($bookmarked);
+$postIsPinned = !empty($postIsPinned ?? false);
 $muteLabel = $postUsername !== '' ? 'Mute @' . $postUsername : 'Mute user';
 $muteMessage = $postUsername !== '' ? 'Mute controls for @' . $postUsername . ' are coming soon.' : 'Mute controls are coming soon.';
 ?>
@@ -143,6 +144,21 @@ $muteMessage = $postUsername !== '' ? 'Mute controls for @' . $postUsername . ' 
           <span>Report</span>
         </a>
       <?php endif; ?>
+    <?php endif; ?>
+
+    <?php if ($isOwner): ?>
+      <button
+        class="contentMenu__item<?= $postIsPinned ? ' is-active' : '' ?>"
+        type="button"
+        role="menuitem"
+        data-pin-post="1"
+        data-post-id="<?= $postId ?>"
+        aria-label="<?= $postIsPinned ? 'Unpin from profile' : 'Pin to profile' ?>">
+        <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+          <path d="M12 2.5 9.5 8H5l3.5 5.5-1 6L12 17l4.5 2.5-1-6L19 8h-4.5L12 2.5Z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" />
+        </svg>
+        <span><?= $postIsPinned ? 'Unpin' : 'Pin to profile' ?></span>
+      </button>
     <?php endif; ?>
 
     <?php if ($isOwner): ?>

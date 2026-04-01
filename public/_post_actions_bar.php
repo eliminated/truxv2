@@ -11,6 +11,20 @@ $liked = (bool)($stats['liked'] ?? false);
 $shared = (bool)($stats['shared'] ?? false);
 $bookmarked = (bool)($stats['bookmarked'] ?? false);
 $isLoggedIn = (bool)$isLoggedIn;
+$quoteReturnPath = trux_post_viewer_path($postId);
+$rawRequestUri = $_SERVER['REQUEST_URI'] ?? '';
+if (is_string($rawRequestUri) && $rawRequestUri !== '') {
+  $candidateRedirect = trim($rawRequestUri);
+  $basePath = (string)(parse_url(TRUX_BASE_URL, PHP_URL_PATH) ?? '');
+  if ($basePath !== '' && str_starts_with($candidateRedirect, $basePath)) {
+    $candidateRedirect = substr($candidateRedirect, strlen($basePath));
+  }
+  if ($candidateRedirect === '' || !str_starts_with($candidateRedirect, '/')) {
+    $candidateRedirect = '/' . ltrim($candidateRedirect, '/');
+  }
+  $quoteReturnPath = trux_safe_local_redirect_path($candidateRedirect, $quoteReturnPath);
+}
+$quoteComposeUrl = TRUX_BASE_URL . '/quote_post.php?original_post_id=' . $postId . '&return=' . rawurlencode($quoteReturnPath);
 ?>
 <div class="post__actionsBar" aria-label="Post actions">
   <?php if ($isLoggedIn): ?>
@@ -79,6 +93,29 @@ $isLoggedIn = (bool)$isLoggedIn;
       </span>
       <span class="u-visually-hidden">Share</span>
       <span class="postAct__count" data-share-count-for="<?= $postId ?>"><?= $sharesCount ?></span>
+    </a>
+  <?php endif; ?>
+
+  <?php if ($isLoggedIn): ?>
+    <a
+      class="postAct"
+      href="<?= trux_e($quoteComposeUrl) ?>"
+      aria-label="Quote this post">
+      <span class="postAct__glyph" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false">
+          <path d="M4 4h7v5H4V4Zm9 0h7v5h-7V4ZM4 12h7l-3 8H4l3-8Zm9 0h7l-3 8h-4l3-8Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+        </svg>
+      </span>
+      <span class="u-visually-hidden">Quote</span>
+    </a>
+  <?php else: ?>
+    <a class="postAct" href="<?= TRUX_BASE_URL ?>/login.php" aria-label="Log in to quote this post">
+      <span class="postAct__glyph" aria-hidden="true">
+        <svg viewBox="0 0 24 24" focusable="false">
+          <path d="M4 4h7v5H4V4Zm9 0h7v5h-7V4ZM4 12h7l-3 8H4l3-8Zm9 0h7l-3 8h-4l3-8Z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" />
+        </svg>
+      </span>
+      <span class="u-visually-hidden">Quote</span>
     </a>
   <?php endif; ?>
 

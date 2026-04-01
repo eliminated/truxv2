@@ -44,7 +44,8 @@ function trux_fetch_feed(int $limit = 20, ?int $beforeId = null): array {
 
     if ($beforeId !== null && $beforeId > 0) {
         $stmt = $db->prepare(
-            'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
+            'SELECT p.id, p.user_id, p.body, p.image_path, p.quoted_post_id, p.created_at, p.edited_at, p.is_pinned,
+                    u.username, u.avatar_path, u.display_name
              FROM posts p
              JOIN users u ON u.id = p.user_id
              WHERE p.id < ?
@@ -58,7 +59,8 @@ function trux_fetch_feed(int $limit = 20, ?int $beforeId = null): array {
     }
 
     $stmt = $db->prepare(
-        'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
+        'SELECT p.id, p.user_id, p.body, p.image_path, p.quoted_post_id, p.created_at, p.edited_at, p.is_pinned,
+                u.username, u.avatar_path, u.display_name
          FROM posts p
          JOIN users u ON u.id = p.user_id
          ORDER BY p.id DESC
@@ -78,7 +80,8 @@ function trux_fetch_following_feed(int $viewerId, int $limit = 20, ?int $beforeI
     $db = trux_db();
 
     $sql = '
-        SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
+        SELECT p.id, p.user_id, p.body, p.image_path, p.quoted_post_id, p.created_at, p.edited_at, p.is_pinned,
+               u.username, u.avatar_path, u.display_name
         FROM posts p
         JOIN users u ON u.id = p.user_id
         WHERE (
@@ -112,7 +115,8 @@ function trux_fetch_following_feed(int $viewerId, int $limit = 20, ?int $beforeI
 function trux_fetch_post_by_id(int $postId): ?array {
     $db = trux_db();
     $stmt = $db->prepare(
-        'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
+        'SELECT p.id, p.user_id, p.body, p.image_path, p.quoted_post_id, p.created_at, p.edited_at, p.is_pinned,
+                u.username, u.avatar_path, u.display_name
          FROM posts p
          JOIN users u ON u.id = p.user_id
          WHERE p.id = ?
@@ -185,7 +189,8 @@ function trux_fetch_posts_by_user(int $userId, int $limit = 30, ?int $beforeId =
 
     if ($beforeId !== null && $beforeId > 0) {
         $stmt = $db->prepare(
-            'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
+            'SELECT p.id, p.user_id, p.body, p.image_path, p.quoted_post_id, p.created_at, p.edited_at, p.is_pinned,
+                    u.username, u.avatar_path, u.display_name
              FROM posts p
              JOIN users u ON u.id = p.user_id
              WHERE p.user_id = ? AND p.id < ?
@@ -200,7 +205,8 @@ function trux_fetch_posts_by_user(int $userId, int $limit = 30, ?int $beforeId =
     }
 
     $stmt = $db->prepare(
-        'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
+        'SELECT p.id, p.user_id, p.body, p.image_path, p.quoted_post_id, p.created_at, p.edited_at, p.is_pinned,
+                u.username, u.avatar_path, u.display_name
          FROM posts p
          JOIN users u ON u.id = p.user_id
          WHERE p.user_id = ?
@@ -853,7 +859,8 @@ function trux_fetch_user_liked_posts(int $userId, int $limit = 100, int $offset 
 
     try {
         $stmt = $db->prepare(
-            'SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path,
+            'SELECT p.id, p.user_id, p.body, p.image_path, p.quoted_post_id, p.created_at, p.edited_at, p.is_pinned,
+                    u.username, u.avatar_path, u.display_name,
                     l.created_at AS liked_at
              FROM post_likes l
              JOIN posts p ON p.id = l.post_id
@@ -871,6 +878,261 @@ function trux_fetch_user_liked_posts(int $userId, int $limit = 100, int $offset 
         return [];
     }
 }
+
+// ─── Pinned Posts ─────────────────────────────────────────────────────────────
+
+function trux_pin_post(int $userId, int $postId): bool {
+    if ($userId <= 0 || $postId <= 0) return false;
+    $db = trux_db();
+    try {
+        $db->beginTransaction();
+        $check = $db->prepare('SELECT id FROM posts WHERE id = ? AND user_id = ? LIMIT 1');
+        $check->execute([$postId, $userId]);
+        if (!$check->fetch()) {
+            $db->rollBack();
+            return false;
+        }
+        $db->prepare('UPDATE posts SET is_pinned = 0 WHERE user_id = ?')->execute([$userId]);
+        $pin = $db->prepare('UPDATE posts SET is_pinned = 1 WHERE id = ? AND user_id = ?');
+        $pin->execute([$postId, $userId]);
+        $db->commit();
+        return $pin->rowCount() > 0;
+    } catch (PDOException) {
+        if ($db->inTransaction()) $db->rollBack();
+        return false;
+    }
+}
+
+function trux_unpin_post(int $userId, int $postId): bool {
+    if ($userId <= 0 || $postId <= 0) return false;
+    try {
+        $db = trux_db();
+        $stmt = $db->prepare('UPDATE posts SET is_pinned = 0 WHERE id = ? AND user_id = ?');
+        $stmt->execute([$postId, $userId]);
+        return $stmt->rowCount() > 0;
+    } catch (PDOException) {
+        return false;
+    }
+}
+
+function trux_fetch_pinned_post(int $userId, ?int $viewerId): ?array {
+    if ($userId <= 0) return null;
+    try {
+        $db = trux_db();
+        $stmt = $db->prepare(
+            'SELECT p.id, p.user_id, p.body, p.image_path, p.quoted_post_id, p.created_at, p.edited_at, p.is_pinned,
+                    u.username, u.avatar_path, u.display_name
+             FROM posts p
+             JOIN users u ON u.id = p.user_id
+             WHERE p.user_id = ? AND p.is_pinned = 1
+             LIMIT 1'
+        );
+        $stmt->execute([$userId]);
+        $row = $stmt->fetch();
+        if (!$row) return null;
+        $stats = trux_fetch_post_interactions([(int)$row['id']], $viewerId);
+        $row['_interactions'] = $stats[(int)$row['id']] ?? [];
+        return $row;
+    } catch (PDOException) {
+        return null;
+    }
+}
+
+// ─── Quote Posts ───────────────────────────────────────────────────────────────
+
+function trux_create_quote_post(int $userId, int $originalPostId, string $quoteText): int {
+    $quoteText = trim($quoteText);
+    if ($userId <= 0 || $originalPostId <= 0) return 0;
+    if ($quoteText === '' || mb_strlen($quoteText) > 2000) return 0;
+    if (!trux_post_exists($originalPostId)) return 0;
+
+    try {
+        $db = trux_db();
+        $stmt = $db->prepare('INSERT INTO posts (user_id, body, image_path, quoted_post_id) VALUES (?, ?, NULL, ?)');
+        $stmt->execute([$userId, $quoteText, $originalPostId]);
+        $postId = (int)$db->lastInsertId();
+        if ($postId <= 0) return 0;
+        trux_sync_post_hashtags($postId, $quoteText);
+        trux_notify_mentions_for_post($postId, $userId, $quoteText);
+        return $postId;
+    } catch (PDOException) {
+        return 0;
+    }
+}
+
+function trux_fetch_quoted_posts_batch(array $postIds): array {
+    $ids = array_values(array_unique(array_filter(array_map('intval', $postIds))));
+    if (!$ids) return [];
+    try {
+        $db = trux_db();
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+        $stmt = $db->prepare(
+            "SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.is_pinned,
+                    u.username, u.avatar_path, u.display_name
+             FROM posts p
+             JOIN users u ON u.id = p.user_id
+             WHERE p.id IN ($placeholders)"
+        );
+        foreach ($ids as $i => $id) {
+            $stmt->bindValue($i + 1, $id, PDO::PARAM_INT);
+        }
+        $stmt->execute();
+        $out = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $out[(int)$row['id']] = $row;
+        }
+        return $out;
+    } catch (PDOException) {
+        return [];
+    }
+}
+
+// ─── Post Polls ────────────────────────────────────────────────────────────────
+
+function trux_create_poll(int $postId, array $options, ?string $expiresAt): int {
+    if ($postId <= 0) return 0;
+    $options = array_values(array_filter(array_map('trim', $options), fn($o) => $o !== ''));
+    if (count($options) < 2 || count($options) > 4) return 0;
+    foreach ($options as $opt) {
+        if (mb_strlen($opt) > 120) return 0;
+    }
+
+    try {
+        $db = trux_db();
+        $db->beginTransaction();
+        $pollStmt = $db->prepare('INSERT INTO polls (post_id, expires_at) VALUES (?, ?)');
+        $pollStmt->execute([$postId, $expiresAt]);
+        $pollId = (int)$db->lastInsertId();
+        if ($pollId <= 0) {
+            $db->rollBack();
+            return 0;
+        }
+        $optStmt = $db->prepare('INSERT INTO poll_options (poll_id, body, sort_order) VALUES (?, ?, ?)');
+        foreach ($options as $i => $opt) {
+            $optStmt->execute([$pollId, $opt, $i + 1]);
+        }
+        $db->commit();
+        return $pollId;
+    } catch (PDOException) {
+        if ($db->inTransaction()) $db->rollBack();
+        return 0;
+    }
+}
+
+function trux_fetch_polls_for_posts(array $postIds, ?int $viewerId): array {
+    $ids = array_values(array_unique(array_filter(array_map('intval', $postIds))));
+    if (!$ids) return [];
+
+    try {
+        $db = trux_db();
+        $placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+        $pollStmt = $db->prepare("SELECT id AS poll_id, post_id, expires_at FROM polls WHERE post_id IN ($placeholders)");
+        foreach ($ids as $i => $id) { $pollStmt->bindValue($i + 1, $id, PDO::PARAM_INT); }
+        $pollStmt->execute();
+
+        $polls = [];
+        $pollIdToPostId = [];
+        foreach ($pollStmt->fetchAll() as $row) {
+            $pid = (int)$row['post_id'];
+            $pollId = (int)$row['poll_id'];
+            $expired = $row['expires_at'] !== null && strtotime((string)$row['expires_at']) < time();
+            $polls[$pid] = [
+                'poll_id'          => $pollId,
+                'expires_at'       => $row['expires_at'],
+                'expired'          => $expired,
+                'options'          => [],
+                'total_votes'      => 0,
+                'viewer_option_id' => null,
+            ];
+            $pollIdToPostId[$pollId] = $pid;
+        }
+        if (!$polls) return [];
+
+        $pollIds = array_keys($pollIdToPostId);
+        $pollPlaceholders = implode(',', array_fill(0, count($pollIds), '?'));
+
+        $optStmt = $db->prepare(
+            "SELECT po.id AS option_id, po.poll_id, po.body, po.sort_order,
+                    COUNT(pv.id) AS vote_count
+             FROM poll_options po
+             LEFT JOIN poll_votes pv ON pv.poll_option_id = po.id
+             WHERE po.poll_id IN ($pollPlaceholders)
+             GROUP BY po.id
+             ORDER BY po.sort_order ASC"
+        );
+        foreach ($pollIds as $i => $id) { $optStmt->bindValue($i + 1, $id, PDO::PARAM_INT); }
+        $optStmt->execute();
+        foreach ($optStmt->fetchAll() as $row) {
+            $postId = $pollIdToPostId[(int)$row['poll_id']] ?? 0;
+            if (!$postId || !isset($polls[$postId])) continue;
+            $polls[$postId]['options'][] = [
+                'id'         => (int)$row['option_id'],
+                'body'       => (string)$row['body'],
+                'vote_count' => (int)$row['vote_count'],
+            ];
+            $polls[$postId]['total_votes'] += (int)$row['vote_count'];
+        }
+
+        $viewer = (int)($viewerId ?? 0);
+        if ($viewer > 0) {
+            $voteStmt = $db->prepare(
+                "SELECT pv.poll_id, pv.poll_option_id FROM poll_votes pv
+                 WHERE pv.poll_id IN ($pollPlaceholders) AND pv.user_id = ?"
+            );
+            foreach ($pollIds as $i => $id) { $voteStmt->bindValue($i + 1, $id, PDO::PARAM_INT); }
+            $voteStmt->bindValue(count($pollIds) + 1, $viewer, PDO::PARAM_INT);
+            $voteStmt->execute();
+            foreach ($voteStmt->fetchAll() as $row) {
+                $postId = $pollIdToPostId[(int)$row['poll_id']] ?? 0;
+                if ($postId && isset($polls[$postId])) {
+                    $polls[$postId]['viewer_option_id'] = (int)$row['poll_option_id'];
+                }
+            }
+        }
+
+        return $polls;
+    } catch (PDOException) {
+        return [];
+    }
+}
+
+function trux_vote_on_poll(int $userId, int $pollId, int $optionId): array {
+    $err = static fn(string $msg) => ['ok' => false, 'error' => $msg];
+    if ($userId <= 0 || $pollId <= 0 || $optionId <= 0) return $err('Invalid parameters.');
+
+    try {
+        $db = trux_db();
+        $checkStmt = $db->prepare(
+            'SELECT pl.id AS poll_id, pl.expires_at, po.id AS option_id, pl.post_id
+             FROM polls pl
+             JOIN poll_options po ON po.poll_id = pl.id AND po.id = ?
+             WHERE pl.id = ?
+             LIMIT 1'
+        );
+        $checkStmt->execute([$optionId, $pollId]);
+        $row = $checkStmt->fetch();
+        if (!$row) return $err('Invalid poll or option.');
+        if ($row['expires_at'] !== null && strtotime((string)$row['expires_at']) < time()) {
+            return $err('This poll has closed.');
+        }
+
+        $upsert = $db->prepare(
+            'INSERT INTO poll_votes (poll_id, poll_option_id, user_id)
+             VALUES (?, ?, ?)
+             ON DUPLICATE KEY UPDATE poll_option_id = VALUES(poll_option_id), created_at = CURRENT_TIMESTAMP'
+        );
+        $upsert->execute([$pollId, $optionId, $userId]);
+
+        $postId = (int)$row['post_id'];
+        $updated = $postId > 0 ? trux_fetch_polls_for_posts([$postId], $userId) : [];
+        return ['ok' => true, 'poll' => $updated[$postId] ?? null];
+    } catch (PDOException) {
+        return ['ok' => false, 'error' => 'Could not record vote.'];
+    }
+}
+
+// ─── Existing helpers ──────────────────────────────────────────────────────────
 
 function trux_fetch_user_liked_comments(int $userId, int $limit = 100, int $offset = 0): array {
     if ($userId <= 0) {

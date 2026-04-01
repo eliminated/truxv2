@@ -260,6 +260,7 @@ input[type="radio"] {
 
 .post {
   position: relative;
+  z-index: 1;
   display: grid;
   grid-template-columns: 4.35rem minmax(0, 1fr);
   gap: var(--space-3);
@@ -274,6 +275,10 @@ input[type="radio"] {
     var(--shadow-sm),
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
   cursor: pointer;
+}
+
+.post.post--menuOpen {
+  z-index: 50;
 }
 
 .post::before {
@@ -409,6 +414,79 @@ input[type="radio"] {
   display: block;
   max-height: 34rem;
   object-fit: cover;
+}
+
+.post__quotedWrap {
+  margin-top: var(--space-4);
+}
+
+.quotedPost {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 1rem 0.3rem 1rem 0.3rem;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), rgba(255, 255, 255, 0.012)),
+    rgba(8, 8, 12, 0.46);
+}
+
+.quotedPost__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem 0.65rem;
+}
+
+.quotedPost__displayName,
+.quotedPost__author {
+  color: var(--text-strong);
+  font-weight: 800;
+}
+
+.quotedPost__displayName {
+  font-size: 0.9rem;
+}
+
+.quotedPost__author {
+  color: var(--rx-cyan-strong);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.quotedPost__time {
+  color: var(--text-soft);
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.quotedPost__body {
+  color: var(--text-main);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.quotedPost__media {
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.9rem 0.24rem 0.9rem 0.24rem;
+  background: rgba(8, 8, 12, 0.72);
+}
+
+.quotedPost__media img {
+  width: 100%;
+  display: block;
+  max-height: 26rem;
+  object-fit: cover;
+}
+
+.post__quotedWrap--deleted {
+  padding: var(--space-4);
+  border: 1px dashed rgba(255, 255, 255, 0.12);
+  border-radius: 1rem 0.3rem 1rem 0.3rem;
+  background: rgba(255, 255, 255, 0.015);
 }
 
 .post__actionsBar {
