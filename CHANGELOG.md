@@ -1,4 +1,27 @@
-﻿# Omnicus Updates
+# Omnicus Updates
+## TruX v0.7.7 — Quick Performance Patch
+
+**Branch**: Production
+**Date**: 2026-04-03
+
+***
+
+### Changed
+
+- Reduced the initial home feed batch from `20` posts to `12` posts for both discovery and following modes while preserving existing load-more and auto-pager behavior
+- Removed visible Algr discovery debug state from the homepage so discovery/following labels stay user-facing and stable in production
+- Deferred the desktop notification dropdown body until first interaction instead of fetching the full menu during the shared header render
+- Deferred desktop discovery rail content until after first paint so trending hashtags and suggested users no longer block the main homepage request
+- Replaced request-time stylesheet import parsing with a direct `main.css` link path using filemtime cache busting
+- Limited live moderation badge counting to moderation workspace pages while preserving staff access to the moderation link everywhere else
+
+### Technical
+
+- Added `public/_discovery_rail.php` and `public/_notification_menu_contents.php` to isolate deferred homepage rail and notification menu markup
+- Added `GET /notifications.php?partial=menu&redirect=...` and `GET /?partial=discovery-rail&feed=all&page=N` partial responses for lazy desktop loading
+- Moved muted-user filtering for notification counts and notification list fetches into SQL so the header and notification endpoints avoid extra PHP-side filtering work
+
+***
 ## TruX v0.7.6 — DM Reaction Picker & Mobile Tap Actions
 
 **Branch**: Production

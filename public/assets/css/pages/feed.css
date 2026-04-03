@@ -25,6 +25,15 @@
   min-width: 0;
 }
 
+.discoveryRailShell {
+  display: grid;
+}
+
+.discoveryRailShell__status,
+.discoveryRailShell__noscript {
+  color: var(--text-soft);
+}
+
 .pageFrame--focus {
   justify-items: start;
 }

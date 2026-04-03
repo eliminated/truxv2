@@ -12,19 +12,7 @@ if (!$me) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $redirectPath = '/notifications.php';
-  $rawRedirect = $_POST['redirect'] ?? '';
-  if (is_string($rawRedirect)) {
-    $candidateRedirect = trim($rawRedirect);
-    if (
-      $candidateRedirect !== ''
-      && str_starts_with($candidateRedirect, '/')
-      && !str_starts_with($candidateRedirect, '//')
-      && !preg_match('/[\r\n]/', $candidateRedirect)
-    ) {
-      $redirectPath = $candidateRedirect;
-    }
-  }
+  $redirectPath = trux_safe_local_redirect_path($_POST['redirect'] ?? '', '/notifications.php');
 
   $action = $_POST['action'] ?? '';
   if (is_string($action) && $action === 'mark_all_read') {
@@ -37,6 +25,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     trux_flash_set('error', 'Invalid notification action.');
   }
   trux_redirect($redirectPath);
+}
+
+$partial = trux_str_param('partial', '');
+if ($partial === 'menu') {
+  $notificationRedirectPath = trux_safe_local_redirect_path($_GET['redirect'] ?? '', '/notifications.php');
+  $unreadNotificationCount = trux_count_unread_notifications((int)$me['id']);
+  $notificationBadgeLabel = $unreadNotificationCount > 99 ? '99+' : (string)$unreadNotificationCount;
+  $notifications = trux_fetch_notifications((int)$me['id'], 10);
+
+  require __DIR__ . '/_notification_menu_contents.php';
+  exit;
 }
 
 $notifications = trux_fetch_notifications((int)$me['id'], 60);

@@ -6,9 +6,10 @@ require_once __DIR__ . '/_bootstrap.php';
 $pageKey = 'home';
 $pageLayout = 'app';
 
+$partial = trux_str_param('partial', '');
 $before = trux_int_param('before', 0);
 $discoveryPage = max(1, trux_int_param('page', 1));
-$limit = 20;
+$limit = 12;
 $requestedFeed = trux_str_param('feed', 'all');
 $feedMode = $requestedFeed === 'following' ? 'following' : 'all';
 $usedAlgrDiscovery = false;
@@ -19,21 +20,42 @@ if (!$me && $feedMode === 'following') {
   $feedMode = 'all';
 }
 
+$viewerId = $me ? (int) $me['id'] : null;
+$feedReturnParams = ['feed' => $feedMode];
+if ($feedMode === 'following' && $before > 0) {
+  $feedReturnParams['before'] = $before;
+} elseif ($feedMode === 'all' && $discoveryPage > 1) {
+  $feedReturnParams['page'] = $discoveryPage;
+}
+$feedReturnPath = '/?' . http_build_query($feedReturnParams);
+if ($feedMode === 'all' && $discoveryPage === 1) {
+  $feedReturnPath = '/';
+}
+
+// Serve the desktop discovery rail separately so the homepage can render the timeline first.
+if ($partial === 'discovery-rail') {
+  if ($feedMode !== 'all') {
+    http_response_code(400);
+    exit;
+  }
+
+  $trendingHashtags = trux_fetch_trending_hashtags(8);
+  $suggestedUsers = trux_fetch_discovery_suggestions($viewerId, $me ? 6 : 7);
+
+  require __DIR__ . '/_discovery_rail.php';
+  exit;
+}
+
 $followingCount = 0;
 if ($feedMode === 'following' && $me) {
   $followCounts = trux_follow_counts((int) $me['id']);
   $followingCount = (int) ($followCounts['following'] ?? 0);
 }
 
-$viewerId = $me ? (int) $me['id'] : null;
 if ($feedMode === 'following' && $me) {
   $posts = trux_fetch_following_feed((int)$me['id'], $limit, $before > 0 ? $before : null);
 } else {
   $algrDiscoveryPage = trux_fetch_discovery_feed_via_algr($viewerId, $limit, $discoveryPage);
-  error_log('ALGR ranked ids: ' . json_encode(array_map(
-    static fn(array $p): int => (int)$p['id'],
-    $algrDiscoveryPage['posts'] ?? []
-  )));
 
   if (is_array($algrDiscoveryPage)) {
     $posts = is_array($algrDiscoveryPage['posts'] ?? null) ? $algrDiscoveryPage['posts'] : [];
@@ -58,24 +80,6 @@ if ($feedMode === 'following') {
   }
 }
 
-$trendingHashtags = [];
-$suggestedUsers = [];
-if ($feedMode === 'all') {
-  $trendingHashtags = trux_fetch_trending_hashtags(8);
-  $suggestedUsers = trux_fetch_discovery_suggestions($viewerId, $me ? 6 : 7);
-}
-
-$feedReturnParams = ['feed' => $feedMode];
-if ($feedMode === 'following' && $before > 0) {
-  $feedReturnParams['before'] = $before;
-} elseif ($feedMode === 'all' && $discoveryPage > 1) {
-  $feedReturnParams['page'] = $discoveryPage;
-}
-$feedReturnPath = '/?' . http_build_query($feedReturnParams);
-if ($feedMode === 'all' && $discoveryPage === 1) {
-  $feedReturnPath = '/';
-}
-
 $interactionMap = trux_fetch_post_interactions(
   trux_collect_post_ids($posts),
   $me ? (int) $me['id'] : null
@@ -88,12 +92,6 @@ unset($_quotedIds);
 
 require_once __DIR__ . '/_header.php';
 ?>
-
-<?php if ($feedMode !== 'following'): ?>
-  <div style="margin: 12px 0; padding: 10px 14px; border: 1px solid #7c4dff; border-radius: 10px; color: #fff; background: rgba(124, 77, 255, 0.12); font-weight: 700;">
-    <?= $usedAlgrDiscovery ? 'Discovery mode · ranked by Algr' : 'Discovery mode · fallback (Algr not used)' ?>
-  </div>
-<?php endif; ?>
 
 <div class="pageFrame pageFrame--feed">
   <section class="inlineHeader inlineHeader--feed">
@@ -126,13 +124,7 @@ require_once __DIR__ . '/_header.php';
       </div>
       <div class="inlineHeader__meta">
         <span><?= $me ? 'Signed in as @' . trux_e((string)$me['username']) : 'Guest browsing' ?></span>
-        <strong>
-          <?=
-          $feedMode === 'following'
-            ? 'Following mode'
-            : ($usedAlgrDiscovery ? 'Discovery mode · ranked by Algr' : 'Discovery mode')
-          ?>
-        </strong>
+        <strong><?= $feedMode === 'following' ? 'Following mode' : 'Discovery mode' ?></strong>
       </div>
     </div>
   </section>
@@ -210,111 +202,48 @@ require_once __DIR__ . '/_header.php';
     </div>
 
     <?php if ($feedMode === 'all'): ?>
+      <?php
+      $discoveryRailSrc = TRUX_BASE_URL . '/?' . http_build_query([
+        'partial' => 'discovery-rail',
+        'feed' => 'all',
+        'page' => $discoveryPage,
+      ]);
+      $discoveryRailFallbackHref = TRUX_BASE_URL . '/search.php';
+      ?>
       <aside class="feedScene__rail">
-        <section class="utilityPanel">
-          <div class="utilityPanel__head">
-            <span class="utilityPanel__eyebrow">Signals</span>
-            <h3>Discovery radar</h3>
-            <p class="muted">Trending topics and people worth opening next.</p>
-          </div>
+        <div
+          class="discoveryRailShell"
+          data-discovery-rail-root="1"
+          data-discovery-rail-src="<?= trux_e($discoveryRailSrc) ?>"
+          data-discovery-rail-fallback-href="<?= trux_e($discoveryRailFallbackHref) ?>">
+          <section class="utilityPanel">
+            <div class="utilityPanel__head">
+              <span class="utilityPanel__eyebrow">Signals</span>
+              <h3>Discovery radar</h3>
+              <p class="muted">Trending topics and people worth opening next.</p>
+            </div>
 
-          <div class="utilityPanel__stack">
-            <section class="utilityBand">
-              <div class="utilityBand__head">
-                <div>
-                  <span class="utilityBand__eyebrow">Topic radar</span>
-                  <h4>Trending hashtags</h4>
+            <div class="utilityPanel__stack" data-discovery-rail-body="1">
+              <section class="utilityBand">
+                <div class="utilityBand__head">
+                  <div>
+                    <span class="utilityBand__eyebrow">Stand by</span>
+                    <h4>Loading discovery radar</h4>
+                  </div>
+                  <span>Deferred</span>
                 </div>
-                <span><?= count($trendingHashtags) ?> live</span>
-              </div>
-
-              <?php if (!$trendingHashtags): ?>
-                <div class="utilityBand__empty muted">No trending hashtags yet.</div>
-              <?php else: ?>
-                <div class="tagStack">
-                  <?php foreach ($trendingHashtags as $tag): ?>
-                    <?php
-                    $hashtag = (string)($tag['hashtag'] ?? '');
-                    $usageCount = (int)($tag['usage_count'] ?? 0);
-                    $recentHits = (int)($tag['recent_hits'] ?? 0);
-                    if ($hashtag === '') {
-                      continue;
-                    }
-                    ?>
-                    <a class="tagChip" href="<?= TRUX_BASE_URL ?>/search.php?q=<?= urlencode('#' . $hashtag) ?>&filter=hashtags">
-                      <span class="tagChip__signal" aria-hidden="true">TAG</span>
-                      <strong>#<?= trux_e($hashtag) ?></strong>
-                      <span><?= number_format($usageCount) ?> post<?= $usageCount === 1 ? '' : 's' ?><?= $recentHits > 0 ? ' · ' . number_format($recentHits) . ' recent' : '' ?></span>
-                    </a>
-                  <?php endforeach; ?>
-                </div>
-              <?php endif; ?>
-            </section>
-
-            <section class="utilityBand">
-              <div class="utilityBand__head">
-                <div>
-                  <span class="utilityBand__eyebrow">Identity radar</span>
-                  <h4><?= $me ? 'Who to follow' : 'Suggested creators' ?></h4>
-                </div>
-                <span><?= count($suggestedUsers) ?> suggestions</span>
-              </div>
-
-              <?php if (!$suggestedUsers): ?>
-                <div class="utilityBand__empty muted">
-                  <?= $me ? 'No suggestions yet. Check back as the network grows.' : 'No suggestions yet.' ?>
-                </div>
-              <?php else: ?>
-                <div class="userStack">
-                  <?php foreach ($suggestedUsers as $suggestion): ?>
-                    <?php
-                    $suggestedId = (int)($suggestion['id'] ?? 0);
-                    $suggestedUsername = (string)($suggestion['username'] ?? '');
-                    if ($suggestedId <= 0 || $suggestedUsername === '') {
-                      continue;
-                    }
-
-                    $mutualCount = (int)($suggestion['mutual_count'] ?? 0);
-                    $followerCount = (int)($suggestion['follower_count'] ?? 0);
-                    $recentPosts = (int)($suggestion['recent_posts'] ?? 0);
-                    $displayName = trim((string)($suggestion['display_name'] ?? ''));
-                    ?>
-                    <div class="userBand">
-                      <span class="userBand__signal" aria-hidden="true">USR</span>
-                      <div class="userBand__copy">
-                        <div class="userBand__title">
-                          <a href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= urlencode($suggestedUsername) ?>">@<?= trux_e($suggestedUsername) ?></a>
-                          <?php if ($displayName !== ''): ?>
-                            <span class="muted"><?= trux_e($displayName) ?></span>
-                          <?php endif; ?>
-                        </div>
-                        <div class="userBand__meta muted">
-                          <?php if ($me && $mutualCount > 0): ?>
-                            <?= number_format($mutualCount) ?> mutual ·
-                          <?php endif; ?>
-                          <?= number_format($followerCount) ?> followers · <?= number_format($recentPosts) ?> recent post<?= $recentPosts === 1 ? '' : 's' ?>
-                        </div>
-                      </div>
-
-                      <?php if ($me): ?>
-                        <form method="post" action="<?= TRUX_BASE_URL ?>/follow.php" data-no-fx="1">
-                          <?= trux_csrf_field() ?>
-                          <input type="hidden" name="action" value="follow">
-                          <input type="hidden" name="user_id" value="<?= $suggestedId ?>">
-                          <input type="hidden" name="user" value="<?= trux_e($suggestedUsername) ?>">
-                          <input type="hidden" name="redirect" value="<?= trux_e($feedReturnPath) ?>">
-                          <button class="shellButton shellButton--ghost" type="submit">Follow</button>
-                        </form>
-                      <?php else: ?>
-                        <a class="shellButton shellButton--ghost" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= urlencode($suggestedUsername) ?>">View</a>
-                      <?php endif; ?>
-                    </div>
-                  <?php endforeach; ?>
-                </div>
-              <?php endif; ?>
-            </section>
-          </div>
-        </section>
+                <div class="utilityBand__empty muted discoveryRailShell__status">Loading trending topics and suggested accounts...</div>
+              </section>
+            </div>
+          </section>
+        </div>
+        <noscript>
+          <section class="utilityPanel discoveryRailShell__noscript">
+            <div class="utilityBand__empty muted">
+              Discovery radar loads after first paint. <a href="<?= trux_e($discoveryRailFallbackHref) ?>">Open search</a> to browse the network.
+            </div>
+          </section>
+        </noscript>
       </aside>
     <?php endif; ?>
   </div>

@@ -57,13 +57,10 @@ $bodyClasses = array_values(array_filter([
 
 $unreadNotificationCount = $user ? trux_count_unread_notifications((int)$user['id']) : 0;
 $unreadMessageCount = $user ? trux_count_unread_direct_messages((int)$user['id']) : 0;
-$notificationMenuItems = $user ? trux_fetch_notifications((int)$user['id'], 10) : [];
 $notificationBadgeLabel = $unreadNotificationCount > 99 ? '99+' : (string)$unreadNotificationCount;
 $notificationRedirectPath = '/notifications.php';
 $showProfileMenuPremium = false;
 $showProfileMenuModeration = $user && trux_has_staff_role((string)($user['staff_role'] ?? 'user'), 'developer');
-$moderationBadgeCounts = $showProfileMenuModeration ? trux_moderation_fetch_staff_badge_counts((int)$user['id'], (string)($user['staff_role'] ?? 'user')) : [];
-$moderationBadgeTotal = (int)($moderationBadgeCounts['total'] ?? 0);
 $showGlobalSearch = $pageLayout !== 'auth';
 $pageContextLabel = match ($pageLayout) {
   'moderation' => 'Ops Workspace',
@@ -95,31 +92,23 @@ if (is_string($rawRequestUri) && $rawRequestUri !== '') {
   }
 }
 $verificationBannerRedirectPath = trux_safe_local_redirect_path($notificationRedirectPath, '/');
+$notificationMenuSrc = $user
+  ? TRUX_BASE_URL . '/notifications.php?' . http_build_query([
+    'partial' => 'menu',
+    'redirect' => $notificationRedirectPath,
+  ])
+  : '';
 $verificationBannerVisible = $user !== null && empty($user['email_verified']);
 $verificationBannerCooldownRemaining = $verificationBannerVisible
   ? trux_email_verification_cooldown_remaining_seconds((string)($user['email_verify_sent_at'] ?? ''))
   : 0;
 $verificationBannerCanResend = $verificationBannerVisible && $verificationBannerCooldownRemaining === 0;
 $mainCssPath = __DIR__ . '/assets/css/main.css';
-$mainCssDir = dirname($mainCssPath);
-$styleSheetManifest = [];
-if (is_file($mainCssPath)) {
-  $mainCssContents = (string)(file_get_contents($mainCssPath) ?: '');
-  if ($mainCssContents !== '' && preg_match_all('/@import\s+url\("([^"]+)"\);/', $mainCssContents, $matches)) {
-    foreach ($matches[1] as $importPath) {
-      $relativeImport = ltrim((string)$importPath, './');
-      $absoluteImportPath = $mainCssDir . DIRECTORY_SEPARATOR . str_replace('/', DIRECTORY_SEPARATOR, $relativeImport);
-      if (!is_file($absoluteImportPath)) {
-        continue;
-      }
-
-      $styleSheetManifest[] = [
-        'href' => TRUX_BASE_URL . '/assets/css/' . str_replace(DIRECTORY_SEPARATOR, '/', $relativeImport),
-        'version' => (int)(filemtime($absoluteImportPath) ?: 0),
-      ];
-    }
-  }
-}
+$loadModerationBadgeCounts = $showProfileMenuModeration && $pageLayout === 'moderation';
+$moderationBadgeCounts = $loadModerationBadgeCounts
+  ? trux_moderation_fetch_staff_badge_counts((int)$user['id'], (string)($user['staff_role'] ?? 'user'))
+  : [];
+$moderationBadgeTotal = $loadModerationBadgeCounts ? (int)($moderationBadgeCounts['total'] ?? 0) : 0;
 
 $isPage = static function (array $slugs) use ($pageSlug): bool {
   return in_array($pageSlug, $slugs, true);
@@ -193,10 +182,10 @@ if ($user) {
     $appRailItems[] = [
       'href' => TRUX_BASE_URL . '/moderation/',
       'label' => 'Moderation',
-      'meta' => $moderationBadgeTotal > 0 ? $moderationBadgeTotal . ' waiting' : 'Staff tools',
+      'meta' => $loadModerationBadgeCounts && $moderationBadgeTotal > 0 ? $moderationBadgeTotal . ' waiting' : 'Staff tools',
       'icon' => 'moderation',
       'active' => $pageLayout === 'moderation',
-      'badge' => $moderationBadgeTotal > 0 ? (string)$moderationBadgeTotal : '',
+      'badge' => $loadModerationBadgeCounts && $moderationBadgeTotal > 0 ? (string)$moderationBadgeTotal : '',
     ];
   }
 } else {
@@ -420,13 +409,7 @@ if ($user) {
   );
   ?>
   <link rel="icon" type="image/png" sizes="32x32" href="<?= TRUX_BASE_URL ?>/favicon.php?v=<?= $faviconVersion ?>">
-  <?php if ($styleSheetManifest): ?>
-    <?php foreach ($styleSheetManifest as $styleSheet): ?>
-      <link rel="stylesheet" href="<?= trux_e((string)$styleSheet['href']) ?>?v=<?= (int)$styleSheet['version'] ?>">
-    <?php endforeach; ?>
-  <?php else: ?>
-    <link rel="stylesheet" href="<?= TRUX_BASE_URL ?>/assets/css/main.css?v=<?= (int)(filemtime($mainCssPath) ?: 0) ?>">
-  <?php endif; ?>
+  <link rel="stylesheet" href="<?= TRUX_BASE_URL ?>/assets/css/main.css?v=<?= (int)(filemtime($mainCssPath) ?: 0) ?>">
   <script defer src="<?= TRUX_BASE_URL ?>/assets/app.js?v=<?= filemtime(__DIR__ . '/assets/app.js') ?>"></script>
   <?php if (($pageKey ?? '') === 'messages' && is_file(__DIR__ . '/assets/dm_emoji.js')): ?>
     <script defer src="<?= TRUX_BASE_URL ?>/assets/dm_emoji.js?v=<?= filemtime(__DIR__ . '/assets/dm_emoji.js') ?>"></script>
@@ -667,7 +650,7 @@ if ($user) {
             <?php if ($user): ?>
               <a class="shellButton shellButton--accent" href="<?= TRUX_BASE_URL ?>/new_post.php">Open compose</a>
 
-              <div class="nav__menu shellMenu shellMenu--notifications">
+              <div class="nav__menu shellMenu shellMenu--notifications" data-notification-menu="1" data-notification-menu-src="<?= trux_e($notificationMenuSrc) ?>">
                 <button class="shellAction shellAction--icon" type="button" aria-label="Notifications">
                   <svg viewBox="0 0 24 24" focusable="false">
                     <path fill="currentColor" d="M12 3a5 5 0 0 0-5 5v1.2c0 .9-.28 1.78-.81 2.5l-1.1 1.54A2 2 0 0 0 6.72 17h10.56a2 2 0 0 0 1.63-3.16l-1.1-1.54A4.3 4.3 0 0 1 17 9.2V8a5 5 0 0 0-5-5Zm0 18a2.75 2.75 0 0 0 2.58-1.8.75.75 0 0 0-.7-1.02h-3.76a.75.75 0 0 0-.7 1.02A2.75 2.75 0 0 0 12 21Z" />
@@ -687,42 +670,9 @@ if ($user) {
                     </div>
                     <a class="notificationMenu__link" href="<?= TRUX_BASE_URL ?>/notifications.php">Open page</a>
                   </div>
-
-                  <?php if (!$notificationMenuItems): ?>
-                    <div class="notificationMenu__empty muted">No notifications yet.</div>
-                  <?php else: ?>
-                    <div class="notificationList notificationList--menu">
-                      <?php foreach ($notificationMenuItems as $notification): ?>
-                        <a class="notificationItem<?= empty($notification['read_at']) ? ' is-unread' : '' ?>" href="<?= trux_e(trux_notification_url($notification)) ?>">
-                          <div class="notificationItem__body">
-                            <div class="notificationItem__text"><?= trux_e(trux_notification_text($notification)) ?></div>
-                            <div class="notificationItem__time muted" data-time-ago="1" data-time-source="<?= trux_e((string)$notification['created_at']) ?>" title="<?= trux_e(trux_format_exact_time((string)$notification['created_at'])) ?>">
-                              <?= trux_e(trux_time_ago((string)$notification['created_at'])) ?>
-                            </div>
-                          </div>
-                        </a>
-                      <?php endforeach; ?>
-                    </div>
-
-                    <div class="notificationMenu__actions">
-                      <?php if ($unreadNotificationCount > 0): ?>
-                        <form method="post" action="<?= TRUX_BASE_URL ?>/notifications.php" class="notificationMenu__form">
-                          <?= trux_csrf_field() ?>
-                          <input type="hidden" name="action" value="mark_all_read">
-                          <input type="hidden" name="redirect" value="<?= trux_e($notificationRedirectPath) ?>">
-                          <button class="notificationMenu__action" type="submit">Mark all as read</button>
-                        </form>
-                      <?php endif; ?>
-                      <?php if ($notificationMenuItems): ?>
-                        <form method="post" action="<?= TRUX_BASE_URL ?>/notifications.php" class="notificationMenu__form" data-confirm="Clear every notification from your feed?">
-                          <?= trux_csrf_field() ?>
-                          <input type="hidden" name="action" value="clean_all">
-                          <input type="hidden" name="redirect" value="<?= trux_e($notificationRedirectPath) ?>">
-                          <button class="notificationMenu__action notificationMenu__action--danger" type="submit">Clean all</button>
-                        </form>
-                      <?php endif; ?>
-                    </div>
-                  <?php endif; ?>
+                  <div class="notificationMenu__body" data-notification-menu-body="1">
+                    <div class="notificationMenu__status muted" data-notification-menu-status="1">Open to load latest notifications.</div>
+                  </div>
                 </div>
               </div>
 
@@ -808,7 +758,7 @@ if ($user) {
                         <span class="menu__itemTitle">Moderation</span>
                         <span class="menu__itemMeta">Staff workspace</span>
                       </span>
-                      <?php if ($moderationBadgeTotal > 0): ?>
+                      <?php if ($loadModerationBadgeCounts && $moderationBadgeTotal > 0): ?>
                         <span class="menuBadge"><?= $moderationBadgeTotal ?></span>
                       <?php endif; ?>
                     </a>

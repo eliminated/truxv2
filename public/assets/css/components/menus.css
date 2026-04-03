@@ -152,6 +152,20 @@
   cursor: pointer;
 }
 
+.notificationMenu__body {
+  min-height: 4rem;
+  display: grid;
+}
+
+.notificationMenu__status {
+  padding: 0.85rem 0.6rem 0.6rem;
+  color: var(--text-soft);
+}
+
+.notificationMenu__status--error {
+  color: #ffdbe4;
+}
+
 .menu__item:hover,
 .menu__button:hover,
 .contentMenu__item:hover,

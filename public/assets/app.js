@@ -666,6 +666,131 @@
   window.addEventListener("trux:times:refresh", refreshTimeAgo);
   window.truxRefreshTimeAgo = refreshTimeAgo;
 })();
+(() => {
+  const MENU_SELECTOR = "[data-notification-menu='1']";
+  const BODY_SELECTOR = "[data-notification-menu-body='1']";
+
+  const setMenuStatus = (body, markup) => {
+    if (!(body instanceof HTMLElement)) return;
+    body.innerHTML = markup;
+  };
+
+  const loadNotificationMenu = async (root) => {
+    if (!(root instanceof HTMLElement)) return;
+
+    const state = root.dataset.notificationMenuState || "idle";
+    if (state === "loading" || state === "loaded") return;
+
+    const src = root.getAttribute("data-notification-menu-src") || "";
+    const body = root.querySelector(BODY_SELECTOR);
+    if (!src || !(body instanceof HTMLElement)) return;
+
+    root.dataset.notificationMenuState = "loading";
+    setMenuStatus(
+      body,
+      '<div class="notificationMenu__status muted" data-notification-menu-status="1">Loading notifications...</div>'
+    );
+
+    try {
+      const response = await window.fetch(src, {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+        credentials: "same-origin",
+      });
+      if (!response.ok) {
+        throw new Error(`Notification menu request failed: ${response.status}`);
+      }
+
+      body.innerHTML = await response.text();
+      root.dataset.notificationMenuState = "loaded";
+      if (typeof window.truxRefreshTimeAgo === "function") {
+        window.truxRefreshTimeAgo();
+      }
+    } catch (error) {
+      root.dataset.notificationMenuState = "error";
+      setMenuStatus(
+        body,
+        '<div class="notificationMenu__status notificationMenu__status--error muted" data-notification-menu-status="1">Couldn\'t load notifications right now.</div>'
+      );
+    }
+  };
+
+  document.querySelectorAll(MENU_SELECTOR).forEach((root) => {
+    if (!(root instanceof HTMLElement)) return;
+
+    const triggerLoad = () => {
+      void loadNotificationMenu(root);
+    };
+
+    root.addEventListener("pointerenter", triggerLoad, { passive: true });
+    root.addEventListener("focusin", triggerLoad);
+    root.addEventListener("click", triggerLoad);
+  });
+})();
+
+(() => {
+  const root = document.querySelector("[data-discovery-rail-root='1']");
+  if (!(root instanceof HTMLElement)) return;
+
+  const desktopOnlyQuery = window.matchMedia("(max-width: 1120px)");
+  if (desktopOnlyQuery.matches) return;
+
+  const src = root.getAttribute("data-discovery-rail-src") || "";
+  const fallbackHref = root.getAttribute("data-discovery-rail-fallback-href") || "";
+  const body = root.querySelector("[data-discovery-rail-body='1']");
+  if (!src || !(body instanceof HTMLElement)) return;
+
+  let started = false;
+
+  const showFallback = () => {
+    body.innerHTML = [
+      '<section class="utilityBand">',
+      '  <div class="utilityBand__head">',
+      '    <div>',
+      '      <span class="utilityBand__eyebrow">Unavailable</span>',
+      '      <h4>Discovery radar is offline</h4>',
+      '    </div>',
+      '    <span>Retry later</span>',
+      '  </div>',
+      '  <div class="utilityBand__empty muted discoveryRailShell__status">',
+      '    Discovery radar is unavailable right now.',
+      fallbackHref ? ` <a href="${fallbackHref}">Open search</a>` : '',
+      '  </div>',
+      '</section>',
+    ].join('');
+  };
+
+  const loadRail = async () => {
+    if (started) return;
+    started = true;
+
+    try {
+      const response = await window.fetch(src, {
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+        credentials: "same-origin",
+      });
+      if (!response.ok) {
+        throw new Error(`Discovery rail request failed: ${response.status}`);
+      }
+
+      root.innerHTML = await response.text();
+      if (typeof window.truxRefreshTimeAgo === "function") {
+        window.truxRefreshTimeAgo();
+      }
+    } catch (error) {
+      showFallback();
+    }
+  };
+
+  if (typeof window.requestIdleCallback === "function") {
+    window.requestIdleCallback(() => {
+      void loadRail();
+    }, { timeout: 1200 });
+  } else {
+    window.setTimeout(() => {
+      void loadRail();
+    }, 180);
+  }
+})();
 
 (() => {
   const fx = document.getElementById("pageFX");

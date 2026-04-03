@@ -392,21 +392,18 @@ function trux_count_unread_notifications(int $userId): int {
     try {
         $db = trux_db();
         $stmt = $db->prepare(
-            'SELECT actor_user_id
-             FROM notifications
-             WHERE recipient_user_id = ?
-               AND read_at IS NULL'
+            'SELECT COUNT(*) AS unread_count
+             FROM notifications n
+             LEFT JOIN muted_users mu
+               ON  mu.user_id = ?
+               AND mu.muted_user_id = n.actor_user_id
+             WHERE n.recipient_user_id = ?
+               AND n.read_at IS NULL
+               AND mu.muted_user_id IS NULL'
         );
-        $stmt->execute([$userId]);
-        $mutedUserIds = trux_fetch_muted_user_id_map($userId);
-        $count = 0;
-        foreach ($stmt->fetchAll() as $row) {
-            $actorUserId = (int)($row['actor_user_id'] ?? 0);
-            if ($actorUserId <= 0 || !isset($mutedUserIds[$actorUserId])) {
-                $count++;
-            }
-        }
-        return $count;
+        $stmt->execute([$userId, $userId]);
+        $row = $stmt->fetch();
+        return (int)($row['unread_count'] ?? 0);
     } catch (PDOException) {
         return 0;
     }
@@ -420,32 +417,23 @@ function trux_fetch_notifications(int $userId, int $limit = 50): array {
     $limit = max(1, min(100, $limit));
     try {
         $db = trux_db();
-        $queryLimit = min(300, max($limit * 3, $limit));
         $stmt = $db->prepare(
             'SELECT n.id, n.type, n.post_id, n.comment_id, n.target_url, n.read_at, n.created_at, n.actor_user_id, actor.username AS actor_username
              FROM notifications n
              JOIN users actor ON actor.id = n.actor_user_id
+             LEFT JOIN muted_users mu
+               ON  mu.user_id = ?
+               AND mu.muted_user_id = n.actor_user_id
              WHERE n.recipient_user_id = ?
+               AND mu.muted_user_id IS NULL
              ORDER BY n.id DESC
              LIMIT ?'
         );
         $stmt->bindValue(1, $userId, PDO::PARAM_INT);
-        $stmt->bindValue(2, $queryLimit, PDO::PARAM_INT);
+        $stmt->bindValue(2, $userId, PDO::PARAM_INT);
+        $stmt->bindValue(3, $limit, PDO::PARAM_INT);
         $stmt->execute();
-        $mutedUserIds = trux_fetch_muted_user_id_map($userId);
-        $rows = [];
-        foreach ($stmt->fetchAll() as $row) {
-            $actorId = (int)($row['actor_user_id'] ?? 0);
-            if ($actorId > 0 && isset($mutedUserIds[$actorId])) {
-                continue;
-            }
-
-            $rows[] = $row;
-            if (count($rows) >= $limit) {
-                break;
-            }
-        }
-        return $rows;
+        return $stmt->fetchAll();
     } catch (PDOException) {
         return [];
     }
