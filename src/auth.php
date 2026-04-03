@@ -98,20 +98,18 @@ function trux_require_login(): void {
     trux_redirect('/login.php');
 }
 
-function trux_login_user(int $userId): void {
-    session_regenerate_id(true);
-    $_SESSION['user_id'] = $userId;
+function trux_login_user(
+    int $userId,
+    string $loginMethod = 'password',
+    ?string $provider = null,
+    array $analysis = [],
+    ?string $loginIdentifier = null
+): void {
+    trux_security_finalize_login($userId, $loginMethod, $provider, $analysis, $loginIdentifier);
 }
 
 function trux_logout_user(): void {
-    $_SESSION = [];
-
-    if (ini_get('session.use_cookies')) {
-        $params = session_get_cookie_params();
-        setcookie(session_name(), '', time() - 42000, $params['path'], $params['domain'], (bool)$params['secure'], (bool)$params['httponly']);
-    }
-
-    session_destroy();
+    trux_security_logout_current_session('logout');
 }
 
 function trux_fetch_user_by_email(string $email): ?array {
@@ -150,6 +148,24 @@ function trux_fetch_user_by_email(string $email): ?array {
             return null;
         }
     }
+}
+
+function trux_fetch_user_by_login_identifier(string $login): ?array {
+    $login = trim($login);
+    if ($login === '') {
+        return null;
+    }
+
+    $db = trux_db();
+    $stmt = $db->prepare(
+        'SELECT id, username, email, password_hash, email_verified
+         FROM users
+         WHERE username = ? OR email = ?
+         LIMIT 1'
+    );
+    $stmt->execute([$login, $login]);
+    $row = $stmt->fetch();
+    return $row ?: null;
 }
 
 function trux_fetch_account_user_by_id(int $userId, bool $includePasswordHash = false): ?array {
@@ -498,6 +514,7 @@ function trux_change_password(int $userId, string $currentPassword, string $newP
         return ['ok' => false, 'errors' => ['Could not update your password right now.']];
     }
 
+    trux_security_revoke_other_sessions($userId, 'password_changed');
     return ['ok' => true];
 }
 
@@ -508,10 +525,8 @@ function trux_attempt_login(string $login, string $password): array {
         return ['ok' => false, 'error' => 'Please enter your username/email and password.'];
     }
 
-    $db = trux_db();
-    $stmt = $db->prepare('SELECT id, password_hash FROM users WHERE username = ? OR email = ? LIMIT 1');
-    $stmt->execute([$login, $login]);
-    $u = $stmt->fetch();
+    $u = trux_fetch_user_by_login_identifier($login);
+    $requestContext = trux_security_device_context();
 
     if (!$u || !isset($u['password_hash'])) {
         trux_moderation_record_activity_event('login_failed', null, [
@@ -519,6 +534,21 @@ function trux_attempt_login(string $login, string $password): array {
                 'login_identifier' => $login,
             ],
         ]);
+        if (trux_guardian_enabled()) {
+            trux_guardian_record_login_event([
+                'user_id' => null,
+                'login_identifier' => $login,
+                'outcome' => 'failure',
+                'login_method' => 'password',
+                'provider' => null,
+                'ip_address' => $requestContext['ip_address'],
+                'user_agent' => $requestContext['user_agent'],
+                'device_label' => $requestContext['device_label'],
+                'browser_name' => $requestContext['browser_name'],
+                'platform_name' => $requestContext['platform_name'],
+                'reasons' => ['invalid_credentials'],
+            ]);
+        }
         return ['ok' => false, 'error' => 'Invalid credentials.'];
     }
     if (!password_verify($password, (string)$u['password_hash'])) {
@@ -527,6 +557,21 @@ function trux_attempt_login(string $login, string $password): array {
                 'login_identifier' => $login,
             ],
         ]);
+        if (trux_guardian_enabled()) {
+            trux_guardian_record_login_event([
+                'user_id' => (int)$u['id'],
+                'login_identifier' => $login,
+                'outcome' => 'failure',
+                'login_method' => 'password',
+                'provider' => null,
+                'ip_address' => $requestContext['ip_address'],
+                'user_agent' => $requestContext['user_agent'],
+                'device_label' => $requestContext['device_label'],
+                'browser_name' => $requestContext['browser_name'],
+                'platform_name' => $requestContext['platform_name'],
+                'reasons' => ['invalid_credentials'],
+            ]);
+        }
         return ['ok' => false, 'error' => 'Invalid credentials.'];
     }
 
@@ -543,7 +588,29 @@ function trux_attempt_login(string $login, string $password): array {
         return ['ok' => false, 'error' => trux_moderation_access_block_message($activeRestriction)];
     }
 
-    trux_login_user((int)$u['id']);
+    $analysis = ['ok' => true, 'suspicious' => false, 'reasons' => [], 'primary_method' => 'none', 'totp_enabled' => false, 'email_otp_enabled' => false];
+    if (trux_guardian_enabled()) {
+        $analysis = trux_guardian_analyze_login((int)$u['id'], $login, $requestContext['ip_address'], $requestContext['user_agent']);
+    } else {
+        $local2fa = trux_security_fetch_2fa_state((int)$u['id']);
+        $analysis['primary_method'] = (string)($local2fa['primary_method'] ?? 'none');
+        $analysis['totp_enabled'] = !empty($local2fa['totp_enabled']);
+        $analysis['email_otp_enabled'] = !empty($local2fa['email_otp_enabled']);
+    }
+
+    $requiresChallenge = !empty($analysis['totp_enabled']) || !empty($analysis['email_otp_enabled']);
+    if ($requiresChallenge) {
+        trux_security_set_pending_auth((int)$u['id'], $login, $analysis, 'password', null);
+        if ((string)($analysis['primary_method'] ?? 'none') === 'email' || (empty($analysis['totp_enabled']) && !empty($analysis['email_otp_enabled']))) {
+            $sendResult = trux_guardian_send_email_otp((int)$u['id'], 'login');
+            if (!empty($sendResult['challenge_public_id'])) {
+                trux_security_update_pending_auth(['email_challenge_public_id' => (string)$sendResult['challenge_public_id']]);
+            }
+        }
+        return ['ok' => false, 'challenge_required' => true, 'redirect' => '/login_challenge.php'];
+    }
+
+    trux_login_user((int)$u['id'], 'password', null, $analysis, $login);
     trux_moderation_record_activity_event('login_success', (int)$u['id'], [
         'metadata' => [
             'login_identifier' => $login,

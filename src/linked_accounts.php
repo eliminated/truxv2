@@ -251,9 +251,9 @@ function trux_fetch_linked_accounts(int $userId): array {
     try {
         $db = trux_db();
         $stmt = $db->prepare(
-            'SELECT id, user_id, provider, provider_user_id, provider_username, provider_display_name,
+            'SELECT id, user_id, provider, provider_user_id, provider_username, provider_email, provider_email_verified, provider_display_name,
                     provider_avatar_url, status, status_reason, metadata_json, linked_at,
-                    last_verified_at, last_used_at, created_at, updated_at
+                    last_verified_at, last_used_at, last_login_at, created_at, updated_at
              FROM linked_accounts
              WHERE user_id = ?
              ORDER BY provider ASC'
@@ -266,6 +266,8 @@ function trux_fetch_linked_accounts(int $userId): array {
             $stmt = $db->prepare(
                 'SELECT id, user_id, provider, provider_user_id,
                         NULL AS provider_username,
+                        NULL AS provider_email,
+                        0 AS provider_email_verified,
                         NULL AS provider_display_name,
                         NULL AS provider_avatar_url,
                         \'connected\' AS status,
@@ -274,6 +276,7 @@ function trux_fetch_linked_accounts(int $userId): array {
                         linked_at,
                         linked_at AS last_verified_at,
                         NULL AS last_used_at,
+                        NULL AS last_login_at,
                         linked_at AS created_at,
                         linked_at AS updated_at
                  FROM linked_accounts
@@ -321,9 +324,9 @@ function trux_fetch_linked_account_by_external(string $provider, string $provide
     try {
         $db = trux_db();
         $stmt = $db->prepare(
-            'SELECT id, user_id, provider, provider_user_id, provider_username, provider_display_name,
+            'SELECT id, user_id, provider, provider_user_id, provider_username, provider_email, provider_email_verified, provider_display_name,
                     provider_avatar_url, status, status_reason, metadata_json, linked_at,
-                    last_verified_at, last_used_at, created_at, updated_at
+                    last_verified_at, last_used_at, last_login_at, created_at, updated_at
              FROM linked_accounts
              WHERE provider = ? AND provider_user_id = ?
              LIMIT 1'
@@ -336,6 +339,8 @@ function trux_fetch_linked_account_by_external(string $provider, string $provide
             $stmt = $db->prepare(
                 'SELECT id, user_id, provider, provider_user_id,
                         NULL AS provider_username,
+                        NULL AS provider_email,
+                        0 AS provider_email_verified,
                         NULL AS provider_display_name,
                         NULL AS provider_avatar_url,
                         \'connected\' AS status,
@@ -344,6 +349,7 @@ function trux_fetch_linked_account_by_external(string $provider, string $provide
                         linked_at,
                         linked_at AS last_verified_at,
                         NULL AS last_used_at,
+                        NULL AS last_login_at,
                         linked_at AS created_at,
                         linked_at AS updated_at
                  FROM linked_accounts
@@ -627,6 +633,8 @@ function trux_discord_normalize_identity(array $payload): ?array {
     return [
         'provider_user_id' => $providerUserId,
         'provider_username' => $username,
+        'provider_email' => trim((string)($payload['email'] ?? '')),
+        'provider_email_verified' => !empty($payload['verified']),
         'provider_display_name' => $displayName !== '' ? $displayName : $username,
         'provider_avatar_url' => $avatarHash !== '' ? trux_discord_avatar_url($providerUserId, $avatarHash) : null,
         'metadata' => $metadata,
@@ -657,6 +665,8 @@ function trux_google_normalize_identity(array $payload): ?array {
     return [
         'provider_user_id' => $providerUserId,
         'provider_username' => $email !== '' ? $email : trim((string)($payload['preferred_username'] ?? '')),
+        'provider_email' => $email,
+        'provider_email_verified' => !empty($payload['email_verified']),
         'provider_display_name' => $displayName !== '' ? $displayName : ($email !== '' ? $email : $providerUserId),
         'provider_avatar_url' => $avatarUrl !== '' ? $avatarUrl : null,
         'metadata' => $metadata,
@@ -684,6 +694,8 @@ function trux_facebook_normalize_identity(array $payload): ?array {
     return [
         'provider_user_id' => $providerUserId,
         'provider_username' => $email,
+        'provider_email' => $email,
+        'provider_email_verified' => $email !== '',
         'provider_display_name' => $displayName !== '' ? $displayName : ($email !== '' ? $email : $providerUserId),
         'provider_avatar_url' => $avatarUrl !== '' ? $avatarUrl : null,
         'metadata' => $metadata,
@@ -713,6 +725,8 @@ function trux_x_normalize_identity(array $payload): ?array {
     return [
         'provider_user_id' => $providerUserId,
         'provider_username' => $username,
+        'provider_email' => '',
+        'provider_email_verified' => false,
         'provider_display_name' => $displayName !== '' ? $displayName : $username,
         'provider_avatar_url' => $avatarUrl !== '' ? $avatarUrl : null,
         'metadata' => [],
@@ -897,6 +911,8 @@ function trux_linked_account_save_connection(int $userId, string $provider, arra
     }
 
     $providerUsername = trim((string)($identity['provider_username'] ?? ''));
+    $providerEmail = trim((string)($identity['provider_email'] ?? ''));
+    $providerEmailVerified = !empty($identity['provider_email_verified']) ? 1 : 0;
     $providerDisplayName = trim((string)($identity['provider_display_name'] ?? ''));
     $providerAvatarUrl = trim((string)($identity['provider_avatar_url'] ?? ''));
     $metadataJson = trux_linked_account_metadata_encode(is_array($identity['metadata'] ?? null) ? $identity['metadata'] : []);
@@ -909,6 +925,8 @@ function trux_linked_account_save_connection(int $userId, string $provider, arra
                 'UPDATE linked_accounts
                  SET provider_user_id = ?,
                      provider_username = ?,
+                     provider_email = ?,
+                     provider_email_verified = ?,
                      provider_display_name = ?,
                      provider_avatar_url = ?,
                      status = ?,
@@ -923,6 +941,8 @@ function trux_linked_account_save_connection(int $userId, string $provider, arra
             $stmt->execute([
                 $providerUserId,
                 $providerUsername !== '' ? $providerUsername : null,
+                $providerEmail !== '' ? $providerEmail : null,
+                $providerEmailVerified,
                 $providerDisplayName !== '' ? $providerDisplayName : null,
                 $providerAvatarUrl !== '' ? $providerAvatarUrl : null,
                 'connected',
@@ -933,16 +953,18 @@ function trux_linked_account_save_connection(int $userId, string $provider, arra
         } else {
             $stmt = $db->prepare(
                 'INSERT INTO linked_accounts (
-                    user_id, provider, provider_user_id, provider_username, provider_display_name,
+                    user_id, provider, provider_user_id, provider_username, provider_email, provider_email_verified, provider_display_name,
                     provider_avatar_url, status, status_reason, metadata_json, linked_at,
                     last_verified_at, last_used_at, created_at, updated_at
-                 ) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?, NOW(), NOW(), NOW(), NOW(), NOW())'
+                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, ?, NOW(), NOW(), NOW(), NOW(), NOW())'
             );
             $stmt->execute([
                 $userId,
                 $provider,
                 $providerUserId,
                 $providerUsername !== '' ? $providerUsername : null,
+                $providerEmail !== '' ? $providerEmail : null,
+                $providerEmailVerified,
                 $providerDisplayName !== '' ? $providerDisplayName : null,
                 $providerAvatarUrl !== '' ? $providerAvatarUrl : null,
                 'connected',
@@ -1024,9 +1046,29 @@ function trux_unlink_linked_account(int $userId, string $provider): array {
     return ['ok' => true];
 }
 
-function trux_start_linked_account_flow(int $userId, string $provider, string $redirectPath = '/settings.php?section=linked-accounts'): array {
+function trux_linked_account_touch_provider_login(int $userId, string $provider): void {
     $provider = trux_normalize_linked_account_provider($provider);
-    if ($userId <= 0) {
+    if ($userId <= 0 || $provider === '') {
+        return;
+    }
+
+    try {
+        $db = trux_db();
+        $stmt = $db->prepare(
+            'UPDATE linked_accounts
+             SET last_login_at = NOW(), last_used_at = NOW(), updated_at = NOW()
+             WHERE user_id = ? AND provider = ?'
+        );
+        $stmt->execute([$userId, $provider]);
+    } catch (PDOException) {
+        // Ignore when the migration is missing.
+    }
+}
+
+function trux_start_linked_account_flow(?int $userId, string $provider, string $redirectPath = '/settings.php?section=linked-accounts', string $mode = 'link'): array {
+    $provider = trux_normalize_linked_account_provider($provider);
+    $mode = $mode === 'login' ? 'login' : 'link';
+    if ($mode === 'link' && (int)$userId <= 0) {
         return ['ok' => false, 'error' => 'not_found'];
     }
 
@@ -1050,110 +1092,153 @@ function trux_start_linked_account_flow(int $userId, string $provider, string $r
         return ['ok' => false, 'error' => 'state_generation_failed'];
     }
 
-    $existing = trux_fetch_linked_account($userId, $provider);
+    $existing = $mode === 'link' ? trux_fetch_linked_account((int)$userId, $provider) : null;
     $sessionPayload = [
         'provider' => $provider,
-        'user_id' => $userId,
+        'user_id' => (int)$userId,
+        'mode' => $mode,
         'state' => $state,
         'created_at' => time(),
-        'redirect_path' => trux_safe_local_redirect_path($redirectPath, '/settings.php?section=linked-accounts'),
+        'redirect_path' => trux_safe_local_redirect_path($redirectPath, $mode === 'login' ? '/login.php' : '/settings.php?section=linked-accounts'),
     ];
     if ($pkceVerifier !== null && $pkceVerifier !== '') {
         $sessionPayload['pkce_verifier'] = $pkceVerifier;
     }
     trux_linked_accounts_store_oauth_session($sessionPayload);
 
-    trux_linked_account_record_activity(
-        'linked_account_oauth_started',
-        $userId,
-        $provider,
-        ['mode' => $existing ? 'relink' : 'link']
-    );
+    if ($mode === 'link' && (int)$userId > 0) {
+        trux_linked_account_record_activity(
+            'linked_account_oauth_started',
+            (int)$userId,
+            $provider,
+            ['mode' => $existing ? 'relink' : 'link']
+        );
+    }
 
     return ['ok' => true, 'redirect_url' => trux_linked_account_oauth_authorize_url($provider, $state, $pkceVerifier ?? null)];
 }
 
-function trux_complete_linked_account_callback(int $currentUserId, array $query): array {
+function trux_complete_linked_account_callback(?int $currentUserId, array $query): array {
     $session = trux_linked_accounts_oauth_session();
     if ($session === null) {
-        return ['ok' => false, 'error' => 'session_missing', 'redirect' => '/settings.php?section=linked-accounts'];
+        return ['ok' => false, 'error' => 'session_missing', 'redirect' => '/login.php'];
     }
 
     $provider = trux_normalize_linked_account_provider((string)($session['provider'] ?? ''));
-    $redirectPath = trux_safe_local_redirect_path((string)($session['redirect_path'] ?? '/settings.php?section=linked-accounts'), '/settings.php?section=linked-accounts');
+    $mode = (string)($session['mode'] ?? 'link') === 'login' ? 'login' : 'link';
+    $redirectDefault = $mode === 'login' ? '/login.php' : '/settings.php?section=linked-accounts';
+    $redirectPath = trux_safe_local_redirect_path((string)($session['redirect_path'] ?? $redirectDefault), $redirectDefault);
     if ($provider === '') {
         trux_linked_accounts_clear_oauth_session();
-        return ['ok' => false, 'error' => 'invalid_provider', 'redirect' => $redirectPath];
+        return ['ok' => false, 'error' => 'invalid_provider', 'redirect' => $redirectPath, 'mode' => $mode];
     }
 
     $expectedUserId = (int)($session['user_id'] ?? 0);
-    if ($currentUserId <= 0 || $currentUserId !== $expectedUserId) {
+    if ($mode === 'link' && ((int)$currentUserId <= 0 || (int)$currentUserId !== $expectedUserId)) {
         trux_linked_accounts_clear_oauth_session();
-        return ['ok' => false, 'error' => 'user_mismatch', 'redirect' => $redirectPath, 'provider' => $provider];
+        return ['ok' => false, 'error' => 'user_mismatch', 'redirect' => $redirectPath, 'provider' => $provider, 'mode' => $mode];
     }
 
     $expectedState = trim((string)($session['state'] ?? ''));
     $receivedState = trim((string)($query['state'] ?? ''));
     if ($expectedState === '' || $receivedState === '' || !hash_equals($expectedState, $receivedState)) {
         trux_linked_accounts_clear_oauth_session();
-        trux_linked_account_record_activity('linked_account_oauth_failed', $currentUserId, $provider, ['reason' => 'invalid_state']);
-        return ['ok' => false, 'error' => 'invalid_state', 'redirect' => $redirectPath, 'provider' => $provider];
+        if ($mode === 'link' && (int)$currentUserId > 0) {
+            trux_linked_account_record_activity('linked_account_oauth_failed', (int)$currentUserId, $provider, ['reason' => 'invalid_state']);
+        }
+        return ['ok' => false, 'error' => 'invalid_state', 'redirect' => $redirectPath, 'provider' => $provider, 'mode' => $mode];
     }
 
     $providerError = trim((string)($query['error'] ?? ''));
     if ($providerError !== '') {
         trux_linked_accounts_clear_oauth_session();
-        trux_linked_account_mark_callback_issue($currentUserId, $provider, 'revoked', 'Provider access was denied during the relink attempt.');
-        trux_linked_account_record_activity('linked_account_oauth_failed', $currentUserId, $provider, ['reason' => $providerError]);
-        return ['ok' => false, 'error' => 'provider_denied', 'provider' => $provider, 'redirect' => $redirectPath];
+        if ($mode === 'link' && (int)$currentUserId > 0) {
+            trux_linked_account_mark_callback_issue((int)$currentUserId, $provider, 'revoked', 'Provider access was denied during the relink attempt.');
+            trux_linked_account_record_activity('linked_account_oauth_failed', (int)$currentUserId, $provider, ['reason' => $providerError]);
+        }
+        return ['ok' => false, 'error' => 'provider_denied', 'provider' => $provider, 'redirect' => $redirectPath, 'mode' => $mode];
     }
 
     $code = trim((string)($query['code'] ?? ''));
     if ($code === '') {
         trux_linked_accounts_clear_oauth_session();
-        trux_linked_account_mark_callback_issue($currentUserId, $provider, 'error', 'The provider callback did not include an authorization code.');
-        trux_linked_account_record_activity('linked_account_oauth_failed', $currentUserId, $provider, ['reason' => 'missing_code']);
-        return ['ok' => false, 'error' => 'missing_code', 'provider' => $provider, 'redirect' => $redirectPath];
+        if ($mode === 'link' && (int)$currentUserId > 0) {
+            trux_linked_account_mark_callback_issue((int)$currentUserId, $provider, 'error', 'The provider callback did not include an authorization code.');
+            trux_linked_account_record_activity('linked_account_oauth_failed', (int)$currentUserId, $provider, ['reason' => 'missing_code']);
+        }
+        return ['ok' => false, 'error' => 'missing_code', 'provider' => $provider, 'redirect' => $redirectPath, 'mode' => $mode];
     }
 
     $pkceVerifier = trim((string)($session['pkce_verifier'] ?? ''));
     $tokenResult = trux_linked_account_oauth_exchange_code($provider, $code, $pkceVerifier !== '' ? $pkceVerifier : null);
     if (!($tokenResult['ok'] ?? false)) {
         trux_linked_accounts_clear_oauth_session();
-        trux_linked_account_mark_callback_issue($currentUserId, $provider, 'error', 'Token exchange with the provider failed during relink.');
-        trux_linked_account_record_activity('linked_account_oauth_failed', $currentUserId, $provider, ['reason' => (string)($tokenResult['error'] ?? 'token_exchange_failed')]);
-        return ['ok' => false, 'error' => 'token_exchange_failed', 'provider' => $provider, 'redirect' => $redirectPath];
+        if ($mode === 'link' && (int)$currentUserId > 0) {
+            trux_linked_account_mark_callback_issue((int)$currentUserId, $provider, 'error', 'Token exchange with the provider failed during relink.');
+            trux_linked_account_record_activity('linked_account_oauth_failed', (int)$currentUserId, $provider, ['reason' => (string)($tokenResult['error'] ?? 'token_exchange_failed')]);
+        }
+        return ['ok' => false, 'error' => 'token_exchange_failed', 'provider' => $provider, 'redirect' => $redirectPath, 'mode' => $mode];
     }
 
     $identityResult = trux_linked_account_fetch_identity($provider, (string)$tokenResult['access_token']);
     if (!($identityResult['ok'] ?? false)) {
         trux_linked_accounts_clear_oauth_session();
-        trux_linked_account_mark_callback_issue($currentUserId, $provider, 'error', 'Provider identity lookup failed during relink.');
-        trux_linked_account_record_activity('linked_account_oauth_failed', $currentUserId, $provider, ['reason' => (string)($identityResult['error'] ?? 'identity_fetch_failed')]);
-        return ['ok' => false, 'error' => 'identity_fetch_failed', 'provider' => $provider, 'redirect' => $redirectPath];
+        if ($mode === 'link' && (int)$currentUserId > 0) {
+            trux_linked_account_mark_callback_issue((int)$currentUserId, $provider, 'error', 'Provider identity lookup failed during relink.');
+            trux_linked_account_record_activity('linked_account_oauth_failed', (int)$currentUserId, $provider, ['reason' => (string)($identityResult['error'] ?? 'identity_fetch_failed')]);
+        }
+        return ['ok' => false, 'error' => 'identity_fetch_failed', 'provider' => $provider, 'redirect' => $redirectPath, 'mode' => $mode];
     }
 
     $normalizedIdentity = trux_linked_account_normalize_identity($provider, (array)($identityResult['identity'] ?? []));
     if ($normalizedIdentity === null) {
         trux_linked_accounts_clear_oauth_session();
-        trux_linked_account_mark_callback_issue($currentUserId, $provider, 'error', 'Provider returned incomplete identity data during relink.');
-        trux_linked_account_record_activity('linked_account_oauth_failed', $currentUserId, $provider, ['reason' => 'identity_invalid']);
-        return ['ok' => false, 'error' => 'identity_invalid', 'provider' => $provider, 'redirect' => $redirectPath];
+        if ($mode === 'link' && (int)$currentUserId > 0) {
+            trux_linked_account_mark_callback_issue((int)$currentUserId, $provider, 'error', 'Provider returned incomplete identity data during relink.');
+            trux_linked_account_record_activity('linked_account_oauth_failed', (int)$currentUserId, $provider, ['reason' => 'identity_invalid']);
+        }
+        return ['ok' => false, 'error' => 'identity_invalid', 'provider' => $provider, 'redirect' => $redirectPath, 'mode' => $mode];
     }
 
-    $saveResult = trux_linked_account_save_connection($currentUserId, $provider, $normalizedIdentity);
+    if ($mode === 'login') {
+        $linkedAccount = trux_fetch_linked_account_by_external($provider, (string)($normalizedIdentity['provider_user_id'] ?? ''));
+        trux_linked_accounts_clear_oauth_session();
+        if ($linkedAccount) {
+            if (strtolower(trim((string)($linkedAccount['status'] ?? 'connected'))) !== 'connected') {
+                return ['ok' => false, 'error' => 'link_inactive', 'provider' => $provider, 'redirect' => $redirectPath, 'mode' => 'login'];
+            }
+            return [
+                'ok' => true,
+                'mode' => 'login',
+                'provider' => $provider,
+                'redirect' => $redirectPath,
+                'login_user_id' => (int)($linkedAccount['user_id'] ?? 0),
+                'identity' => $normalizedIdentity,
+                'account' => $linkedAccount,
+            ];
+        }
+
+        $providerEmail = trux_normalize_email_address((string)($normalizedIdentity['provider_email'] ?? ''));
+        if ($providerEmail !== '' && trux_fetch_user_by_email($providerEmail)) {
+            return ['ok' => false, 'error' => 'provider_email_conflict', 'provider' => $provider, 'redirect' => $redirectPath, 'mode' => 'login'];
+        }
+
+        return ['ok' => false, 'error' => 'not_linked_for_login', 'provider' => $provider, 'redirect' => $redirectPath, 'mode' => 'login'];
+    }
+
+    $saveResult = trux_linked_account_save_connection((int)$currentUserId, $provider, $normalizedIdentity);
     trux_linked_accounts_clear_oauth_session();
 
     if (!($saveResult['ok'] ?? false)) {
         $error = (string)($saveResult['error'] ?? 'save_failed');
         $relatedUserId = $error === 'already_linked_elsewhere' ? (int)($saveResult['existing_user_id'] ?? 0) : null;
-        trux_linked_account_record_activity('linked_account_conflict', $currentUserId, $provider, ['reason' => $error], $relatedUserId);
-        return ['ok' => false, 'error' => $error, 'provider' => $provider, 'redirect' => $redirectPath];
+        trux_linked_account_record_activity('linked_account_conflict', (int)$currentUserId, $provider, ['reason' => $error], $relatedUserId);
+        return ['ok' => false, 'error' => $error, 'provider' => $provider, 'redirect' => $redirectPath, 'mode' => $mode];
     }
 
     trux_linked_account_record_activity(
         'linked_account_linked',
-        $currentUserId,
+        (int)$currentUserId,
         $provider,
         [
             'mode' => (string)($saveResult['action'] ?? 'linked'),
@@ -1164,6 +1249,7 @@ function trux_complete_linked_account_callback(int $currentUserId, array $query)
 
     return [
         'ok' => true,
+        'mode' => $mode,
         'provider' => $provider,
         'redirect' => $redirectPath,
         'account' => $saveResult['account'] ?? null,

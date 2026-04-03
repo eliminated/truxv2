@@ -10,39 +10,84 @@ if (trux_is_logged_in()) {
   trux_redirect('/');
 }
 
-$token  = trim(trux_str_param('token', ''));
+$selector = trim(trux_str_param('selector', ''));
+$validator = trim(trux_str_param('validator', ''));
 $errors = [];
+$info = null;
 $valid  = false;
+$preview = ['ok' => false, 'valid' => false, 'step_up_required' => false];
+$passwordResetChallengePublicId = trim((string)($_SESSION['password_reset_challenge_public_id'] ?? ''));
 
-if ($token !== '') {
-  $email = trux_validate_password_reset_token($token);
-  $valid = $email !== null;
+if ($selector !== '' && $validator !== '') {
+  $preview = trux_guardian_preview_password_reset($selector, $validator);
+  $valid = ($preview['ok'] ?? false) && !empty($preview['valid']);
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-  $token    = trim((string)($_POST['token'] ?? ''));
+  $selector = trim((string)($_POST['selector'] ?? ''));
+  $validator = trim((string)($_POST['validator'] ?? ''));
+  $preview = trux_guardian_preview_password_reset($selector, $validator);
+  $valid = ($preview['ok'] ?? false) && !empty($preview['valid']);
   $password = (string)($_POST['password'] ?? '');
   $confirm  = (string)($_POST['password_confirm'] ?? '');
+  $action = (string)($_POST['action'] ?? 'consume');
+  $stepUpCode = trim((string)($_POST['step_up_code'] ?? ''));
 
-  if ($token === '') {
+  if ($selector === '' || $validator === '') {
     $errors[] = 'Invalid or missing reset token.';
   }
 
-  if (mb_strlen($password) < 8) {
-    $errors[] = 'Password must be at least 8 characters.';
-  }
-
-  if ($password !== $confirm) {
-    $errors[] = 'Passwords do not match.';
-  }
-
-  if ($errors === []) {
-    $ok = trux_consume_password_reset_token($token, $password);
-    if ($ok) {
-      trux_flash_set('success', 'Password reset successfully. Please log in with your new password.');
-      trux_redirect('/login.php');
-    } else {
+  if ($action === 'send_email_code') {
+    $resetUserId = (int)($preview['user_id'] ?? 0);
+    if (!$valid || $resetUserId <= 0) {
       $errors[] = 'This reset link is invalid or has expired. Please request a new one.';
+    } else {
+      $sendResult = trux_guardian_send_email_otp($resetUserId, 'password_reset');
+      if ($sendResult['ok'] ?? false) {
+        $passwordResetChallengePublicId = (string)($sendResult['challenge_public_id'] ?? '');
+        $_SESSION['password_reset_challenge_public_id'] = $passwordResetChallengePublicId;
+        $info = 'A reset verification code was sent to ' . (string)($preview['masked_email'] ?? 'your inbox') . '.';
+      } else {
+        $errors[] = 'Could not send a reset verification code right now.';
+      }
+    }
+  } else {
+    if (mb_strlen($password) < 8) {
+      $errors[] = 'Password must be at least 8 characters.';
+    }
+
+    if ($password !== $confirm) {
+      $errors[] = 'Passwords do not match.';
+    }
+
+    if ($errors === []) {
+      $passwordHash = password_hash($password, PASSWORD_DEFAULT);
+      if (!is_string($passwordHash) || $passwordHash === '') {
+        $errors[] = 'Could not secure your new password right now.';
+      } else {
+        $context = trux_security_device_context();
+        $consumeResult = trux_guardian_consume_password_reset(
+          $selector,
+          $validator,
+          $passwordHash,
+          $passwordResetChallengePublicId !== '' ? $passwordResetChallengePublicId : null,
+          $stepUpCode !== '' ? $stepUpCode : null,
+          $context['ip_address'],
+          $context['user_agent']
+        );
+        if ($consumeResult['ok'] ?? false) {
+          unset($_SESSION['password_reset_challenge_public_id']);
+          trux_flash_set('success', 'Password reset successfully. Please log in with your new password.');
+          trux_redirect('/login.php');
+        }
+        if (($consumeResult['error'] ?? '') === 'step_up_required' || ($consumeResult['error'] ?? '') === 'invalid_step_up_code') {
+          $errors[] = ($consumeResult['error'] ?? '') === 'invalid_step_up_code'
+            ? 'That reset verification code was invalid.'
+            : 'This reset requires an additional email verification code.';
+        } else {
+          $errors[] = 'This reset link is invalid or has expired. Please request a new one.';
+        }
+      }
     }
   }
 }
@@ -56,7 +101,7 @@ require_once __DIR__ . '/_header.php';
       <div class="authGateway__signalHead">
         <span class="authGateway__eyebrow">Credential refresh</span>
         <h1 class="authGateway__title">Set a new password and reopen your workspace.</h1>
-        <p class="authGateway__copy">Token validation, password rules, and redirect behavior remain unchanged while the reset flow adopts the new gateway system.</p>
+        <p class="authGateway__copy">Selector and validator reset tokens, single-use invalidation, strict expiry, and optional risky-reset step-up now run through Guardian.</p>
       </div>
 
       <div class="authReadoutGrid" aria-hidden="true">
@@ -117,10 +162,14 @@ require_once __DIR__ . '/_header.php';
               <?php endforeach; ?>
             </div>
           <?php endif; ?>
+          <?php if ($info): ?>
+            <div class="flash flash--success"><?= trux_e($info) ?></div>
+          <?php endif; ?>
 
           <form method="post" action="<?= TRUX_BASE_URL ?>/reset_password.php" class="form authSlab__form">
             <?= trux_csrf_field() ?>
-            <input type="hidden" name="token" value="<?= trux_e($token) ?>">
+            <input type="hidden" name="selector" value="<?= trux_e($selector) ?>">
+            <input type="hidden" name="validator" value="<?= trux_e($validator) ?>">
 
             <label class="field">
               <span>New password</span>
@@ -132,8 +181,26 @@ require_once __DIR__ . '/_header.php';
               <input type="password" name="password_confirm" minlength="8" required autocomplete="new-password" placeholder="Repeat your new password">
             </label>
 
+            <?php if (!empty($preview['step_up_required'])): ?>
+              <div class="settingRow settingRow--stacked">
+                <span class="settingRow__label">
+                  <strong>Extra verification required</strong>
+                  <small class="muted">Guardian marked this reset as risky. Send a one-time email code to <?= trux_e((string)($preview['masked_email'] ?? 'your inbox')) ?>, then enter it below to complete the reset.</small>
+                </span>
+              </div>
+
+              <div class="authSlab__actions">
+                <button class="shellButton shellButton--ghost" type="submit" name="action" value="send_email_code">Send reset verification code</button>
+              </div>
+
+              <label class="field">
+                <span>Email verification code</span>
+                <input type="text" name="step_up_code" inputmode="numeric" autocomplete="one-time-code" placeholder="123456">
+              </label>
+            <?php endif; ?>
+
             <div class="authSlab__actions">
-              <button class="shellButton shellButton--accent" type="submit">Set new password</button>
+              <button class="shellButton shellButton--accent" type="submit" name="action" value="consume">Set new password</button>
             </div>
           </form>
         <?php endif; ?>

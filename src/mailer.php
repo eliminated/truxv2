@@ -198,93 +198,18 @@ function trux_email_verification_email_text(string $name, string $verifyUrl, str
 }
 
 function trux_create_password_reset_token(string $email): ?string {
-    $email = trim(strtolower($email));
-    if ($email === '' || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        return null;
-    }
+    $context = function_exists('trux_security_device_context') ? trux_security_device_context() : ['ip_address' => null, 'user_agent' => null];
+    $result = function_exists('trux_guardian_issue_password_reset')
+        ? trux_guardian_issue_password_reset($email, $context['ip_address'] ?? null, $context['user_agent'] ?? null)
+        : ['ok' => false];
 
-    $db = trux_db();
-
-    $userStmt = $db->prepare('SELECT id FROM users WHERE email = ? LIMIT 1');
-    $userStmt->execute([$email]);
-    if (!$userStmt->fetch()) {
-        return null;
-    }
-
-    try {
-        $token = bin2hex(random_bytes(32));
-        $expiresAt = date('Y-m-d H:i:s', time() + 3600);
-
-        $delStmt = $db->prepare('DELETE FROM password_resets WHERE email = ?');
-        $delStmt->execute([$email]);
-
-        $insStmt = $db->prepare(
-            'INSERT INTO password_resets (email, token, expires_at) VALUES (?, ?, ?)'
-        );
-        $insStmt->execute([$email, $token, $expiresAt]);
-
-        return $token;
-    } catch (PDOException) {
-        return null;
-    }
+    return ($result['ok'] ?? false) ? '__guardian__' : null;
 }
 
 function trux_validate_password_reset_token(string $token): ?string {
-    if ($token === '' || strlen($token) !== 64) {
-        return null;
-    }
-
-    try {
-        $db = trux_db();
-        $stmt = $db->prepare(
-            'SELECT email FROM password_resets
-             WHERE token = ?
-               AND used_at IS NULL
-               AND expires_at > NOW()
-             LIMIT 1'
-        );
-        $stmt->execute([$token]);
-        $row = $stmt->fetch();
-
-        return $row ? (string)$row['email'] : null;
-    } catch (PDOException) {
-        return null;
-    }
+    return null;
 }
 
 function trux_consume_password_reset_token(string $token, string $newPassword): bool {
-    $email = trux_validate_password_reset_token($token);
-    if ($email === null) {
-        return false;
-    }
-
-    if (mb_strlen($newPassword) < 8) {
-        return false;
-    }
-
-    $hash = password_hash($newPassword, PASSWORD_DEFAULT);
-    if ($hash === false) {
-        return false;
-    }
-
-    try {
-        $db = trux_db();
-        $db->beginTransaction();
-
-        $updateUser = $db->prepare('UPDATE users SET password_hash = ? WHERE email = ?');
-        $updateUser->execute([$hash, $email]);
-
-        $markUsed = $db->prepare(
-            'UPDATE password_resets SET used_at = NOW() WHERE token = ?'
-        );
-        $markUsed->execute([$token]);
-
-        $db->commit();
-        return true;
-    } catch (PDOException) {
-        if ($db->inTransaction()) {
-            $db->rollBack();
-        }
-        return false;
-    }
+    return false;
 }

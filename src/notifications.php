@@ -11,6 +11,7 @@ function trux_notification_defaults(): array {
         'notify_post_comments' => true,
         'notify_replies' => true,
         'notify_report_updates_default' => false,
+        'notify_security_alerts' => true,
     ];
 }
 
@@ -48,6 +49,10 @@ function trux_notification_pref_labels(): array {
             'title' => 'Report update DMs',
             'description' => 'Preselect private moderation follow-up messages when you submit a report.',
         ],
+        'notify_security_alerts' => [
+            'title' => 'Security alerts',
+            'description' => 'Suspicious sign-ins, risky security changes, and important account safety notices.',
+        ],
     ];
 }
 
@@ -60,6 +65,7 @@ function trux_notification_pref_for_type(string $type): ?string {
         'follow' => 'notify_follows',
         'post_comment' => 'notify_post_comments',
         'comment_reply' => 'notify_replies',
+        'security_alert' => 'notify_security_alerts',
         default => null,
     };
 }
@@ -80,7 +86,7 @@ function trux_fetch_notification_preferences(int $userId): array {
         $db = trux_db();
         $stmt = $db->prepare(
             'SELECT notify_post_likes, notify_post_quotes, notify_comment_votes, notify_mentions, notify_follows,
-                    notify_post_comments, notify_replies, notify_report_updates_default
+                    notify_post_comments, notify_replies, notify_report_updates_default, notify_security_alerts
              FROM users
              WHERE id = ?
              LIMIT 1'
@@ -126,7 +132,8 @@ function trux_update_notification_preferences(int $userId, array $submitted): bo
                  notify_follows = ?,
                  notify_post_comments = ?,
                  notify_replies = ?,
-                 notify_report_updates_default = ?
+                 notify_report_updates_default = ?,
+                 notify_security_alerts = ?
              WHERE id = ?'
         );
         $stmt->execute([
@@ -138,6 +145,7 @@ function trux_update_notification_preferences(int $userId, array $submitted): bo
             $values['notify_post_comments'],
             $values['notify_replies'],
             $values['notify_report_updates_default'],
+            $values['notify_security_alerts'],
             $userId,
         ]);
         return true;
@@ -517,6 +525,7 @@ function trux_notification_text(array $notification): string {
         'moderation_dm_restricted' => 'A moderation review restricted your direct-message access.',
         'moderation_account_suspended' => 'A moderation review suspended your account.',
         'moderation_account_locked' => 'A moderation review locked your account.',
+        'security_alert' => 'Guardian recorded a suspicious sign-in or security event on your account.',
         default => $actor . ' sent you a notification.',
     };
 }

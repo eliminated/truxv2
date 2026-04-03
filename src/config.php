@@ -87,3 +87,9 @@ define('TRUX_X_CLIENT_ID',      (string)trux_env('TRUX_X_CLIENT_ID',      ''));
 define('TRUX_X_CLIENT_SECRET',  (string)trux_env('TRUX_X_CLIENT_SECRET',  ''));
 define('TRUX_X_REDIRECT_URI',   (string)trux_env('TRUX_X_REDIRECT_URI',   TRUX_BASE_URL . '/settings/link-account-callback.php'));
 define('TRUX_X_SCOPES',         (string)trux_env('TRUX_X_SCOPES',         'users.read tweet.read'));
+
+define('TRUX_GUARDIAN_BASE_URL', (string)trux_env('TRUX_GUARDIAN_BASE_URL', ''));
+define('TRUX_GUARDIAN_SHARED_SECRET', (string)trux_env('TRUX_GUARDIAN_SHARED_SECRET', ''));
+define('TRUX_GUARDIAN_TOTP_ENCRYPTION_KEY', (string)trux_env('TRUX_GUARDIAN_TOTP_ENCRYPTION_KEY', ''));
+define('TRUX_GUARDIAN_RESET_SIGNING_SECRET', (string)trux_env('TRUX_GUARDIAN_RESET_SIGNING_SECRET', ''));
+define('TRUX_GUARDIAN_LAST_ACTIVE_TOUCH_SECONDS', (int)trux_env('TRUX_GUARDIAN_LAST_ACTIVE_TOUCH_SECONDS', '120'));

@@ -20,9 +20,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   if ($res['ok'] ?? false) {
     trux_flash_set('success', 'Welcome back!');
     trux_redirect(TRUX_BASE_URL . '/');
+  } elseif ($res['challenge_required'] ?? false) {
+    trux_redirect((string)($res['redirect'] ?? '/login_challenge.php'));
   } else {
     $error = (string) ($res['error'] ?? 'Login failed.');
   }
+}
+
+$providerLoginOptions = [];
+foreach (trux_linked_account_providers() as $providerKey => $providerMeta) {
+  if ((string)($providerMeta['availability'] ?? '') !== 'available' || empty($providerMeta['supports_oauth'])) {
+    continue;
+  }
+  if (!in_array($providerKey, ['google', 'discord', 'facebook', 'x'], true)) {
+    continue;
+  }
+  $providerLoginOptions[$providerKey] = $providerMeta;
 }
 
 require_once __DIR__ . '/_header.php';
@@ -108,6 +121,27 @@ require_once __DIR__ . '/_header.php';
 
           <a class="authSlab__metaLink" href="<?= TRUX_BASE_URL ?>/forgot_password.php">Forgot your password?</a>
         </form>
+
+        <?php if ($providerLoginOptions !== []): ?>
+          <div class="authProviderOptions">
+            <div class="authProviderOptions__head">
+              <span>Linked provider sign-in</span>
+              <small class="muted">Only works if this provider is already linked to your TruX account.</small>
+            </div>
+            <div class="authProviderOptions__grid">
+              <?php foreach ($providerLoginOptions as $providerKey => $providerMeta): ?>
+                <form method="post" action="<?= TRUX_BASE_URL ?>/provider_login.php" class="authProviderOptions__form">
+                  <?= trux_csrf_field() ?>
+                  <input type="hidden" name="provider" value="<?= trux_e($providerKey) ?>">
+                  <button class="shellButton shellButton--ghost authProviderOptions__button" type="submit">
+                    <span class="authProviderOptions__icon" aria-hidden="true"><?= trux_linked_account_provider_icon_svg($providerKey) ?></span>
+                    <span>Continue with <?= trux_e((string)$providerMeta['label']) ?></span>
+                  </button>
+                </form>
+              <?php endforeach; ?>
+            </div>
+          </div>
+        <?php endif; ?>
       </div>
     </section>
   </div>

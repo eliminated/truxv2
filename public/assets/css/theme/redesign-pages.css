@@ -824,6 +824,74 @@
   border-top: 1px solid rgba(255, 255, 255, 0.06);
 }
 
+.authProviderOptions {
+  margin-top: var(--space-5);
+  display: grid;
+  gap: var(--space-3);
+  padding-top: var(--space-4);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.authProviderOptions__head {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.authProviderOptions__head span {
+  color: var(--text-strong);
+  font-weight: 700;
+}
+
+.authProviderOptions__grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.authProviderOptions__form {
+  display: contents;
+}
+
+.authProviderOptions__button {
+  width: 100%;
+  justify-content: flex-start;
+  gap: 0.75rem;
+}
+
+.authProviderOptions__icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.authProviderOptions__icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.securityRecoveryCodes {
+  margin-top: var(--space-3);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+  gap: var(--space-2);
+}
+
+.securityRecoveryCodes code {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.8rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 0.9rem 0.24rem 0.9rem 0.24rem;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text-strong);
+  font-size: 0.92rem;
+  letter-spacing: 0.08em;
+}
+
 .pageFrame--studio .editorStage {
   grid-template-columns: minmax(0, 1fr);
 }

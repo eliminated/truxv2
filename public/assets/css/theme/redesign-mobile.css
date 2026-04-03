@@ -78,6 +78,11 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
+  .authProviderOptions__grid,
+  .securityRecoveryCodes {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .identityBand__inner {
     grid-template-columns: minmax(0, 1fr);
     margin-top: -3rem;

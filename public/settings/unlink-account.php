@@ -47,6 +47,10 @@ if (empty($me['email_verified'])) {
     trux_redirect($linkedAccountsRedirectPath);
 }
 
+trux_security_require_step_up_or_redirect((int)$me['id'], $linkedAccountsRedirectPath, 'unlink_provider', [
+    'provider' => $provider,
+]);
+
 $providerMeta = trux_linked_account_provider($provider);
 $providerLabel = (string)(($providerMeta['label'] ?? '') !== '' ? $providerMeta['label'] : ucfirst($provider));
 

@@ -21,16 +21,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   }
 
   if ($errors === []) {
-    $token = trux_create_password_reset_token($email);
-
-    if ($token !== null) {
-      $user     = trux_fetch_user_by_email($email);
-      $name     = $user ? (string)($user['username'] ?? $email) : $email;
-      $resetUrl = TRUX_BASE_URL . '/reset_password.php?token=' . urlencode($token);
-      trux_send_password_reset_email($email, $name, $resetUrl);
+    $context = trux_security_device_context();
+    $issueResult = trux_guardian_issue_password_reset($email, $context['ip_address'], $context['user_agent']);
+    if ($issueResult['ok'] ?? false) {
+      $submitted = true;
+    } else {
+      $errors[] = 'Password recovery is unavailable right now. Please try again in a moment.';
     }
-
-    $submitted = true;
   }
 }
 
@@ -43,7 +40,7 @@ require_once __DIR__ . '/_header.php';
       <div class="authGateway__signalHead">
         <span class="authGateway__eyebrow">Recovery</span>
         <h1 class="authGateway__title">Recover access without exposing account state.</h1>
-        <p class="authGateway__copy">Reset-link generation, token expiry, and mail delivery stay exactly the same behind a cleaner recovery flow.</p>
+        <p class="authGateway__copy">Recovery requests stay non-enumerating while reset issue, expiry, and risky-reset checks move into the Guardian security service.</p>
       </div>
 
       <div class="authReadoutGrid" aria-hidden="true">
