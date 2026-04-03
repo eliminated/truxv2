@@ -813,9 +813,231 @@ function trux_direct_message_attach_rows_with_reply_context(array $rows): array 
     return $rows;
 }
 
+function trux_direct_message_reaction_catalog(): array {
+    static $catalog = null;
+    if ($catalog !== null) {
+        return $catalog;
+    }
+
+    $catalog = [
+        'heart' => [
+            'slug' => 'heart',
+            'label' => 'Heart',
+            'emoji' => '❤️',
+            'order' => 0,
+        ],
+        'fire' => [
+            'slug' => 'fire',
+            'label' => 'Fire',
+            'emoji' => '🔥',
+            'order' => 1,
+        ],
+        'clap' => [
+            'slug' => 'clap',
+            'label' => 'Clap',
+            'emoji' => '👏',
+            'order' => 2,
+        ],
+        'laugh' => [
+            'slug' => 'laugh',
+            'label' => 'Laugh',
+            'emoji' => '😂',
+            'order' => 3,
+        ],
+        'think' => [
+            'slug' => 'think',
+            'label' => 'Think',
+            'emoji' => '🤔',
+            'order' => 4,
+        ],
+        'hundred' => [
+            'slug' => 'hundred',
+            'label' => 'Hundred',
+            'emoji' => '💯',
+            'order' => 5,
+        ],
+    ];
+
+    return $catalog;
+}
+
+function trux_direct_message_reaction_slugs(): array {
+    return array_keys(trux_direct_message_reaction_catalog());
+}
+
 function trux_direct_message_normalize_reaction(string $reaction): string {
     $normalized = trim(mb_strtolower($reaction));
-    return $normalized === 'like' ? 'like' : '';
+    if ($normalized === 'like') {
+        $normalized = 'heart';
+    }
+
+    return array_key_exists($normalized, trux_direct_message_reaction_catalog()) ? $normalized : '';
+}
+
+function trux_direct_message_reaction_rank(string $reaction): int {
+    $normalized = trux_direct_message_normalize_reaction($reaction);
+    if ($normalized === '') {
+        return PHP_INT_MAX;
+    }
+
+    $meta = trux_direct_message_reaction_catalog()[$normalized] ?? null;
+    return is_array($meta) ? (int)($meta['order'] ?? PHP_INT_MAX) : PHP_INT_MAX;
+}
+
+function trux_direct_message_reaction_meta(string $reaction): ?array {
+    $normalized = trux_direct_message_normalize_reaction($reaction);
+    if ($normalized === '') {
+        return null;
+    }
+
+    $meta = trux_direct_message_reaction_catalog()[$normalized] ?? null;
+    return is_array($meta) ? $meta : null;
+}
+
+function trux_direct_message_reaction_emoji(string $reaction): string {
+    $meta = trux_direct_message_reaction_meta($reaction);
+    return is_array($meta) ? (string)($meta['emoji'] ?? '') : '';
+}
+
+function trux_render_direct_message_reaction_html(
+    string $reaction,
+    string $wrapperClass = 'messageBubble__reactionEmoji',
+    string $imageClass = 'messageBubble__reactionEmojiImage'
+): string {
+    $meta = trux_direct_message_reaction_meta($reaction);
+    if (!is_array($meta)) {
+        return '';
+    }
+
+    $emoji = (string)($meta['emoji'] ?? '');
+    if ($emoji === '') {
+        return '';
+    }
+
+    $lookup = trux_dm_emoji_lookup();
+    $emojiMeta = $lookup[$emoji] ?? null;
+    if (is_array($emojiMeta)) {
+        $assetPath = trim((string)($emojiMeta['asset_path'] ?? ''));
+        if ($assetPath !== '') {
+            return '<span class="' . trux_e($wrapperClass) . '"><img class="'
+                . trux_e($imageClass)
+                . '" src="'
+                . trux_e(trux_dm_emoji_asset_url($assetPath))
+                . '" alt="'
+                . trux_e($emoji)
+                . '" title="'
+                . trux_e((string)($meta['label'] ?? 'Reaction'))
+                . '" loading="lazy" decoding="async" draggable="false"></span>';
+        }
+    }
+
+    return '<span class="' . trux_e($wrapperClass) . '">' . trux_e($emoji) . '</span>';
+}
+
+function trux_direct_message_default_picker_reactions(int $limit = 5): array {
+    return array_slice(trux_direct_message_reaction_slugs(), 0, max(0, $limit));
+}
+
+function trux_direct_message_pick_preferred_reaction_row(array $current, array $candidate): array {
+    if ($current === []) {
+        return $candidate;
+    }
+
+    $currentCreated = trim((string)($current['created_at'] ?? ''));
+    $candidateCreated = trim((string)($candidate['created_at'] ?? ''));
+
+    if ($candidateCreated > $currentCreated) {
+        return $candidate;
+    }
+    if ($candidateCreated < $currentCreated) {
+        return $current;
+    }
+
+    return trux_direct_message_reaction_rank((string)($candidate['reaction'] ?? ''))
+        < trux_direct_message_reaction_rank((string)($current['reaction'] ?? ''))
+        ? $candidate
+        : $current;
+}
+
+function trux_direct_message_dedupe_reaction_rows(array $rows): array {
+    $deduped = [];
+
+    foreach ($rows as $row) {
+        if (!is_array($row)) {
+            continue;
+        }
+
+        $messageId = (int)($row['message_id'] ?? 0);
+        $userId = (int)($row['user_id'] ?? 0);
+        $reaction = trux_direct_message_normalize_reaction((string)($row['reaction'] ?? ''));
+        if ($messageId <= 0 || $userId <= 0 || $reaction === '') {
+            continue;
+        }
+
+        $candidate = [
+            'message_id' => $messageId,
+            'user_id' => $userId,
+            'reaction' => $reaction,
+            'created_at' => trim((string)($row['created_at'] ?? '')),
+        ];
+        $key = $messageId . ':' . $userId;
+        $deduped[$key] = isset($deduped[$key])
+            ? trux_direct_message_pick_preferred_reaction_row($deduped[$key], $candidate)
+            : $candidate;
+    }
+
+    return array_values($deduped);
+}
+
+function trux_direct_message_fetch_viewer_top_reactions(int $viewerId, int $limit = 5): array {
+    $limit = max(0, $limit);
+    $defaults = trux_direct_message_default_picker_reactions($limit);
+    if ($viewerId <= 0 || $limit < 1) {
+        return $defaults;
+    }
+
+    $db = trux_db();
+
+    try {
+        $stmt = $db->prepare(
+            'SELECT message_id, user_id, reaction, created_at
+             FROM direct_message_reactions
+             WHERE user_id = ?'
+        );
+        $stmt->execute([$viewerId]);
+        $rows = trux_direct_message_dedupe_reaction_rows($stmt->fetchAll());
+    } catch (PDOException) {
+        return $defaults;
+    }
+
+    $counts = [];
+    foreach ($rows as $row) {
+        $reaction = (string)($row['reaction'] ?? '');
+        if ($reaction === '') {
+            continue;
+        }
+        $counts[$reaction] = (int)($counts[$reaction] ?? 0) + 1;
+    }
+
+    $ranked = array_keys($counts);
+    usort(
+        $ranked,
+        static function (string $left, string $right) use ($counts): int {
+            $countCompare = ((int)($counts[$right] ?? 0)) <=> ((int)($counts[$left] ?? 0));
+            if ($countCompare !== 0) {
+                return $countCompare;
+            }
+            return trux_direct_message_reaction_rank($left) <=> trux_direct_message_reaction_rank($right);
+        }
+    );
+
+    foreach ($defaults as $reaction) {
+        if (!in_array($reaction, $ranked, true)) {
+            $ranked[] = $reaction;
+        }
+    }
+
+    return array_slice($ranked, 0, $limit);
 }
 
 function trux_toggle_direct_message_reaction(int $messageId, int $viewerId, string $reaction): array {
@@ -837,30 +1059,31 @@ function trux_toggle_direct_message_reaction(int $messageId, int $viewerId, stri
     }
 
     $db = trux_db();
+    $currentReaction = null;
 
     try {
         $db->beginTransaction();
 
-        $existsStmt = $db->prepare(
-            'SELECT 1
+        $existingStmt = $db->prepare(
+            'SELECT message_id, user_id, reaction, created_at
              FROM direct_message_reactions
              WHERE message_id = ?
-               AND user_id = ?
-               AND reaction = ?
-             LIMIT 1'
+               AND user_id = ?'
         );
-        $existsStmt->execute([$messageId, $viewerId, $normalizedReaction]);
-        $viewerAlreadyReacted = (bool)$existsStmt->fetchColumn();
+        $existingStmt->execute([$messageId, $viewerId]);
+        $existingRows = trux_direct_message_dedupe_reaction_rows($existingStmt->fetchAll());
+        $currentReaction = $existingRows !== []
+            ? (string)($existingRows[0]['reaction'] ?? '')
+            : null;
 
-        if ($viewerAlreadyReacted) {
-            $deleteStmt = $db->prepare(
-                'DELETE FROM direct_message_reactions
-                 WHERE message_id = ?
-                   AND user_id = ?
-                   AND reaction = ?'
-            );
-            $deleteStmt->execute([$messageId, $viewerId, $normalizedReaction]);
-        } else {
+        $deleteStmt = $db->prepare(
+            'DELETE FROM direct_message_reactions
+             WHERE message_id = ?
+               AND user_id = ?'
+        );
+        $deleteStmt->execute([$messageId, $viewerId]);
+
+        if ($currentReaction !== $normalizedReaction) {
             $insertStmt = $db->prepare(
                 'INSERT INTO direct_message_reactions (message_id, user_id, reaction)
                  VALUES (?, ?, ?)'
@@ -883,15 +1106,19 @@ function trux_toggle_direct_message_reaction(int $messageId, int $viewerId, stri
     }
 
     $reactions = is_array($updated['reactions'] ?? null) ? $updated['reactions'] : [];
+    $userReaction = $currentReaction === $normalizedReaction ? null : $normalizedReaction;
 
     return [
         'ok' => true,
         'message' => $updated,
         'message_id' => $messageId,
         'reaction' => $normalizedReaction,
-        'viewer_liked' => !empty($reactions['viewer_liked']),
-        'like_count' => (int)($reactions['like_count'] ?? 0),
-        'action' => $viewerAlreadyReacted ? 'removed' : 'added',
+        'user_reaction' => $userReaction,
+        'total_count' => (int)($reactions['total_count'] ?? 0),
+        'picker_reactions' => trux_direct_message_fetch_viewer_top_reactions($viewerId),
+        'action' => $currentReaction === $normalizedReaction
+            ? 'removed'
+            : ($currentReaction === null ? 'added' : 'changed'),
     ];
 }
 
@@ -904,8 +1131,9 @@ function trux_direct_message_fetch_reaction_summary_map(array $messageIds, int $
     $summary = [];
     foreach ($messageIds as $messageId) {
         $summary[$messageId] = [
-            'like_count' => 0,
-            'viewer_liked' => false,
+            'viewer_reaction' => null,
+            'total_count' => 0,
+            'items' => [],
         ];
     }
 
@@ -913,41 +1141,58 @@ function trux_direct_message_fetch_reaction_summary_map(array $messageIds, int $
     $db = trux_db();
 
     try {
-        $countStmt = $db->prepare(
-            'SELECT message_id, COUNT(*) AS like_count
+        $stmt = $db->prepare(
+            'SELECT message_id, user_id, reaction, created_at
              FROM direct_message_reactions
-             WHERE reaction = ?
-               AND message_id IN (' . $placeholders . ')
-             GROUP BY message_id'
+             WHERE message_id IN (' . $placeholders . ')'
         );
-        $countStmt->execute(array_merge(['like'], $messageIds));
-        foreach ($countStmt->fetchAll() as $row) {
-            $messageId = (int)($row['message_id'] ?? 0);
-            if (!isset($summary[$messageId])) {
-                continue;
-            }
-            $summary[$messageId]['like_count'] = (int)($row['like_count'] ?? 0);
-        }
-
-        if ($viewerId > 0) {
-            $viewerStmt = $db->prepare(
-                'SELECT message_id
-                 FROM direct_message_reactions
-                 WHERE reaction = ?
-                   AND user_id = ?
-                   AND message_id IN (' . $placeholders . ')'
-            );
-            $viewerStmt->execute(array_merge(['like', $viewerId], $messageIds));
-            foreach ($viewerStmt->fetchAll() as $row) {
-                $messageId = (int)($row['message_id'] ?? 0);
-                if (isset($summary[$messageId])) {
-                    $summary[$messageId]['viewer_liked'] = true;
-                }
-            }
-        }
+        $stmt->execute($messageIds);
+        $rows = trux_direct_message_dedupe_reaction_rows($stmt->fetchAll());
     } catch (PDOException) {
         return $summary;
     }
+
+    $countMap = [];
+    foreach ($rows as $row) {
+        $messageId = (int)($row['message_id'] ?? 0);
+        $userId = (int)($row['user_id'] ?? 0);
+        $reaction = (string)($row['reaction'] ?? '');
+        if (!isset($summary[$messageId]) || $reaction === '') {
+            continue;
+        }
+
+        $summary[$messageId]['total_count'] = (int)($summary[$messageId]['total_count'] ?? 0) + 1;
+        $countMap[$messageId][$reaction] = (int)($countMap[$messageId][$reaction] ?? 0) + 1;
+
+        if ($viewerId > 0 && $userId === $viewerId) {
+            $summary[$messageId]['viewer_reaction'] = $reaction;
+        }
+    }
+
+    foreach ($summary as $messageId => &$entry) {
+        $items = [];
+        foreach ($countMap[$messageId] ?? [] as $reaction => $count) {
+            $items[] = [
+                'reaction' => $reaction,
+                'count' => (int)$count,
+            ];
+        }
+
+        usort(
+            $items,
+            static function (array $left, array $right): int {
+                $countCompare = ((int)($right['count'] ?? 0)) <=> ((int)($left['count'] ?? 0));
+                if ($countCompare !== 0) {
+                    return $countCompare;
+                }
+                return trux_direct_message_reaction_rank((string)($left['reaction'] ?? ''))
+                    <=> trux_direct_message_reaction_rank((string)($right['reaction'] ?? ''));
+            }
+        );
+
+        $entry['items'] = $items;
+    }
+    unset($entry);
 
     return $summary;
 }
@@ -961,8 +1206,9 @@ function trux_direct_message_attach_rows_with_reactions(array $rows, int $viewer
     foreach ($rows as &$row) {
         $messageId = (int)($row['id'] ?? 0);
         $row['reactions'] = $summaryMap[$messageId] ?? [
-            'like_count' => 0,
-            'viewer_liked' => false,
+            'viewer_reaction' => null,
+            'total_count' => 0,
+            'items' => [],
         ];
     }
     unset($row);
@@ -1019,7 +1265,7 @@ function trux_serialize_direct_message(array $message, int $viewerId): array {
         'sender_display_name' => (string)($message['sender_display_name'] ?? ''),
         'is_mine' => $isMine,
         'body' => $body,
-        'body_html' => $body !== '' ? trux_render_comment_body($body) : '',
+        'body_html' => $body !== '' ? trux_render_direct_message_body($body) : '',
         'reply_to_message_id' => (int)($message['reply_to_message_id'] ?? 0),
         'reply_context' => $replyContext ? [
             'message_id' => (int)($replyContext['message_id'] ?? 0),
@@ -1046,8 +1292,20 @@ function trux_serialize_direct_message(array $message, int $viewerId): array {
         'read_at' => (string)($message['read_at'] ?? ''),
         'is_read' => trim((string)($message['read_at'] ?? '')) !== '',
         'reactions' => [
-            'like_count' => (int)($reactions['like_count'] ?? 0),
-            'viewer_liked' => !empty($reactions['viewer_liked']),
+            'viewer_reaction' => trux_direct_message_normalize_reaction((string)($reactions['viewer_reaction'] ?? '')) ?: null,
+            'total_count' => (int)($reactions['total_count'] ?? 0),
+            'items' => array_values(array_filter(
+                is_array($reactions['items'] ?? null) ? $reactions['items'] : [],
+                static function ($item): bool {
+                    if (!is_array($item)) {
+                        return false;
+                    }
+
+                    $reaction = trux_direct_message_normalize_reaction((string)($item['reaction'] ?? ''));
+                    $count = (int)($item['count'] ?? 0);
+                    return $reaction !== '' && $count > 0;
+                }
+            )),
         ],
     ];
 }

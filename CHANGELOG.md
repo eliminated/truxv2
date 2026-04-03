@@ -1,4 +1,31 @@
 ﻿# Omnicus Updates
+## TruX v0.7.6 — DM Reaction Picker & Mobile Tap Actions
+
+**Branch**: Production
+**Date**: 2026-04-03
+
+***
+
+### Added
+
+- Shared DM reactions now use the fixed six-reaction set: `heart`, `fire`, `clap`, `laugh`, `think`, and `hundred`
+- Personalized DM reaction picker row that surfaces each viewer's top 5 direct-message reactions alongside the full shared 6
+- Standardized Noto-backed reaction emoji rendering in DM quick actions and reaction badges so reactions no longer depend on device-native emoji sets
+
+### Changed
+
+- DM message reactions now allow one active reaction per user per message instead of binary `like` toggles
+- The existing thumbs-up quick action now opens a reaction picker on desktop hover/click and on mobile tap from the inline quick-actions bar
+- Mobile DM quick actions now open from a single tap on the non-interactive message bubble surface instead of a long press
+- DM reaction badges now render compact reaction clusters with combined totals beneath each bubble
+
+### Technical
+
+- Added `database/migrations/20260403_upgrade_direct_message_reactions_v076.sql` and updated `database/schema.sql` so `direct_message_reactions` now keys on `(message_id, user_id)` while preserving lookup indexes
+- Expanded the DM reaction payload and endpoint contract in `src/messages.php` and `public/react_message.php` to return `viewer_reaction`, ordered reaction summaries, and personalized picker defaults
+- Updated the DM thread shell, bubble partial, and `public/assets/messages_v2.js` so reaction picker state survives thread refreshes and server-rendered bubble replacements
+
+***
 ## TruX v0.7.5 — Quote Posts, Post Polls, Dark Mode, Pinned Posts
 
 **Branch**: Production
@@ -1619,4 +1646,5 @@
 
 ## Omnicus v0.1 - Initial Release
 Initial Releases
+
 

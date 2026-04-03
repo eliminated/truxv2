@@ -30,8 +30,27 @@ $replySenderUsername = (string)($replyContext['sender_username'] ?? '');
 $replyPreview = trim((string)($replyContext['preview'] ?? ''));
 $replyLabel = $replySenderUsername !== '' ? '@' . $replySenderUsername : 'deleted message';
 $reactions = is_array($message['reactions'] ?? null) ? $message['reactions'] : [];
-$likeCount = (int)($reactions['like_count'] ?? 0);
-$viewerLiked = !empty($reactions['viewer_liked']);
+$viewerReaction = trux_direct_message_normalize_reaction((string)($reactions['viewer_reaction'] ?? ''));
+$reactionTotal = max(0, (int)($reactions['total_count'] ?? 0));
+$reactionItems = [];
+foreach ((is_array($reactions['items'] ?? null) ? $reactions['items'] : []) as $reactionItem) {
+  if (!is_array($reactionItem)) {
+    continue;
+  }
+
+  $reactionSlug = trux_direct_message_normalize_reaction((string)($reactionItem['reaction'] ?? ''));
+  $reactionCount = max(0, (int)($reactionItem['count'] ?? 0));
+  if ($reactionSlug === '' || $reactionCount < 1) {
+    continue;
+  }
+
+  $reactionItems[] = [
+    'reaction' => $reactionSlug,
+    'count' => $reactionCount,
+  ];
+}
+$reactionBadgeItems = array_slice($reactionItems, 0, 3);
+$hasReactionBadge = $reactionTotal > 0 && $reactionBadgeItems !== [];
 $canQuickDelete = $isMine && $canUnsend && !$isUnsent;
 $hasQuickActions = !$isUnsent;
 $bubbleClasses = ['messageBubble'];
@@ -59,8 +78,8 @@ if ($attachmentCount > 0) {
   data-message-body-raw="<?= trux_e($messageBody) ?>"
   data-message-sender-username="<?= trux_e($messageSenderUsername) ?>"
   data-message-reply-to-id="<?= $replyTargetId ?>"
-  data-message-like-count="<?= $likeCount ?>"
-  data-message-viewer-liked="<?= $viewerLiked ? '1' : '0' ?>"
+  data-message-viewer-reaction="<?= trux_e($viewerReaction) ?>"
+  data-message-reaction-total-count="<?= $reactionTotal ?>"
   data-message-can-edit="<?= $canEdit ? '1' : '0' ?>"
   data-message-can-unsend="<?= $canUnsend ? '1' : '0' ?>"
   data-message-is-unsent="<?= $isUnsent ? '1' : '0' ?>">
@@ -158,18 +177,19 @@ if ($attachmentCount > 0) {
     <?php if ($isUnsent): ?>
       <div class="messageBubble__body messageBubble__body--muted"><em><?= trux_e(trux_direct_message_deleted_copy()) ?></em></div>
     <?php elseif ($messageBody !== ''): ?>
-      <div class="messageBubble__body"><?= (string)($message['body_html'] ?? trux_render_comment_body($messageBody)) ?></div>
+      <div class="messageBubble__body"><?= (string)($message['body_html'] ?? trux_render_direct_message_body($messageBody)) ?></div>
     <?php endif; ?>
     <?= trux_render_direct_message_attachments($message) ?>
   </div>
   <?php if ($hasQuickActions): ?>
     <div class="messageBubble__hoverActions" data-message-hover-actions="1" aria-label="Quick message actions">
       <button
-        class="messageBubble__hoverAction<?= $viewerLiked ? ' is-active' : '' ?>"
+        class="messageBubble__hoverAction<?= $viewerReaction !== '' ? ' is-active' : '' ?>"
         type="button"
         data-message-quick-action="react"
+        data-message-reaction-trigger="1"
         aria-label="React to message"
-        aria-pressed="<?= $viewerLiked ? 'true' : 'false' ?>">
+        aria-pressed="<?= $viewerReaction !== '' ? 'true' : 'false' ?>">
         <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
           <path d="M8.25 10.75V20H6.5a1.75 1.75 0 0 1-1.75-1.75v-5.75A1.75 1.75 0 0 1 6.5 10.75h1.75Zm2.5 9.25h4.65a2.6 2.6 0 0 0 2.52-2l1.05-4.55a2.27 2.27 0 0 0-2.22-2.8h-3v-4A2.4 2.4 0 0 0 11.35 4.3L9.7 8.05a5.37 5.37 0 0 0-.45 2.18v8.02c0 .97.78 1.75 1.75 1.75Z" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -186,6 +206,7 @@ if ($attachmentCount > 0) {
           </svg>
         </button>
       <?php endif; ?>
+      <div class="messageBubble__reactionPicker" hidden data-message-reaction-picker="1"></div>
     </div>
   <?php endif; ?>
   <?php if ($canQuickDelete): ?>
@@ -195,11 +216,17 @@ if ($attachmentCount > 0) {
       <button type="button" data-message-delete-confirm-no="1">No</button>
     </div>
   <?php endif; ?>
-  <div class="messageBubble__reactionBadge"<?= $likeCount > 0 ? '' : ' hidden' ?> data-message-reaction-badge="1">
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path d="M8.25 10.75V20H6.5a1.75 1.75 0 0 1-1.75-1.75v-5.75A1.75 1.75 0 0 1 6.5 10.75h1.75Zm2.5 9.25h4.65a2.6 2.6 0 0 0 2.52-2l1.05-4.55a2.27 2.27 0 0 0-2.22-2.8h-3v-4A2.4 2.4 0 0 0 11.35 4.3L9.7 8.05a5.37 5.37 0 0 0-.45 2.18v8.02c0 .97.78 1.75 1.75 1.75Z" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-    <span data-message-reaction-count="1"><?= $likeCount ?></span>
+  <div
+    class="messageBubble__reactionBadge"
+    <?= $hasReactionBadge ? '' : ' hidden' ?>
+    data-message-reaction-badge="1"
+    aria-label="<?= trux_e($reactionTotal === 1 ? '1 reaction' : $reactionTotal . ' reactions') ?>">
+    <span class="messageBubble__reactionCluster" aria-hidden="true">
+      <?php foreach ($reactionBadgeItems as $reactionItem): ?>
+        <?= trux_render_direct_message_reaction_html((string)$reactionItem['reaction']) ?>
+      <?php endforeach; ?>
+    </span>
+    <span data-message-reaction-count="1"><?= $reactionTotal ?></span>
   </div>
   <?php if ($isMine && !$isUnsent): ?>
     <div class="messageBubble__readStatus" aria-label="<?= $isRead ? 'Read' : 'Delivered' ?>" data-message-read-status="<?= $isRead ? 'read' : 'sent' ?>">

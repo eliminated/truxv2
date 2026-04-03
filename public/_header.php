@@ -428,6 +428,9 @@ if ($user) {
     <link rel="stylesheet" href="<?= TRUX_BASE_URL ?>/assets/css/main.css?v=<?= (int)(filemtime($mainCssPath) ?: 0) ?>">
   <?php endif; ?>
   <script defer src="<?= TRUX_BASE_URL ?>/assets/app.js?v=<?= filemtime(__DIR__ . '/assets/app.js') ?>"></script>
+  <?php if (($pageKey ?? '') === 'messages' && is_file(__DIR__ . '/assets/dm_emoji.js')): ?>
+    <script defer src="<?= TRUX_BASE_URL ?>/assets/dm_emoji.js?v=<?= filemtime(__DIR__ . '/assets/dm_emoji.js') ?>"></script>
+  <?php endif; ?>
   <?php if (($pageKey ?? '') === 'messages' && is_file(__DIR__ . '/assets/messages_v2.js')): ?>
     <script defer src="<?= TRUX_BASE_URL ?>/assets/messages_v2.js?v=<?= filemtime(__DIR__ . '/assets/messages_v2.js') ?>"></script>
   <?php endif; ?>

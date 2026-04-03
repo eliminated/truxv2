@@ -47,7 +47,7 @@ if (!$me) {
 
 $viewerId = (int)$me['id'];
 $messageId = (int)($_POST['message_id'] ?? 0);
-$reaction = trim((string)($_POST['reaction'] ?? 'like'));
+$reaction = trim((string)($_POST['reaction'] ?? 'heart'));
 
 if ($messageId <= 0) {
     $respond(false, 400, 'Invalid message.');
@@ -72,9 +72,15 @@ if ($isJson) {
     $respond(true, 200, 'Reaction updated.', [
         'message_id' => $messageId,
         'conversation_id' => $conversationId,
-        'reaction' => 'like',
-        'like_count' => (int)($result['like_count'] ?? 0),
-        'viewer_liked' => !empty($result['viewer_liked']),
+        'reaction' => (string)($result['reaction'] ?? ''),
+        'user_reaction' => isset($result['user_reaction']) && is_string($result['user_reaction'])
+            ? $result['user_reaction']
+            : null,
+        'picker_reactions' => array_values(array_filter(
+            is_array($result['picker_reactions'] ?? null) ? $result['picker_reactions'] : [],
+            static fn ($item): bool => is_string($item) && trim($item) !== ''
+        )),
+        'total_count' => (int)($result['total_count'] ?? 0),
         'message' => $message,
         'message_html' => trux_render_direct_message_bubble($message, $viewerId, $conversationId),
     ]);

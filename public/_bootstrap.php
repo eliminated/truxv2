@@ -20,6 +20,7 @@ require_once dirname(__DIR__) . '/src/discovery.php';
 require_once dirname(__DIR__) . '/src/search.php';
 require_once dirname(__DIR__) . '/src/notifications.php';
 require_once dirname(__DIR__) . '/src/upload.php';
+require_once dirname(__DIR__) . '/src/algr.php';
 
 date_default_timezone_set(TRUX_TIMEZONE);
 

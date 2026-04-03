@@ -110,6 +110,10 @@ $recipientUsername = $recipientUser ? (string)($recipientUser['username'] ?? '')
 $recipientHandle = $recipientUsername !== '' ? '@' . $recipientUsername : '';
 
 $activeConversationId = (int)($selectedConversation['id'] ?? 0);
+$viewerReactionPickerJson = json_encode(
+  trux_direct_message_fetch_viewer_top_reactions($viewerId),
+  JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+);
 $messagesLayoutClasses = [];
 if ($recipientUser) {
   $messagesLayoutClasses[] = 'is-thread-open';
@@ -236,6 +240,7 @@ $renderMessagesThread = static function () use (
   $threadNoticeCopy,
   $renderDmEmptyIcon,
   $selectedMessages,
+  $viewerReactionPickerJson,
   $viewerId,
   $canCompose
 ): string {
@@ -282,6 +287,7 @@ $renderMessagesThread = static function () use (
           data-conversation-id="<?= $activeConversationId ?>"
           data-latest-message-id="<?= $latestLoadedMessageId ?>"
           data-oldest-message-id="<?= $oldestLoadedMessageId ?>"
+          data-message-picker-reactions="<?= trux_e(is_string($viewerReactionPickerJson) ? $viewerReactionPickerJson : '[]') ?>"
           data-has-more-before="<?= $hasOlderMessages ? '1' : '0' ?>">
           <?php if ($activeConversationId > 0): ?>
             <div class="messagesThread__loadRow" data-message-load-row="1"<?= $hasOlderMessages ? '' : ' hidden' ?>>
@@ -472,6 +478,7 @@ $renderMessagesThread = static function () use (
             <div class="messagesComposer__emojiRecent" hidden data-messages-emoji-recent="1"></div>
             <div class="messagesComposer__emojiTabs" data-messages-emoji-tabs="1"></div>
             <div class="messagesComposer__emojiGrid" data-messages-emoji-grid="1"></div>
+            <div class="messagesComposer__emojiVariants" hidden data-messages-emoji-variants="1"></div>
           </div>
         </form>
       <?php elseif ($recipientIsReportSystem): ?>

@@ -26,6 +26,46 @@
     recipientStatus instanceof HTMLElement
       ? String(recipientStatus.textContent || "").trim()
       : "";
+  const isMobile = () =>
+    mobileQuery instanceof MediaQueryList
+      ? mobileQuery.matches
+      : window.innerWidth <= 768;
+  const readJson = async (res) => {
+    const text = await res.text();
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { ok: false, error: text || "Request failed." };
+    }
+  };
+  const showToast = (message, type = "success") => {
+    if (!message) return;
+    if (typeof window.truxToast === "function") {
+      window.truxToast(message, type);
+      return;
+    }
+    if (type === "error") {
+      window.alert(message);
+    }
+  };
+  const copyText = async (value) => {
+    const text = String(value || "");
+    if (!text) return;
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return;
+    }
+
+    const helper = document.createElement("textarea");
+    helper.value = text;
+    helper.setAttribute("readonly", "readonly");
+    helper.style.position = "fixed";
+    helper.style.top = "-9999px";
+    document.body.appendChild(helper);
+    helper.select();
+    document.execCommand("copy");
+    helper.remove();
+  };
 
   const state = {
     recipientTimer: 0,
@@ -41,7 +81,10 @@
     selectedAttachments: [],
     attachmentCounter: 0,
     replyContext: null,
-    emojiCategory: "smileys",
+    emojiCategory: "smileys-emotion",
+    emojiVariantSource: "",
+    emojiAvailableCategoryIds: [],
+    emojiScrollFrame: 0,
     knownMessageIds: new Set(),
     latestMessageId: 0,
     oldestMessageId: 0,
@@ -55,336 +98,61 @@
     quickActionsBubbleId: "",
     quickActionsHideTimer: 0,
     quickActionsMode: "",
-    longPressTimer: 0,
-    longPressBubbleId: "",
+    reactionPickerBubbleId: "",
+    reactionPickerReactions: [],
   };
 
   const MAX_CLIENT_ATTACHMENT_BYTES = 4 * 1024 * 1024;
   const EMOJI_RECENT_STORAGE_KEY = "trux.dm.emoji.recent";
-  const EMOJI_CATEGORIES = [
-    {
-      id: "smileys",
-      icon: "😀",
-      items: [
-        ["😀", "grinning happy smile"],
-        ["😁", "beaming grin smile"],
-        ["😂", "joy tears laugh"],
-        ["🤣", "rofl laugh rolling"],
-        ["😃", "smile open happy"],
-        ["😄", "happy grin bright"],
-        ["😅", "sweat smile relief"],
-        ["😆", "laughing squint grin"],
-        ["😉", "wink playful"],
-        ["😊", "blush smile warm"],
-        ["😍", "heart eyes love"],
-        ["😘", "kiss face"],
-        ["😎", "cool sunglasses"],
-        ["🤩", "star struck wow"],
-        ["😇", "angel halo"],
-        ["🙂", "slight smile"],
-        ["🙃", "upside down playful"],
-        ["😌", "relieved calm"],
-        ["😋", "yum delicious"],
-        ["😜", "tongue wink silly"],
-        ["🤔", "thinking curious"],
-        ["😴", "sleepy tired"],
-        ["😮", "surprised wow"],
-        ["🥳", "party celebrate"],
-      ],
-    },
-    {
-      id: "people",
-      icon: "👋",
-      items: [
-        ["👋", "wave hello goodbye"],
-        ["🤚", "raised hand stop"],
-        ["🖐️", "splayed hand"],
-        ["✋", "hand high five"],
-        ["👌", "ok hand"],
-        ["🤌", "pinched fingers"],
-        ["🤏", "pinching hand small"],
-        ["✌️", "victory peace"],
-        ["🤞", "crossed fingers luck"],
-        ["🫶", "heart hands love"],
-        ["🤟", "love you hand"],
-        ["🤘", "rock sign"],
-        ["👏", "clap applause"],
-        ["🙌", "raised hands celebrate"],
-        ["🫡", "salute respect"],
-        ["🙏", "pray thanks please"],
-        ["💪", "muscle strong"],
-        ["🧠", "brain smart"],
-        ["👀", "eyes looking"],
-        ["🫂", "hug support"],
-        ["🧑‍💻", "person laptop coder"],
-        ["🧑‍🚀", "astronaut space"],
-        ["🕵️", "detective spy"],
-        ["🥷", "ninja stealth"],
-      ],
-    },
-    {
-      id: "animals",
-      icon: "🐶",
-      items: [
-        ["🐶", "dog pet puppy"],
-        ["🐱", "cat pet kitten"],
-        ["🐭", "mouse"],
-        ["🐹", "hamster"],
-        ["🐰", "rabbit bunny"],
-        ["🦊", "fox"],
-        ["🐻", "bear"],
-        ["🐼", "panda"],
-        ["🐨", "koala"],
-        ["🐯", "tiger"],
-        ["🦁", "lion"],
-        ["🐮", "cow"],
-        ["🐷", "pig"],
-        ["🐸", "frog"],
-        ["🐵", "monkey"],
-        ["🐔", "chicken"],
-        ["🐧", "penguin"],
-        ["🦄", "unicorn"],
-        ["🐙", "octopus"],
-        ["🦋", "butterfly"],
-        ["🐬", "dolphin"],
-        ["🦈", "shark"],
-        ["🐢", "turtle"],
-        ["🐝", "bee"],
-      ],
-    },
-    {
-      id: "food",
-      icon: "🍕",
-      items: [
-        ["🍎", "apple fruit"],
-        ["🍉", "watermelon fruit"],
-        ["🍇", "grapes fruit"],
-        ["🍓", "strawberry fruit"],
-        ["🍒", "cherries fruit"],
-        ["🥑", "avocado"],
-        ["🌮", "taco"],
-        ["🍔", "burger hamburger"],
-        ["🍟", "fries chips"],
-        ["🍕", "pizza slice"],
-        ["🌭", "hotdog"],
-        ["🥪", "sandwich"],
-        ["🍜", "ramen noodles"],
-        ["🍣", "sushi"],
-        ["🍩", "donut doughnut"],
-        ["🍪", "cookie biscuit"],
-        ["🎂", "birthday cake"],
-        ["🍰", "cake dessert"],
-        ["🍫", "chocolate"],
-        ["🍿", "popcorn"],
-        ["☕", "coffee"],
-        ["🧋", "bubble tea"],
-        ["🍹", "tropical drink"],
-        ["🍺", "beer"],
-      ],
-    },
-    {
-      id: "activities",
-      icon: "⚽",
-      items: [
-        ["⚽", "soccer football"],
-        ["🏀", "basketball"],
-        ["🏈", "american football"],
-        ["⚾", "baseball"],
-        ["🎾", "tennis"],
-        ["🏐", "volleyball"],
-        ["🏉", "rugby"],
-        ["🎱", "billiards pool"],
-        ["🏓", "ping pong"],
-        ["🏸", "badminton"],
-        ["🥊", "boxing glove"],
-        ["🥋", "martial arts"],
-        ["🎮", "video game"],
-        ["🕹️", "joystick arcade"],
-        ["🎯", "dart target"],
-        ["🎲", "dice game"],
-        ["♟️", "chess"],
-        ["🎸", "guitar music"],
-        ["🎤", "microphone sing"],
-        ["🎧", "headphones audio"],
-        ["🎬", "movie clapper"],
-        ["🎨", "art palette"],
-        ["🛹", "skateboard"],
-        ["🏆", "trophy win"],
-      ],
-    },
-    {
-      id: "travel",
-      icon: "🌍",
-      items: [
-        ["🌍", "earth globe europe africa"],
-        ["🌎", "earth globe americas"],
-        ["🌏", "earth globe asia australia"],
-        ["🗺️", "world map"],
-        ["🧭", "compass"],
-        ["🏕️", "camping tent"],
-        ["🏝️", "island beach"],
-        ["🏖️", "beach umbrella"],
-        ["🏜️", "desert"],
-        ["🏔️", "mountain snow"],
-        ["🌋", "volcano"],
-        ["🗽", "statue liberty"],
-        ["🎡", "ferris wheel"],
-        ["✈️", "airplane flight"],
-        ["🚀", "rocket space"],
-        ["🚗", "car"],
-        ["🏎️", "race car"],
-        ["🛵", "scooter"],
-        ["🚲", "bicycle bike"],
-        ["🛶", "canoe"],
-        ["⛵", "sailboat boat"],
-        ["🚄", "train bullet"],
-        ["🚇", "metro subway"],
-        ["🛸", "ufo"],
-      ],
-    },
-    {
-      id: "objects",
-      icon: "💡",
-      items: [
-        ["💡", "light bulb idea"],
-        ["🔦", "flashlight torch"],
-        ["📱", "phone mobile"],
-        ["💻", "laptop computer"],
-        ["⌨️", "keyboard"],
-        ["🖥️", "desktop monitor"],
-        ["🖱️", "mouse computer"],
-        ["📷", "camera photo"],
-        ["📹", "video camera"],
-        ["🎙️", "microphone studio"],
-        ["📡", "satellite antenna"],
-        ["🧲", "magnet"],
-        ["⚙️", "gear settings"],
-        ["🔧", "wrench tool"],
-        ["🛠️", "tools build"],
-        ["🔒", "lock secure"],
-        ["🔑", "key"],
-        ["💎", "gem diamond"],
-        ["📦", "box package"],
-        ["🎁", "gift present"],
-        ["🧪", "test tube science"],
-        ["💊", "pill"],
-        ["🧬", "dna"],
-        ["🪩", "mirror ball disco"],
-      ],
-    },
-    {
-      id: "symbols",
-      icon: "🔣",
-      items: [
-        ["❤️", "red heart love"],
-        ["🧡", "orange heart"],
-        ["💛", "yellow heart"],
-        ["💚", "green heart"],
-        ["💙", "blue heart"],
-        ["💜", "purple heart"],
-        ["🖤", "black heart"],
-        ["🤍", "white heart"],
-        ["💯", "hundred score"],
-        ["💢", "anger symbol"],
-        ["💥", "boom explosion"],
-        ["💫", "dizzy stars"],
-        ["💤", "sleep symbol"],
-        ["✨", "sparkles"],
-        ["🔥", "fire lit"],
-        ["⚡", "lightning fast"],
-        ["✅", "check success"],
-        ["❌", "cross fail"],
-        ["❗", "exclamation"],
-        ["❓", "question"],
-        ["➕", "plus"],
-        ["➖", "minus"],
-        ["♻️", "recycle"],
-        ["🔔", "bell notification"],
-      ],
-    },
-    {
-      id: "flags",
-      icon: "🏁",
-      items: [
-        ["🏁", "checkered flag race"],
-        ["🚩", "triangular flag"],
-        ["🏳️", "white flag"],
-        ["🏴", "black flag"],
-        ["🇺🇸", "flag united states usa"],
-        ["🇬🇧", "flag united kingdom uk britain"],
-        ["🇲🇾", "flag malaysia"],
-        ["🇸🇬", "flag singapore"],
-        ["🇯🇵", "flag japan"],
-        ["🇰🇷", "flag south korea"],
-        ["🇨🇳", "flag china"],
-        ["🇮🇳", "flag india"],
-        ["🇦🇺", "flag australia"],
-        ["🇳🇿", "flag new zealand"],
-        ["🇨🇦", "flag canada"],
-        ["🇫🇷", "flag france"],
-        ["🇩🇪", "flag germany"],
-        ["🇮🇹", "flag italy"],
-        ["🇪🇸", "flag spain"],
-        ["🇧🇷", "flag brazil"],
-        ["🇦🇷", "flag argentina"],
-        ["🇲🇽", "flag mexico"],
-        ["🇿🇦", "flag south africa"],
-        ["🇪🇺", "flag european union"],
-      ],
-    },
+  const DEFAULT_EMOJI_CATEGORY = "smileys-emotion";
+  const DM_REACTION_ORDER = [
+    "heart",
+    "fire",
+    "clap",
+    "laugh",
+    "think",
+    "hundred",
   ];
-
-  const isMobile = () =>
-    mobileQuery instanceof MediaQueryList
-      ? mobileQuery.matches
-      : window.innerWidth <= 768;
-
-  const readJson = async (res) => {
-    const text = await res.text();
-    try {
-      return JSON.parse(text);
-    } catch {
-      return { ok: false, error: text || "Request failed." };
-    }
+  const DM_REACTION_META = {
+    heart: { label: "Heart", emoji: "\u2764\uFE0F" },
+    fire: { label: "Fire", emoji: "\u{1F525}" },
+    clap: { label: "Clap", emoji: "\u{1F44F}" },
+    laugh: { label: "Laugh", emoji: "\u{1F602}" },
+    think: { label: "Think", emoji: "\u{1F914}" },
+    hundred: { label: "Hundred", emoji: "\u{1F4AF}" },
   };
-
-  const showToast = (message, type = "success") => {
-    if (!message) return;
-    if (typeof window.truxToast === "function") {
-      window.truxToast(message, type);
-      return;
+  const DEFAULT_DM_REACTION_PICKER = DM_REACTION_ORDER.slice(0, 5);
+  state.reactionPickerReactions = DEFAULT_DM_REACTION_PICKER.slice();
+  const getDmEmojiApi = () =>
+    window.TruxDmEmoji && typeof window.TruxDmEmoji.loadCatalog === "function"
+      ? window.TruxDmEmoji
+      : null;
+  const loadDmEmojiCatalog = async () => {
+    const api = getDmEmojiApi();
+    if (!api) {
+      throw new Error("Emoji tools are unavailable.");
     }
-    if (type === "error") {
-      window.alert(message);
-    }
+    return api.loadCatalog(baseUrl);
   };
-
-  const copyText = async (value) => {
-    const text = String(value || "");
-    if (!text) return;
-    if (navigator.clipboard?.writeText) {
-      await navigator.clipboard.writeText(text);
-      return;
-    }
-    const helper = document.createElement("textarea");
-    helper.value = text;
-    helper.setAttribute("readonly", "readonly");
-    helper.style.position = "fixed";
-    helper.style.top = "-9999px";
-    document.body.appendChild(helper);
-    helper.select();
-    document.execCommand("copy");
-    helper.remove();
+  const getLoadedDmEmojiCatalog = () => {
+    const api = getDmEmojiApi();
+    return api && typeof api.getCatalog === "function" ? api.getCatalog() : null;
   };
-
+  const normalizeEmojiText = (value) => {
+    const api = getDmEmojiApi();
+    return api && typeof api.normalizeText === "function"
+      ? api.normalizeText(value)
+      : String(value || "")
+          .toLowerCase()
+          .normalize("NFKD");
+  };
   const escapeHtml = (value) =>
     String(value)
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
+      .replace(/\"/g, "&quot;")
       .replace(/'/g, "&#39;");
-
   const textToHtml = (value) => escapeHtml(value).replace(/\n/g, "<br>");
   const joinHtmlFragments = (value) =>
     Array.isArray(value)
@@ -397,22 +165,6 @@
     }
     return `${text.slice(0, Math.max(1, limit - 1)).trim()}...`;
   };
-  const normalizeEmojiText = (value) =>
-    String(value || "")
-      .toLowerCase()
-      .normalize("NFKD");
-  const buildEmojiCatalog = () =>
-    EMOJI_CATEGORIES.map((category) => ({
-      ...category,
-      items: category.items.map(([emoji, keywords]) => ({
-        emoji,
-        keywords: String(keywords || ""),
-      })),
-    }));
-  const emojiCatalog = buildEmojiCatalog();
-  const emojiCategoryMap = new Map(
-    emojiCatalog.map((category) => [category.id, category])
-  );
 
   const canUseDesktopEnterToSend = () => {
     const finePointer =
@@ -562,6 +314,10 @@
   };
   const getComposerEmojiGrid = () => {
     const node = layout.querySelector("[data-messages-emoji-grid='1']");
+    return node instanceof HTMLElement ? node : null;
+  };
+  const getComposerEmojiVariants = () => {
+    const node = layout.querySelector("[data-messages-emoji-variants='1']");
     return node instanceof HTMLElement ? node : null;
   };
   const getMessageList = () => {
@@ -865,34 +621,306 @@
     }
   };
 
-  const getFilteredEmojiItems = () => {
-    const query = normalizeEmojiText(getComposerEmojiSearch()?.value || "");
-    const categoryId = state.emojiCategory || emojiCatalog[0]?.id || "smileys";
+  const findEmojiCatalogItem = (emoji, catalog = getLoadedDmEmojiCatalog()) => {
+    if (!catalog) {
+      return null;
+    }
+    return catalog.byEmoji.get(String(emoji || "")) || null;
+  };
 
-    const filterItems = (items) =>
-      items.filter((item) => {
-        if (!query) return true;
-        return normalizeEmojiText(`${item.emoji} ${item.keywords}`).includes(query);
+  const buildEmojiImageMarkup = (item, className, decorative = true) => {
+    const api = getDmEmojiApi();
+    if (api && typeof api.renderEmojiImageHtml === "function") {
+      return api.renderEmojiImageHtml(item, {
+        className,
+        decorative,
+        loading: false,
       });
+    }
+    return escapeHtml(item?.emoji || "");
+  };
 
+  const normalizeReactionSlug = (value) => {
+    const reaction = String(value || "").trim().toLowerCase();
+    if (reaction === "like") {
+      return "heart";
+    }
+    return Object.prototype.hasOwnProperty.call(DM_REACTION_META, reaction)
+      ? reaction
+      : "";
+  };
+
+  const normalizeReactionPickerOrder = (value) => {
+    const source = Array.isArray(value) ? value : [];
+    const ordered = [];
+
+    source.forEach((item) => {
+      const reaction = normalizeReactionSlug(item);
+      if (reaction && !ordered.includes(reaction)) {
+        ordered.push(reaction);
+      }
+    });
+
+    DEFAULT_DM_REACTION_PICKER.forEach((reaction) => {
+      if (!ordered.includes(reaction)) {
+        ordered.push(reaction);
+      }
+    });
+
+    return ordered.slice(0, 5);
+  };
+
+  const getReactionMeta = (reaction) => {
+    const normalized = normalizeReactionSlug(reaction);
+    return normalized ? DM_REACTION_META[normalized] || null : null;
+  };
+
+  const buildReactionEmojiMarkup = (
+    reaction,
+    className = "messageBubble__reactionEmojiImage",
+    decorative = false
+  ) => {
+    const meta = getReactionMeta(reaction);
+    if (!meta) {
+      return "";
+    }
+
+    const item = findEmojiCatalogItem(meta.emoji);
+    if (item) {
+      return buildEmojiImageMarkup(item, className, decorative);
+    }
+
+    return `<span class="${escapeHtml(className)}">${escapeHtml(meta.emoji)}</span>`;
+  };
+
+  const buildEmojiCardMarkup = (item, options = {}) => {
+    const variants = Array.isArray(item?.variants) ? item.variants : [];
+    return `
+      <div class="messagesComposer__emojiCard">
+        <button
+          class="messagesComposer__emojiButton"
+          type="button"
+          data-messages-emoji-value="${escapeHtml(item?.emoji || "")}"
+          aria-label="${escapeHtml(item?.name || "Emoji")}">${buildEmojiImageMarkup(
+            item,
+            "messagesComposer__emojiPickerImage"
+          )}</button>
+        ${
+          variants.length > 0
+            ? `
+              <button
+                class="messagesComposer__emojiVariantToggle"
+                type="button"
+                data-messages-emoji-variant-toggle="${escapeHtml(item?.emoji || "")}"
+                aria-label="Show variants for ${escapeHtml(item?.name || "Emoji")}">+</button>
+            `
+            : ""
+        }
+      </div>
+    `;
+  };
+
+  const closeEmojiVariants = () => {
+    state.emojiVariantSource = "";
+    const variants = getComposerEmojiVariants();
+    if (!(variants instanceof HTMLElement)) {
+      return;
+    }
+    variants.hidden = true;
+    variants.innerHTML = "";
+  };
+
+  const renderEmojiVariants = (catalog = getLoadedDmEmojiCatalog()) => {
+    const variants = getComposerEmojiVariants();
+    if (!(variants instanceof HTMLElement) || !catalog) {
+      return;
+    }
+
+    const sourceItem = findEmojiCatalogItem(state.emojiVariantSource, catalog);
+    const sourceVariants = Array.isArray(sourceItem?.variants) ? sourceItem.variants : [];
+    if (!sourceItem || sourceVariants.length < 1) {
+      variants.hidden = true;
+      variants.innerHTML = "";
+      return;
+    }
+
+    variants.hidden = false;
+    variants.innerHTML = `
+      <div class="messagesComposer__emojiVariantHead">
+        <span class="messagesComposer__emojiVariantTitle">${escapeHtml(
+          sourceItem.name || "Variants"
+        )}</span>
+        <button class="messagesComposer__emojiVariantClose" type="button" data-messages-emoji-variant-close="1">Close</button>
+      </div>
+      <div class="messagesComposer__emojiVariantGrid">
+        ${[sourceItem].concat(sourceVariants).map((item) => `
+          <button
+            class="messagesComposer__emojiVariantButton"
+            type="button"
+            data-messages-emoji-value="${escapeHtml(item.emoji)}"
+            aria-label="${escapeHtml(item.name)}">${buildEmojiImageMarkup(
+              item,
+              "messagesComposer__emojiPickerImage"
+            )}</button>
+        `).join("")}
+      </div>
+    `;
+  };
+
+  const openEmojiVariants = async (emoji) => {
+    state.emojiVariantSource = String(emoji || "");
+    const catalog = getLoadedDmEmojiCatalog() || (await loadDmEmojiCatalog());
+    renderEmojiVariants(catalog);
+  };
+
+  const emojiItemMatchesQuery = (item, query) => {
+    if (!query) {
+      return true;
+    }
+    if (item.searchText.includes(query)) {
+      return true;
+    }
+    return Array.isArray(item.variants)
+      ? item.variants.some((variant) => variant.searchText.includes(query))
+      : false;
+  };
+
+  const getEmojiPickerSections = (catalog) => {
+    const query = normalizeEmojiText(getComposerEmojiSearch()?.value || "");
     const recentItems = loadRecentEmoji()
-      .map((emoji) => {
-        const match = emojiCatalog
-          .flatMap((category) => category.items)
-          .find((item) => item.emoji === emoji);
-        return match || null;
-      })
-      .filter(Boolean);
+      .map((emoji) => catalog.byEmoji.get(emoji) || null)
+      .filter(Boolean)
+      .filter((item) => emojiItemMatchesQuery(item, query));
 
-    const activeCategory = emojiCategoryMap.get(categoryId) || emojiCatalog[0];
+    const sections = catalog.categories
+      .map((category) => ({
+        category,
+        items: category.items.filter((item) => emojiItemMatchesQuery(item, query)),
+      }))
+      .filter((section) => section.items.length > 0);
+
     return {
-      recent: filterItems(recentItems),
-      category: activeCategory,
-      items: filterItems(activeCategory?.items || []),
+      query,
+      recent: recentItems,
+      sections,
     };
   };
 
-  const renderEmojiPicker = () => {
+  const syncEmojiTabState = (availableCategoryIds = state.emojiAvailableCategoryIds) => {
+    const tabs = getComposerEmojiTabs();
+    if (!(tabs instanceof HTMLElement)) {
+      return;
+    }
+
+    const available = availableCategoryIds ? new Set(availableCategoryIds) : null;
+    Array.from(tabs.querySelectorAll("[data-messages-emoji-tab]")).forEach((node) => {
+      if (!(node instanceof HTMLButtonElement)) {
+        return;
+      }
+      const categoryId = String(node.dataset.messagesEmojiTab || "");
+      const isActive = categoryId !== "" && categoryId === state.emojiCategory;
+      const isAvailable = !available || available.has(categoryId);
+      node.classList.toggle("is-active", isActive);
+      node.classList.toggle("is-disabled", !isAvailable);
+      node.disabled = !isAvailable;
+      node.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
+  };
+
+  const buildEmojiSectionMarkup = (category, items) => `
+    <section
+      class="messagesComposer__emojiSection"
+      data-messages-emoji-section="${escapeHtml(category.id)}"
+      aria-label="${escapeHtml(category.label)}">
+      <div class="messagesComposer__emojiSectionHead">
+        <span class="messagesComposer__emojiSectionTitle">${escapeHtml(category.label)}</span>
+        <span class="messagesComposer__emojiSectionCount">${items.length}</span>
+      </div>
+      <div class="messagesComposer__emojiSectionGrid">
+        ${items.map((item) => buildEmojiCardMarkup(item)).join("")}
+      </div>
+    </section>
+  `;
+
+  const findEmojiSectionElement = (categoryId) => {
+    const grid = getComposerEmojiGrid();
+    if (!(grid instanceof HTMLElement)) {
+      return null;
+    }
+    return Array.from(grid.querySelectorAll("[data-messages-emoji-section]")).find((node) => {
+      return (
+        node instanceof HTMLElement &&
+        String(node.dataset.messagesEmojiSection || "") === String(categoryId || "")
+      );
+    }) || null;
+  };
+
+  const scrollEmojiSectionIntoView = (categoryId, behavior = "smooth") => {
+    const grid = getComposerEmojiGrid();
+    const target = findEmojiSectionElement(categoryId);
+    if (!(grid instanceof HTMLElement) || !(target instanceof HTMLElement)) {
+      return;
+    }
+    state.emojiCategory = String(categoryId || DEFAULT_EMOJI_CATEGORY);
+    syncEmojiTabState();
+    grid.scrollTo({
+      top: Math.max(0, target.offsetTop - 4),
+      behavior,
+    });
+  };
+
+  const syncEmojiCategoryFromScroll = () => {
+    state.emojiScrollFrame = 0;
+    const grid = getComposerEmojiGrid();
+    if (!(grid instanceof HTMLElement)) {
+      return;
+    }
+
+    const sections = Array.from(grid.querySelectorAll("[data-messages-emoji-section]")).filter(
+      (node) => node instanceof HTMLElement
+    );
+    if (sections.length < 1) {
+      return;
+    }
+
+    const threshold = grid.scrollTop + 24;
+    let activeSection = sections[0];
+    sections.forEach((section) => {
+      if (section.offsetTop <= threshold) {
+        activeSection = section;
+      }
+    });
+
+    const categoryId = String(activeSection.dataset.messagesEmojiSection || "");
+    if (categoryId && categoryId !== state.emojiCategory) {
+      state.emojiCategory = categoryId;
+      syncEmojiTabState();
+    }
+  };
+
+  const queueEmojiScrollSync = () => {
+    if (state.emojiScrollFrame) {
+      return;
+    }
+    state.emojiScrollFrame = window.requestAnimationFrame(syncEmojiCategoryFromScroll);
+  };
+
+  const bindEmojiGridScroll = () => {
+    const grid = getComposerEmojiGrid();
+    if (!(grid instanceof HTMLElement) || grid.dataset.emojiScrollBound === "1") {
+      return;
+    }
+    grid.dataset.emojiScrollBound = "1";
+    grid.addEventListener(
+      "scroll",
+      () => {
+        queueEmojiScrollSync();
+      },
+      { passive: true }
+    );
+  };
+
+  const renderEmojiPicker = async () => {
     const panel = getComposerEmojiPanel();
     const recentRow = getComposerEmojiRecent();
     const tabs = getComposerEmojiTabs();
@@ -905,65 +933,82 @@
       return;
     }
 
-    const { recent, category, items } = getFilteredEmojiItems();
-
-    tabs.innerHTML = emojiCatalog
-      .map(
-        (entry) => `
-          <button
-            class="messagesComposer__emojiTab${entry.id === category?.id ? " is-active" : ""}"
-            type="button"
-            data-messages-emoji-tab="${escapeHtml(entry.id)}"
-            aria-label="${escapeHtml(entry.id)}"
-            aria-pressed="${entry.id === category?.id ? "true" : "false"}">
-            <span aria-hidden="true">${entry.icon}</span>
-          </button>
-        `
-      )
-      .join("");
-
-    if (recentRow instanceof HTMLElement) {
-      recentRow.hidden = recent.length < 1;
-      recentRow.innerHTML = recent.length
-        ? `
-            <span class="messagesComposer__emojiLabel">Recent</span>
-            <div class="messagesComposer__emojiRecentGrid">
-              ${recent
-                .map(
-                  (item) => `
-                    <button
-                      class="messagesComposer__emojiButton"
-                      type="button"
-                      data-messages-emoji-value="${escapeHtml(item.emoji)}"
-                      aria-label="${escapeHtml(item.keywords)}">${item.emoji}</button>
-                  `
-                )
-                .join("")}
-            </div>
-          `
-        : "";
+    bindEmojiGridScroll();
+    const alreadyLoadedCatalog = getLoadedDmEmojiCatalog();
+    const panelOpen = !panel.hidden || panel.classList.contains("is-open");
+    if (!panelOpen && !alreadyLoadedCatalog) {
+      return;
     }
 
-    grid.innerHTML = items.length
-      ? items
-          .map(
-            (item) => `
-              <button
-                class="messagesComposer__emojiButton"
-                type="button"
-                data-messages-emoji-value="${escapeHtml(item.emoji)}"
-                aria-label="${escapeHtml(item.keywords)}">${item.emoji}</button>
-            `
-          )
-          .join("")
-      : `<div class="messagesComposer__emojiEmpty muted">No emoji found.</div>`;
+    grid.innerHTML = `<div class="messagesComposer__emojiEmpty muted">Loading emoji...</div>`;
 
-    panel.dataset.emojiCategory = category?.id || "";
+    try {
+      const catalog = alreadyLoadedCatalog || (await loadDmEmojiCatalog());
+      const { recent, sections } = getEmojiPickerSections(catalog);
+      const availableCategoryIds = sections.map((section) => section.category.id);
+      state.emojiAvailableCategoryIds = availableCategoryIds;
+      if (!availableCategoryIds.includes(state.emojiCategory)) {
+        state.emojiCategory = availableCategoryIds[0] || catalog.categories[0]?.id || DEFAULT_EMOJI_CATEGORY;
+      }
+
+      tabs.innerHTML = catalog.categories
+        .map(
+          (entry) => `
+            <button
+              class="messagesComposer__emojiTab${entry.id === state.emojiCategory ? " is-active" : ""}"
+              type="button"
+              data-messages-emoji-tab="${escapeHtml(entry.id)}"
+              aria-label="${escapeHtml(entry.label)}"
+              aria-pressed="${entry.id === state.emojiCategory ? "true" : "false"}">${buildEmojiImageMarkup(
+                {
+                  emoji: entry.iconEmoji,
+                  name: entry.label,
+                  assetUrl: entry.iconAssetUrl,
+                },
+                "messagesComposer__emojiTabImage"
+              )}</button>
+          `
+        )
+        .join("");
+
+      if (recentRow instanceof HTMLElement) {
+        recentRow.hidden = recent.length < 1;
+        recentRow.innerHTML = recent.length
+          ? `
+              <span class="messagesComposer__emojiLabel">Recent</span>
+              <div class="messagesComposer__emojiRecentGrid">
+                ${recent.map((item) => buildEmojiCardMarkup(item)).join("")}
+              </div>
+            `
+          : "";
+      }
+
+      grid.innerHTML = sections.length
+        ? sections
+            .map((section) => buildEmojiSectionMarkup(section.category, section.items))
+            .join("")
+        : `<div class="messagesComposer__emojiEmpty muted">No emoji found.</div>`;
+
+      grid.scrollTop = 0;
+      panel.dataset.emojiCategory = state.emojiCategory || "";
+      syncEmojiTabState(availableCategoryIds);
+      renderEmojiVariants(catalog);
+    } catch (error) {
+      state.emojiAvailableCategoryIds = [];
+      tabs.innerHTML = "";
+      if (recentRow instanceof HTMLElement) {
+        recentRow.hidden = true;
+        recentRow.innerHTML = "";
+      }
+      grid.innerHTML = `<div class="messagesComposer__emojiEmpty muted">Emoji could not be loaded.</div>`;
+      closeEmojiVariants();
+    }
   };
 
   const closeEmojiPanel = () => {
     const panel = getComposerEmojiPanel();
     if (!(panel instanceof HTMLElement)) return;
+    closeEmojiVariants();
     panel.hidden = true;
     panel.classList.remove("is-open");
   };
@@ -972,9 +1017,9 @@
     const panel = getComposerEmojiPanel();
     if (!(panel instanceof HTMLElement)) return;
     closeAttachmentMenu();
-    renderEmojiPicker();
     panel.hidden = false;
     panel.classList.add("is-open");
+    void renderEmojiPicker();
     const search = getComposerEmojiSearch();
     if (search instanceof HTMLInputElement) {
       window.setTimeout(() => {
@@ -982,6 +1027,26 @@
         search.select();
       }, 20);
     }
+  };
+
+  const insertEmojiAtCaret = (emoji) => {
+    const input = getComposerInput();
+    if (!(input instanceof HTMLTextAreaElement) || !emoji) {
+      return;
+    }
+    const start = input.selectionStart ?? input.value.length;
+    const end = input.selectionEnd ?? input.value.length;
+    const before = input.value.slice(0, start);
+    const after = input.value.slice(end);
+    input.value = `${before}${emoji}${after}`;
+    saveRecentEmoji(emoji);
+    syncComposerHeight(input);
+    closeEmojiPanel();
+    window.setTimeout(() => {
+      const caret = start + emoji.length;
+      input.focus();
+      input.setSelectionRange(caret, caret);
+    }, 20);
   };
 
   const setComposerReplyContext = (replyContext) => {
@@ -1116,6 +1181,144 @@
     if (!(bubble instanceof HTMLElement)) return null;
     const bar = bubble.querySelector("[data-message-hover-actions='1']");
     return bar instanceof HTMLElement ? bar : null;
+  };
+
+  const getReactionPicker = (bubble) => {
+    if (!(bubble instanceof HTMLElement)) return null;
+    const picker = bubble.querySelector("[data-message-reaction-picker='1']");
+    return picker instanceof HTMLElement ? picker : null;
+  };
+
+  const setReactionPickerOrder = (value) => {
+    const nextOrder = normalizeReactionPickerOrder(value);
+    state.reactionPickerReactions = nextOrder;
+
+    const list = getMessageList();
+    if (list instanceof HTMLElement) {
+      list.dataset.messagePickerReactions = JSON.stringify(nextOrder);
+    }
+  };
+
+  const syncReactionPickerStateFromDom = () => {
+    const list = getMessageList();
+    if (!(list instanceof HTMLElement)) {
+      state.reactionPickerReactions = DEFAULT_DM_REACTION_PICKER.slice();
+      return;
+    }
+
+    try {
+      const raw = String(list.dataset.messagePickerReactions || "[]");
+      setReactionPickerOrder(JSON.parse(raw));
+    } catch {
+      setReactionPickerOrder(DEFAULT_DM_REACTION_PICKER);
+    }
+  };
+
+  const buildReactionChoiceMarkup = (reaction, activeReaction) => {
+    const normalized = normalizeReactionSlug(reaction);
+    const meta = getReactionMeta(normalized);
+    if (!normalized || !meta) {
+      return "";
+    }
+
+    const isActive = normalized === normalizeReactionSlug(activeReaction);
+    return `
+      <button
+        class="messageBubble__reactionChoice${isActive ? " is-active" : ""}"
+        type="button"
+        data-message-reaction-select="${escapeHtml(normalized)}"
+        aria-label="${escapeHtml(meta.label)}"
+        aria-pressed="${isActive ? "true" : "false"}">
+        ${buildReactionEmojiMarkup(normalized)}
+      </button>
+    `;
+  };
+
+  const renderReactionPicker = (bubble) => {
+    if (!(bubble instanceof HTMLElement)) return;
+    const picker = getReactionPicker(bubble);
+    if (!(picker instanceof HTMLElement)) return;
+
+    const activeReaction = normalizeReactionSlug(
+      bubble.dataset.messageViewerReaction || ""
+    );
+    const topReactions = normalizeReactionPickerOrder(state.reactionPickerReactions);
+    const fullReactions = DM_REACTION_ORDER.map((reaction) =>
+      buildReactionChoiceMarkup(reaction, activeReaction)
+    ).join("");
+
+    picker.innerHTML = `
+      <div class="messageBubble__reactionPickerSection">
+        <span class="messageBubble__reactionPickerLabel">Your top 5</span>
+        <div class="messageBubble__reactionPickerRow">${topReactions
+          .map((reaction) => buildReactionChoiceMarkup(reaction, activeReaction))
+          .join("")}</div>
+      </div>
+      <div class="messageBubble__reactionPickerSection">
+        <span class="messageBubble__reactionPickerLabel">All reactions</span>
+        <div class="messageBubble__reactionPickerRow">${fullReactions}</div>
+      </div>
+    `;
+  };
+
+  const closeReactionPicker = (bubble = null) => {
+    const targetBubble =
+      bubble instanceof HTMLElement
+        ? bubble
+        : findMessageBubble(state.reactionPickerBubbleId);
+    if (!(targetBubble instanceof HTMLElement)) {
+      state.reactionPickerBubbleId = "";
+      return;
+    }
+
+    const picker = getReactionPicker(targetBubble);
+    if (picker instanceof HTMLElement) {
+      picker.hidden = true;
+      picker.innerHTML = "";
+    }
+
+    targetBubble.classList.remove("is-reaction-picker-open");
+    if (state.reactionPickerBubbleId === getBubbleId(targetBubble)) {
+      state.reactionPickerBubbleId = "";
+    }
+  };
+
+  const openReactionPicker = async (bubble) => {
+    if (!(bubble instanceof HTMLElement)) return;
+
+    if (state.reactionPickerBubbleId && state.reactionPickerBubbleId !== getBubbleId(bubble)) {
+      closeReactionPicker(findMessageBubble(state.reactionPickerBubbleId));
+    }
+
+    try {
+      await loadDmEmojiCatalog();
+    } catch {
+      // Fall back to text glyphs if the emoji catalog fails to load.
+    }
+
+    renderReactionPicker(bubble);
+
+    const picker = getReactionPicker(bubble);
+    if (!(picker instanceof HTMLElement)) return;
+
+    picker.hidden = false;
+    bubble.classList.add("is-reaction-picker-open");
+    state.reactionPickerBubbleId = getBubbleId(bubble);
+    positionQuickActions(bubble, { mobile: state.quickActionsMode === "mobile" });
+  };
+
+  const toggleReactionPicker = async (bubble) => {
+    if (!(bubble instanceof HTMLElement)) return;
+    if (
+      state.reactionPickerBubbleId === getBubbleId(bubble) &&
+      bubble.classList.contains("is-reaction-picker-open")
+    ) {
+      closeReactionPicker(bubble);
+      positionQuickActions(bubble, { mobile: state.quickActionsMode === "mobile" });
+      return;
+    }
+
+    await openReactionPicker(bubble);
   };
 
   const rectsIntersect = (a, b) =>
@@ -1265,8 +1468,11 @@
         ? bubble
         : findMessageBubble(state.quickActionsBubbleId);
     if (targetBubble instanceof HTMLElement) {
+      closeReactionPicker(targetBubble);
       targetBubble.classList.remove("is-quick-actions-open");
       hideDeleteConfirmation(targetBubble);
+    } else {
+      closeReactionPicker();
     }
     state.quickActionsBubbleId = "";
     state.quickActionsMode = "";
@@ -1428,6 +1634,7 @@
     state.knownMessageIds = new Set();
     state.latestMessageId = 0;
     state.oldestMessageId = 0;
+    syncReactionPickerStateFromDom();
 
     getDomMessageBubbles().forEach((bubble) => {
       const bubbleId = getBubbleId(bubble);
@@ -2122,32 +2329,6 @@
     };
   };
 
-  const updateMessageReactionUi = (bubble, likeCount, viewerLiked) => {
-    if (!(bubble instanceof HTMLElement)) return;
-    const nextCount = Math.max(0, Number(likeCount || 0));
-    const liked = !!viewerLiked;
-
-    bubble.dataset.messageLikeCount = String(nextCount);
-    bubble.dataset.messageViewerLiked = liked ? "1" : "0";
-
-    const badge = bubble.querySelector("[data-message-reaction-badge='1']");
-    const countNode = bubble.querySelector("[data-message-reaction-count='1']");
-    if (countNode instanceof HTMLElement) {
-      countNode.textContent = String(nextCount);
-    }
-    if (badge instanceof HTMLElement) {
-      badge.hidden = nextCount <= 0;
-    }
-
-    bubble
-      .querySelectorAll("[data-message-quick-action='react']")
-      .forEach((button) => {
-        if (!(button instanceof HTMLButtonElement)) return;
-        button.classList.toggle("is-active", liked);
-        button.setAttribute("aria-pressed", liked ? "true" : "false");
-      });
-  };
-
   const hideDeleteConfirmation = (bubble) => {
     if (!(bubble instanceof HTMLElement)) return;
     const confirm = bubble.querySelector("[data-message-delete-confirm='1']");
@@ -2237,9 +2418,14 @@
     const dayLabel = formatMessageDayLabel(now);
     const isFailed = status === "failed";
     const statusLabel = isFailed ? "Failed" : "Sending";
+    const emojiApi = getDmEmojiApi();
+    const renderedBody =
+      emojiApi && typeof emojiApi.renderInlineTextHtml === "function"
+        ? emojiApi.renderInlineTextHtml(payload.body)
+        : textToHtml(payload.body);
     const bodyMarkup =
       payload.body !== ""
-        ? `<div class="messageBubble__body">${textToHtml(payload.body)}</div>`
+        ? `<div class="messageBubble__body">${renderedBody}</div>`
         : "";
     const replyMarkup = buildReplyContextMarkup(payload.replyContext);
     const attachmentMarkup = payload.attachments.length
@@ -2261,8 +2447,8 @@
         data-message-reply-to-id="${escapeHtml(
           String(payload.replyToMessageId || 0)
         )}"
-        data-message-like-count="0"
-        data-message-viewer-liked="0"
+        data-message-viewer-reaction=""
+        data-message-reaction-total-count="0"
         data-message-can-edit="0"
         data-message-can-unsend="0"
         data-message-is-unsent="0">
@@ -2281,7 +2467,7 @@
           ${attachmentMarkup}
         </div>
         <div class="messageBubble__hoverActions" data-message-hover-actions="1" aria-label="Quick message actions">
-          <button class="messageBubble__hoverAction" type="button" data-message-quick-action="react" aria-label="React to message" aria-pressed="false">
+          <button class="messageBubble__hoverAction" type="button" data-message-quick-action="react" data-message-reaction-trigger="1" aria-label="React to message" aria-pressed="false">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M8.25 10.75V20H6.5a1.75 1.75 0 0 1-1.75-1.75v-5.75A1.75 1.75 0 0 1 6.5 10.75h1.75Zm2.5 9.25h4.65a2.6 2.6 0 0 0 2.52-2l1.05-4.55a2.27 2.27 0 0 0-2.22-2.8h-3v-4A2.4 2.4 0 0 0 11.35 4.3L9.7 8.05a5.37 5.37 0 0 0-.45 2.18v8.02c0 .97.78 1.75 1.75 1.75Z" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
@@ -2291,11 +2477,10 @@
               <path d="M10.25 8.25 5.75 12l4.5 3.75M6.25 12h7.5a4.5 4.5 0 0 1 4.5 4.5v.25" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </button>
+          <div class="messageBubble__reactionPicker" hidden data-message-reaction-picker="1"></div>
         </div>
         <div class="messageBubble__reactionBadge" hidden data-message-reaction-badge="1">
-          <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-            <path d="M8.25 10.75V20H6.5a1.75 1.75 0 0 1-1.75-1.75v-5.75A1.75 1.75 0 0 1 6.5 10.75h1.75Zm2.5 9.25h4.65a2.6 2.6 0 0 0 2.52-2l1.05-4.55a2.27 2.27 0 0 0-2.22-2.8h-3v-4A2.4 2.4 0 0 0 11.35 4.3L9.7 8.05a5.37 5.35 0 0 0-.45 2.18v8.02c0 .97.78 1.75 1.75 1.75Z" fill="none" stroke="currentColor" stroke-width="1.55" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
+          <span class="messageBubble__reactionCluster" aria-hidden="true"></span>
           <span data-message-reaction-count="1">0</span>
         </div>
         <div class="messageBubble__failure" data-temp-failure="1"${
@@ -2487,6 +2672,12 @@
       return;
     }
 
+    try {
+      await loadDmEmojiCatalog();
+    } catch {
+      // Fall back to plain text rendering if the emoji catalog is unavailable.
+    }
+
     const tempId = insertTemporaryMessage(payload);
     clearComposerDraft();
     await submitSendPayload(payload, tempId);
@@ -2622,12 +2813,18 @@
     }
   };
 
-  const toggleMessageReaction = async (messageId) => {
+  const selectMessageReaction = async (messageId, reaction) => {
     const bubble = findMessageBubble(messageId);
     if (!(bubble instanceof HTMLElement)) return;
     const csrf = getCsrfToken();
     if (!csrf) {
       showToast("Session expired. Refresh the page and try again.", "error");
+      return;
+    }
+
+    const normalizedReaction = normalizeReactionSlug(reaction);
+    if (!normalizedReaction) {
+      showToast("Unsupported reaction.", "error");
       return;
     }
 
@@ -2638,7 +2835,7 @@
         body: new URLSearchParams({
           _csrf: csrf,
           message_id: String(messageId),
-          reaction: "like",
+          reaction: normalizedReaction,
         }),
       });
       const data = await readJson(res);
@@ -2646,11 +2843,13 @@
         throw new Error(data?.error || "Could not update message reaction.");
       }
 
-      updateMessageReactionUi(
-        bubble,
-        Number(data.like_count || 0),
-        !!data.viewer_liked
-      );
+      if (Array.isArray(data.picker_reactions)) {
+        setReactionPickerOrder(data.picker_reactions);
+      }
+
+      if (!replaceMessageBubble(messageId, data.message_html || "")) {
+        throw new Error("Could not update message reaction.");
+      }
     } catch (err) {
       showToast(
         err instanceof Error ? err.message : "Could not update message reaction.",
@@ -2723,6 +2922,7 @@
   const requestDeleteMessage = (messageId) => {
     const bubble = findMessageBubble(messageId);
     if (!(bubble instanceof HTMLElement)) return;
+    closeReactionPicker(bubble);
     showDeleteConfirmation(bubble);
     openQuickActions(bubble, { mobile: state.quickActionsMode === "mobile" });
   };
@@ -3096,11 +3296,11 @@
     }
   };
 
-  const clearLongPress = () => {
-    window.clearTimeout(state.longPressTimer);
-    state.longPressTimer = 0;
-    state.longPressBubbleId = "";
-  };
+  const isInteractiveBubbleTarget = (target) =>
+    target instanceof Element &&
+    !!target.closest(
+      "button, a, input, textarea, select, label, summary, [contenteditable='true']"
+    );
 
   const normalizeToInboxUrl = () => {
     const nextUrl = getInboxUrl();
@@ -3166,6 +3366,11 @@
     }
 
     openQuickActions(bubble);
+
+    const reactionTrigger = event.target.closest("[data-message-reaction-trigger='1']");
+    if (reactionTrigger instanceof HTMLButtonElement) {
+      void openReactionPicker(bubble);
+    }
   });
 
   document.addEventListener("mouseout", (event) => {
@@ -3186,37 +3391,28 @@
     scheduleQuickActionsClose(bubble);
   });
 
-  document.addEventListener("pointerdown", (event) => {
-    if (!isMobile() || !(event.target instanceof Element)) {
+  document.addEventListener("focusin", (event) => {
+    if (isMobile() || !(event.target instanceof Element)) {
       return;
     }
 
-    const interactiveTarget = event.target.closest(
-      "button, a, input, textarea, select, label"
-    );
-    if (interactiveTarget instanceof HTMLElement) {
+    const reactionTrigger = event.target.closest("[data-message-reaction-trigger='1']");
+    if (!(reactionTrigger instanceof HTMLButtonElement)) {
       return;
     }
 
-    const bubble = event.target.closest("[data-message-bubble='1']");
-    if (!(bubble instanceof HTMLElement) || !getQuickActionsBar(bubble)) {
+    const bubble = reactionTrigger.closest("[data-message-bubble='1']");
+    if (!(bubble instanceof HTMLElement)) {
       return;
     }
 
-    clearLongPress();
-    state.longPressBubbleId = getBubbleId(bubble);
-    state.longPressTimer = window.setTimeout(() => {
-      openQuickActions(bubble, { mobile: true });
-      state.longPressBubbleId = getBubbleId(bubble);
-    }, 500);
+    openQuickActions(bubble);
+    void openReactionPicker(bubble);
   });
 
-  document.addEventListener("pointerup", clearLongPress);
-  document.addEventListener("pointercancel", clearLongPress);
   document.addEventListener(
     "scroll",
     () => {
-      clearLongPress();
       if (state.quickActionsMode === "mobile") {
         closeQuickActions();
       }
@@ -3270,6 +3466,29 @@
 
     if (!event.target.closest("[data-message-bubble='1']")) {
       closeQuickActions();
+    }
+
+    if (isMobile()) {
+      const bubble = event.target.closest("[data-message-bubble='1']");
+      if (
+        bubble instanceof HTMLElement &&
+        getQuickActionsBar(bubble) &&
+        !isInteractiveBubbleTarget(event.target)
+      ) {
+        event.preventDefault();
+        const bubbleId = getBubbleId(bubble);
+        const isSameBubble =
+          state.quickActionsMode === "mobile" &&
+          state.quickActionsBubbleId === bubbleId &&
+          bubble.classList.contains("is-quick-actions-open");
+
+        if (isSameBubble) {
+          closeQuickActions(bubble);
+        } else {
+          openQuickActions(bubble, { mobile: true });
+        }
+        return;
+      }
     }
 
     const conversationList = getConversationList();
@@ -3384,33 +3603,31 @@
     const emojiTab = event.target.closest("[data-messages-emoji-tab]");
     if (emojiTab instanceof HTMLButtonElement) {
       event.preventDefault();
-      state.emojiCategory = String(emojiTab.dataset.messagesEmojiTab || "smileys");
-      renderEmojiPicker();
+      scrollEmojiSectionIntoView(
+        String(emojiTab.dataset.messagesEmojiTab || DEFAULT_EMOJI_CATEGORY)
+      );
+      closeEmojiVariants();
+      return;
+    }
+
+    const emojiVariantToggle = event.target.closest("[data-messages-emoji-variant-toggle]");
+    if (emojiVariantToggle instanceof HTMLButtonElement) {
+      event.preventDefault();
+      void openEmojiVariants(String(emojiVariantToggle.dataset.messagesEmojiVariantToggle || ""));
+      return;
+    }
+
+    const emojiVariantClose = event.target.closest("[data-messages-emoji-variant-close='1']");
+    if (emojiVariantClose instanceof HTMLButtonElement) {
+      event.preventDefault();
+      closeEmojiVariants();
       return;
     }
 
     const emojiValue = event.target.closest("[data-messages-emoji-value]");
     if (emojiValue instanceof HTMLButtonElement) {
       event.preventDefault();
-      const emoji = String(emojiValue.dataset.messagesEmojiValue || "");
-      const input = getComposerInput();
-      if (!(input instanceof HTMLTextAreaElement) || !emoji) {
-        return;
-      }
-      const start = input.selectionStart ?? input.value.length;
-      const end = input.selectionEnd ?? input.value.length;
-      const before = input.value.slice(0, start);
-      const after = input.value.slice(end);
-      input.value = `${before}${emoji}${after}`;
-      saveRecentEmoji(emoji);
-      renderEmojiPicker();
-      syncComposerHeight(input);
-      closeEmojiPanel();
-      window.setTimeout(() => {
-        const caret = start + emoji.length;
-        input.focus();
-        input.setSelectionRange(caret, caret);
-      }, 20);
+      insertEmojiAtCaret(String(emojiValue.dataset.messagesEmojiValue || ""));
       return;
     }
 
@@ -3436,6 +3653,16 @@
       return;
     }
 
+    const reactionChoice = event.target.closest("[data-message-reaction-select]");
+    if (reactionChoice instanceof HTMLButtonElement) {
+      event.preventDefault();
+      const bubble = reactionChoice.closest("[data-message-bubble='1']");
+      const messageId = getBubbleId(bubble);
+      const reaction = String(reactionChoice.dataset.messageReactionSelect || "");
+      void selectMessageReaction(messageId, reaction);
+      return;
+    }
+
     const quickAction = event.target.closest("[data-message-quick-action]");
     if (quickAction instanceof HTMLButtonElement) {
       event.preventDefault();
@@ -3444,10 +3671,7 @@
       const action = String(quickAction.dataset.messageQuickAction || "");
 
       if (action === "react") {
-        void toggleMessageReaction(messageId);
-        if (state.quickActionsMode === "mobile") {
-          closeQuickActions(bubble);
-        }
+        void toggleReactionPicker(bubble);
         return;
       }
       if (action === "reply") {

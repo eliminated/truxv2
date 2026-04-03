@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 require_once __DIR__ . '/_bootstrap.php';
 
@@ -10,6 +11,8 @@ $discoveryPage = max(1, trux_int_param('page', 1));
 $limit = 20;
 $requestedFeed = trux_str_param('feed', 'all');
 $feedMode = $requestedFeed === 'following' ? 'following' : 'all';
+$usedAlgrDiscovery = false;
+$algrDiscoveryPage = null;
 
 $me = trux_current_user();
 if (!$me && $feedMode === 'following') {
@@ -23,19 +26,34 @@ if ($feedMode === 'following' && $me) {
 }
 
 $viewerId = $me ? (int) $me['id'] : null;
-$posts = $feedMode === 'following' && $me
-  ? trux_fetch_following_feed((int) $me['id'], $limit, $before > 0 ? $before : null)
-  : trux_fetch_discovery_feed($viewerId, $limit, $discoveryPage);
+if ($feedMode === 'following' && $me) {
+  $posts = trux_fetch_following_feed((int)$me['id'], $limit, $before > 0 ? $before : null);
+} else {
+  $algrDiscoveryPage = trux_fetch_discovery_feed_via_algr($viewerId, $limit, $discoveryPage);
+  error_log('ALGR ranked ids: ' . json_encode(array_map(
+    static fn(array $p): int => (int)$p['id'],
+    $algrDiscoveryPage['posts'] ?? []
+  )));
+
+  if (is_array($algrDiscoveryPage)) {
+    $posts = is_array($algrDiscoveryPage['posts'] ?? null) ? $algrDiscoveryPage['posts'] : [];
+    $usedAlgrDiscovery = true;
+  } else {
+    $posts = trux_fetch_discovery_feed($viewerId, $limit, $discoveryPage);
+  }
+}
 
 $nextBefore = null;
 $nextDiscoveryPage = null;
 if ($feedMode === 'following') {
   if (count($posts) > 0) {
     $last = $posts[count($posts) - 1];
-    $nextBefore = (int) $last['id'];
+    $nextBefore = (int)$last['id'];
   }
 } else {
-  if (count($posts) === $limit) {
+  if ($usedAlgrDiscovery) {
+    $nextDiscoveryPage = !empty($algrDiscoveryPage['has_more']) ? $discoveryPage + 1 : null;
+  } elseif (count($posts) === $limit) {
     $nextDiscoveryPage = $discoveryPage + 1;
   }
 }
@@ -71,6 +89,12 @@ unset($_quotedIds);
 require_once __DIR__ . '/_header.php';
 ?>
 
+<?php if ($feedMode !== 'following'): ?>
+  <div style="margin: 12px 0; padding: 10px 14px; border: 1px solid #7c4dff; border-radius: 10px; color: #fff; background: rgba(124, 77, 255, 0.12); font-weight: 700;">
+    <?= $usedAlgrDiscovery ? 'Discovery mode · ranked by Algr' : 'Discovery mode · fallback (Algr not used)' ?>
+  </div>
+<?php endif; ?>
+
 <div class="pageFrame pageFrame--feed">
   <section class="inlineHeader inlineHeader--feed">
     <div class="inlineHeader__main">
@@ -78,13 +102,13 @@ require_once __DIR__ . '/_header.php';
       <div class="inlineHeader__titleWrap">
         <h2 class="inlineHeader__title"><?= $feedMode === 'following' ? 'Following stream' : 'Discovery stream' ?></h2>
         <p class="inlineHeader__copy">
-        <?php if ($feedMode === 'following' && $me): ?>
-          Latest posts from people you follow, plus your own posts.
-        <?php elseif (trux_is_logged_in()): ?>
-          Fresh discovery ordered by recency, engagement, and social proximity.
-        <?php else: ?>
-          Explore the public network. Sign in to personalize the stream.
-        <?php endif; ?>
+          <?php if ($feedMode === 'following' && $me): ?>
+            Latest posts from people you follow, plus your own posts.
+          <?php elseif (trux_is_logged_in()): ?>
+            Fresh discovery ordered by recency, engagement, and social proximity.
+          <?php else: ?>
+            Explore the public network. Sign in to personalize the stream.
+          <?php endif; ?>
         </p>
       </div>
     </div>
@@ -102,7 +126,13 @@ require_once __DIR__ . '/_header.php';
       </div>
       <div class="inlineHeader__meta">
         <span><?= $me ? 'Signed in as @' . trux_e((string)$me['username']) : 'Guest browsing' ?></span>
-        <strong><?= $feedMode === 'following' ? 'Following mode' : 'Discovery mode' ?></strong>
+        <strong>
+          <?=
+          $feedMode === 'following'
+            ? 'Following mode'
+            : ($usedAlgrDiscovery ? 'Discovery mode · ranked by Algr' : 'Discovery mode')
+          ?>
+        </strong>
       </div>
     </div>
   </section>
@@ -166,12 +196,12 @@ require_once __DIR__ . '/_header.php';
               class="shellButton shellButton--ghost"
               data-no-fx="1"
               href="<?php
-              if ($feedMode === 'following') {
-                echo TRUX_BASE_URL . '/?feed=following&before=' . (int)$nextBefore;
-              } else {
-                echo TRUX_BASE_URL . '/?page=' . (int)$nextDiscoveryPage;
-              }
-              ?>">
+                    if ($feedMode === 'following') {
+                      echo TRUX_BASE_URL . '/?feed=following&before=' . (int)$nextBefore;
+                    } else {
+                      echo TRUX_BASE_URL . '/?page=' . (int)$nextDiscoveryPage;
+                    }
+                    ?>">
               Load more
             </a>
           </div>

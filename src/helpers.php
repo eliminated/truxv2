@@ -466,3 +466,283 @@ function trux_render_post_body(string $body): string {
 function trux_render_comment_body(string $body): string {
     return trux_render_rich_text($body);
 }
+
+function trux_dm_emoji_catalog_data(): array {
+    static $catalog = null;
+    if ($catalog !== null) {
+        return $catalog;
+    }
+
+    $path = dirname(__DIR__) . '/public/assets/emoji/noto/catalog.json';
+    if (!is_file($path)) {
+        $catalog = [];
+        return $catalog;
+    }
+
+    $raw = file_get_contents($path);
+    if (!is_string($raw) || $raw === '') {
+        $catalog = [];
+        return $catalog;
+    }
+
+    $decoded = json_decode($raw, true);
+    $catalog = is_array($decoded) ? $decoded : [];
+    return $catalog;
+}
+
+function trux_dm_emoji_flatten_catalog_items(array $items, array &$lookup): void {
+    foreach ($items as $item) {
+        if (!is_array($item)) {
+            continue;
+        }
+
+        $emoji = trim((string)($item['emoji'] ?? ''));
+        $assetPath = trim((string)($item['asset_path'] ?? ''));
+        if ($emoji !== '' && $assetPath !== '') {
+            $lookup[$emoji] = [
+                'asset_path' => $assetPath,
+                'name' => trim((string)($item['name'] ?? 'Emoji')),
+            ];
+        }
+
+        $variants = $item['variants'] ?? [];
+        if (is_array($variants) && $variants !== []) {
+            trux_dm_emoji_flatten_catalog_items($variants, $lookup);
+        }
+    }
+}
+
+function trux_dm_emoji_lookup(): array {
+    static $lookup = null;
+    if ($lookup !== null) {
+        return $lookup;
+    }
+
+    $lookup = [];
+    $catalog = trux_dm_emoji_catalog_data();
+    $categories = $catalog['categories'] ?? [];
+    if (!is_array($categories)) {
+        return $lookup;
+    }
+
+    foreach ($categories as $category) {
+        if (!is_array($category)) {
+            continue;
+        }
+        $items = $category['items'] ?? [];
+        if (!is_array($items)) {
+            continue;
+        }
+        trux_dm_emoji_flatten_catalog_items($items, $lookup);
+    }
+
+    return $lookup;
+}
+
+function trux_dm_emoji_matchers(): array {
+    static $matchers = null;
+    if ($matchers !== null) {
+        return $matchers;
+    }
+
+    $matchers = [];
+    foreach (trux_dm_emoji_lookup() as $emoji => $meta) {
+        $first = mb_substr($emoji, 0, 1, 'UTF-8');
+        if ($first === '') {
+            continue;
+        }
+        $matchers[$first][] = [
+            'emoji' => $emoji,
+            'length' => mb_strlen($emoji, 'UTF-8'),
+            'meta' => $meta,
+        ];
+    }
+
+    foreach ($matchers as &$bucket) {
+        usort(
+            $bucket,
+            static fn (array $left, array $right): int => (int)$right['length'] <=> (int)$left['length']
+        );
+    }
+    unset($bucket);
+
+    return $matchers;
+}
+
+function trux_dm_emoji_asset_url(string $assetPath): string {
+    return TRUX_BASE_URL . '/assets/emoji/noto/' . ltrim($assetPath, '/');
+}
+
+function trux_dm_render_emoji_html(string $emoji, array $meta): string {
+    $assetPath = trim((string)($meta['asset_path'] ?? ''));
+    if ($assetPath === '') {
+        return trux_e($emoji);
+    }
+
+    $name = trim((string)($meta['name'] ?? 'Emoji'));
+    return '<span class="messageBubble__emojiInline"><img class="messageBubble__emojiImage" src="'
+        . trux_e(trux_dm_emoji_asset_url($assetPath))
+        . '" alt="'
+        . trux_e($emoji)
+        . '" title="'
+        . trux_e($name)
+        . '" loading="lazy" decoding="async" draggable="false"></span>';
+}
+
+function trux_dm_render_plain_text_with_emoji_images(string $text): string {
+    if ($text === '') {
+        return '';
+    }
+
+    $matchers = trux_dm_emoji_matchers();
+    if ($matchers === []) {
+        return trux_e($text);
+    }
+
+    $out = '';
+    $cursor = 0;
+    $length = mb_strlen($text, 'UTF-8');
+
+    while ($cursor < $length) {
+        $char = mb_substr($text, $cursor, 1, 'UTF-8');
+        if ($char === '') {
+            break;
+        }
+
+        $matched = null;
+        $bucket = $matchers[$char] ?? [];
+        foreach ($bucket as $candidate) {
+            $emoji = (string)($candidate['emoji'] ?? '');
+            $emojiLength = (int)($candidate['length'] ?? 0);
+            if ($emoji === '' || $emojiLength < 1) {
+                continue;
+            }
+            if (mb_substr($text, $cursor, $emojiLength, 'UTF-8') === $emoji) {
+                $matched = $candidate;
+                break;
+            }
+        }
+
+        if ($matched !== null) {
+            $out .= trux_dm_render_emoji_html((string)$matched['emoji'], (array)$matched['meta']);
+            $cursor += (int)$matched['length'];
+            continue;
+        }
+
+        $out .= trux_e($char);
+        $cursor += 1;
+    }
+
+    return $out;
+}
+
+function trux_render_dm_non_url_rich_text_segment(string $line): string {
+    $pattern = '/(^|[^A-Za-z0-9_])(@[A-Za-z0-9_]{3,32}|#[A-Za-z0-9_]{1,50})\b/';
+    $cursor = 0;
+    $out = '';
+
+    $matched = preg_match_all($pattern, $line, $matches, PREG_OFFSET_CAPTURE);
+    if (is_int($matched) && $matched > 0) {
+        $count = count($matches[0]);
+        for ($i = 0; $i < $count; $i++) {
+            $fullOffset = (int)$matches[0][$i][1];
+            $prefix = (string)$matches[1][$i][0];
+            $token = (string)$matches[2][$i][0];
+            $prefixLen = strlen($prefix);
+            $tokenStart = $fullOffset + $prefixLen;
+
+            if ($tokenStart < $cursor || $token === '') {
+                continue;
+            }
+
+            $before = substr($line, $cursor, $tokenStart - $cursor);
+            if ($before !== false && $before !== '') {
+                $out .= trux_dm_render_plain_text_with_emoji_images($before);
+            }
+
+            $sigil = substr($token, 0, 1);
+            $term = substr($token, 1);
+
+            if ($sigil === '@') {
+                $href = TRUX_BASE_URL . '/profile.php?u=' . rawurlencode($term);
+                $out .= '<a class="mentionLink" href="' . trux_e($href) . '">@' . trux_e($term) . '</a>';
+            } elseif ($sigil === '#') {
+                $normalized = strtolower($term);
+                $href = TRUX_BASE_URL . '/search.php?q=' . rawurlencode('#' . $normalized) . '&filter=hashtags';
+                $out .= '<a class="hashtagLink" href="' . trux_e($href) . '">#' . trux_e($term) . '</a>';
+            } else {
+                $out .= trux_dm_render_plain_text_with_emoji_images($token);
+            }
+
+            $cursor = $tokenStart + strlen($token);
+        }
+    }
+
+    $tail = substr($line, $cursor);
+    if ($tail !== false && $tail !== '') {
+        $out .= trux_dm_render_plain_text_with_emoji_images($tail);
+    }
+
+    return $out;
+}
+
+function trux_render_dm_rich_text_line(string $line): string {
+    $pattern = '#https?://[^\s<]+#i';
+    $cursor = 0;
+    $out = '';
+
+    $matched = preg_match_all($pattern, $line, $matches, PREG_OFFSET_CAPTURE);
+    if (!is_int($matched) || $matched <= 0) {
+        return trux_render_dm_non_url_rich_text_segment($line);
+    }
+
+    foreach ($matches[0] as $match) {
+        $rawUrl = (string)($match[0] ?? '');
+        $fullOffset = (int)($match[1] ?? 0);
+        if ($rawUrl === '' || $fullOffset < $cursor) {
+            continue;
+        }
+
+        $before = substr($line, $cursor, $fullOffset - $cursor);
+        if ($before !== false && $before !== '') {
+            $out .= trux_render_dm_non_url_rich_text_segment($before);
+        }
+
+        [$cleanUrl, $suffix] = trux_split_url_suffix($rawUrl);
+        if ($cleanUrl !== '') {
+            $out .= trux_render_link_token($cleanUrl);
+        } else {
+            $out .= trux_e($rawUrl);
+        }
+        if ($suffix !== '') {
+            $out .= trux_e($suffix);
+        }
+
+        $cursor = $fullOffset + strlen($rawUrl);
+    }
+
+    $tail = substr($line, $cursor);
+    if ($tail !== false && $tail !== '') {
+        $out .= trux_render_dm_non_url_rich_text_segment($tail);
+    }
+
+    return $out;
+}
+
+function trux_render_direct_message_body(string $body): string {
+    if ($body === '' || trux_dm_emoji_catalog_data() === []) {
+        return trux_render_rich_text($body);
+    }
+
+    $lines = preg_split("/\R/", $body);
+    if (!is_array($lines) || $lines === []) {
+        $lines = [$body];
+    }
+
+    $renderedLines = [];
+    foreach ($lines as $line) {
+        $renderedLines[] = trux_render_dm_rich_text_line((string)$line);
+    }
+
+    return implode("<br>\n", $renderedLines);
+}

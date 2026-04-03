@@ -287,7 +287,7 @@ CREATE TABLE IF NOT EXISTS direct_message_reactions (
   user_id BIGINT UNSIGNED NOT NULL,
   reaction VARCHAR(24) NOT NULL,
   created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  PRIMARY KEY (message_id, user_id, reaction),
+  PRIMARY KEY (message_id, user_id),
   KEY idx_dm_reactions_user (user_id, created_at),
   KEY idx_dm_reactions_lookup (message_id, reaction),
   CONSTRAINT fk_dm_reactions_message FOREIGN KEY (message_id) REFERENCES direct_messages(id)
