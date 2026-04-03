@@ -15,6 +15,7 @@ $postCardClasses = trim((string)($postCardClasses ?? ''));
 $postContextTimeSource = trim((string)($postContextTimeSource ?? ''));
 $postContextTimePrefix = trim((string)($postContextTimePrefix ?? ''));
 $postViewerLinks = is_array($postViewerLinks ?? null) ? $postViewerLinks : [];
+$postInteractionDeferred = !empty($postInteractionDeferred);
 
 $postUrl = trux_post_viewer_url($postId);
 $postStats = array_merge(
@@ -30,9 +31,14 @@ $postAvatarPath = trim((string)($postRecord['avatar_path'] ?? ''));
 $postAvatarUrl = $postAvatarPath !== '' ? trux_public_url($postAvatarPath) : '';
 $postImagePath = trim((string)($postRecord['image_path'] ?? ''));
 $postImageUrl = $postImagePath !== '' ? trux_public_url($postImagePath) : '';
-$postCardClassAttr = trim('post streamItem ' . $postCardClasses);
+$postCardClassAttr = trim('post streamItem ' . $postCardClasses . ($postInteractionDeferred ? ' post--interaction-shell' : ''));
 ?>
-<article class="<?= trux_e($postCardClassAttr) ?>" data-post-id="<?= $postId ?>" data-post-click-target="1" data-post-url="<?= trux_e($postUrl) ?>">
+<article
+  class="<?= trux_e($postCardClassAttr) ?>"
+  data-post-id="<?= $postId ?>"
+  data-post-click-target="1"
+  data-post-url="<?= trux_e($postUrl) ?>"
+  <?= $postInteractionDeferred ? 'data-needs-interactions="1" data-post-interactions-state="pending"' : '' ?>>
   <div class="post__gutter">
     <a class="post__avatar<?= $postAvatarUrl !== '' ? ' post__avatar--image' : '' ?>" href="<?= TRUX_BASE_URL ?>/profile.php?u=<?= trux_e($postUsername) ?>" aria-label="View @<?= trux_e($postUsername) ?> profile">
       <?php if ($postAvatarUrl !== ''): ?>

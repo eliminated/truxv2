@@ -600,6 +600,12 @@
 
 (() => {
   const TIME_SELECTOR = "[data-time-ago='1'][data-time-source]";
+  if (
+    window.truxTimeAgoBooted === true &&
+    typeof window.truxRefreshTimeAgo === "function"
+  ) {
+    return;
+  }
 
   const parseTimeSource = (raw) => {
     if (!raw || typeof raw !== "string") return null;
@@ -665,6 +671,7 @@
   window.setInterval(refreshTimeAgo, 30000);
   window.addEventListener("trux:times:refresh", refreshTimeAgo);
   window.truxRefreshTimeAgo = refreshTimeAgo;
+  window.truxTimeAgoBooted = true;
 })();
 (() => {
   const MENU_SELECTOR = "[data-notification-menu='1']";
@@ -795,7 +802,9 @@
 (() => {
   const fx = document.getElementById("pageFX");
   const classicAppearance = document.body.classList.contains("appearance--classic");
-  const reducedBySetting = document.body.classList.contains("motion--reduced");
+  const reducedBySetting =
+    document.body.classList.contains("motion--reduced") ||
+    document.body.classList.contains("perf--lite");
   const reducedBySystem = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const shouldReduceMotion = classicAppearance || reducedBySetting || reducedBySystem;
 
@@ -2307,6 +2316,9 @@
     if (!selector) return;
     document.querySelectorAll(selector).forEach((el) => {
       el.textContent = String(count);
+      el.classList.remove("is-placeholder");
+      el.removeAttribute("data-count-placeholder");
+      el.removeAttribute("aria-busy");
     });
   };
 

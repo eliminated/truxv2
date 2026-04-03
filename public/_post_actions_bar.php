@@ -11,6 +11,7 @@ $liked = (bool)($stats['liked'] ?? false);
 $shared = (bool)($stats['shared'] ?? false);
 $bookmarked = (bool)($stats['bookmarked'] ?? false);
 $isLoggedIn = (bool)$isLoggedIn;
+$postInteractionDeferred = !empty($postInteractionDeferred);
 $quoteReturnPath = trux_post_viewer_path($postId);
 $rawRequestUri = $_SERVER['REQUEST_URI'] ?? '';
 if (is_string($rawRequestUri) && $rawRequestUri !== '') {
@@ -38,7 +39,7 @@ $quoteComposeUrl = TRUX_BASE_URL . '/quote_post.php?original_post_id=' . $postId
           </svg>
         </span>
         <span class="u-visually-hidden">Like</span>
-        <span class="postAct__count" data-like-count-for="<?= $postId ?>"><?= $likesCount ?></span>
+        <span class="postAct__count<?= $postInteractionDeferred ? ' is-placeholder' : '' ?>" data-like-count-for="<?= $postId ?>"<?= $postInteractionDeferred ? ' data-count-placeholder="1" aria-busy="true"' : '' ?>><?= $postInteractionDeferred ? '...' : $likesCount ?></span>
       </button>
     </form>
   <?php else: ?>
@@ -49,7 +50,7 @@ $quoteComposeUrl = TRUX_BASE_URL . '/quote_post.php?original_post_id=' . $postId
         </svg>
       </span>
       <span class="u-visually-hidden">Like</span>
-      <span class="postAct__count" data-like-count-for="<?= $postId ?>"><?= $likesCount ?></span>
+      <span class="postAct__count<?= $postInteractionDeferred ? ' is-placeholder' : '' ?>" data-like-count-for="<?= $postId ?>"<?= $postInteractionDeferred ? ' data-count-placeholder="1" aria-busy="true"' : '' ?>><?= $postInteractionDeferred ? '...' : $likesCount ?></span>
     </a>
   <?php endif; ?>
 
@@ -67,7 +68,7 @@ $quoteComposeUrl = TRUX_BASE_URL . '/quote_post.php?original_post_id=' . $postId
       </svg>
     </span>
     <span class="u-visually-hidden">Comment</span>
-    <span class="postAct__count" data-comment-count-for="<?= $postId ?>"><?= $commentsCount ?></span>
+    <span class="postAct__count<?= $postInteractionDeferred ? ' is-placeholder' : '' ?>" data-comment-count-for="<?= $postId ?>"<?= $postInteractionDeferred ? ' data-count-placeholder="1" aria-busy="true"' : '' ?>><?= $postInteractionDeferred ? '...' : $commentsCount ?></span>
   </button>
 
   <?php if ($isLoggedIn): ?>
@@ -81,7 +82,7 @@ $quoteComposeUrl = TRUX_BASE_URL . '/quote_post.php?original_post_id=' . $postId
           </svg>
         </span>
         <span class="u-visually-hidden">Share</span>
-        <span class="postAct__count" data-share-count-for="<?= $postId ?>"><?= $sharesCount ?></span>
+        <span class="postAct__count<?= $postInteractionDeferred ? ' is-placeholder' : '' ?>" data-share-count-for="<?= $postId ?>"<?= $postInteractionDeferred ? ' data-count-placeholder="1" aria-busy="true"' : '' ?>><?= $postInteractionDeferred ? '...' : $sharesCount ?></span>
       </button>
     </form>
   <?php else: ?>
@@ -92,7 +93,7 @@ $quoteComposeUrl = TRUX_BASE_URL . '/quote_post.php?original_post_id=' . $postId
         </svg>
       </span>
       <span class="u-visually-hidden">Share</span>
-      <span class="postAct__count" data-share-count-for="<?= $postId ?>"><?= $sharesCount ?></span>
+      <span class="postAct__count<?= $postInteractionDeferred ? ' is-placeholder' : '' ?>" data-share-count-for="<?= $postId ?>"<?= $postInteractionDeferred ? ' data-count-placeholder="1" aria-busy="true"' : '' ?>><?= $postInteractionDeferred ? '...' : $sharesCount ?></span>
     </a>
   <?php endif; ?>
 
@@ -130,7 +131,7 @@ $quoteComposeUrl = TRUX_BASE_URL . '/quote_post.php?original_post_id=' . $postId
           </svg>
         </span>
         <span class="u-visually-hidden" data-action-label="bookmark"><?= $bookmarked ? 'Saved' : 'Bookmark' ?></span>
-        <span class="postAct__count" data-bookmark-count-for="<?= $postId ?>"><?= $bookmarksCount ?></span>
+        <span class="postAct__count<?= $postInteractionDeferred ? ' is-placeholder' : '' ?>" data-bookmark-count-for="<?= $postId ?>"<?= $postInteractionDeferred ? ' data-count-placeholder="1" aria-busy="true"' : '' ?>><?= $postInteractionDeferred ? '...' : $bookmarksCount ?></span>
       </button>
     </form>
   <?php else: ?>
@@ -141,7 +142,7 @@ $quoteComposeUrl = TRUX_BASE_URL . '/quote_post.php?original_post_id=' . $postId
         </svg>
       </span>
       <span class="u-visually-hidden" data-action-label="bookmark">Bookmark</span>
-      <span class="postAct__count" data-bookmark-count-for="<?= $postId ?>"><?= $bookmarksCount ?></span>
+      <span class="postAct__count<?= $postInteractionDeferred ? ' is-placeholder' : '' ?>" data-bookmark-count-for="<?= $postId ?>"<?= $postInteractionDeferred ? ' data-count-placeholder="1" aria-busy="true"' : '' ?>><?= $postInteractionDeferred ? '...' : $bookmarksCount ?></span>
     </a>
   <?php endif; ?>
 </div>

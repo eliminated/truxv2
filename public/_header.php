@@ -54,10 +54,20 @@ $bodyClasses = array_values(array_filter([
   'page--' . $pageSlug,
   $isAuthenticated ? 'is-authenticated' : 'is-guest',
 ]));
+$uiPerformanceMode = 'full';
+if ($user) {
+  $candidatePerformanceMode = trim((string)($user['ui_performance_mode'] ?? 'full'));
+  if (in_array($candidatePerformanceMode, ['full', 'balanced', 'lite'], true)) {
+    $uiPerformanceMode = $candidatePerformanceMode;
+  }
+}
+$bodyClasses[] = 'perf--' . $uiPerformanceMode;
+if ($uiPerformanceMode === 'lite') {
+  $bodyClasses[] = 'motion--reduced';
+  $bodyClasses[] = 'appearance--classic';
+}
 
-$unreadNotificationCount = $user ? trux_count_unread_notifications((int)$user['id']) : 0;
-$unreadMessageCount = $user ? trux_count_unread_direct_messages((int)$user['id']) : 0;
-$notificationBadgeLabel = $unreadNotificationCount > 99 ? '99+' : (string)$unreadNotificationCount;
+$deferredUnreadCountsSrc = $user ? TRUX_BASE_URL . '/api/notifications/count.php' : '';
 $notificationRedirectPath = '/notifications.php';
 $showProfileMenuPremium = false;
 $showProfileMenuModeration = $user && trux_has_staff_role((string)($user['staff_role'] ?? 'user'), 'developer');
@@ -104,6 +114,12 @@ $verificationBannerCooldownRemaining = $verificationBannerVisible
   : 0;
 $verificationBannerCanResend = $verificationBannerVisible && $verificationBannerCooldownRemaining === 0;
 $mainCssPath = __DIR__ . '/assets/css/main.css';
+$criticalCssPath = __DIR__ . '/assets/css/critical.css';
+$criticalJsPath = __DIR__ . '/assets/app-critical.js';
+$mainCssVersion = (int)(filemtime($mainCssPath) ?: 0);
+$appJsVersion = (int)(filemtime(__DIR__ . '/assets/app.js') ?: 0);
+$criticalJsVersion = is_file($criticalJsPath) ? (int)(filemtime($criticalJsPath) ?: 0) : 0;
+$criticalCssContents = is_file($criticalCssPath) ? (string)file_get_contents($criticalCssPath) : '';
 $loadModerationBadgeCounts = $showProfileMenuModeration && $pageLayout === 'moderation';
 $moderationBadgeCounts = $loadModerationBadgeCounts
   ? trux_moderation_fetch_staff_badge_counts((int)$user['id'], (string)($user['staff_role'] ?? 'user'))
@@ -150,19 +166,20 @@ if ($user) {
   $appRailItems[] = [
     'href' => TRUX_BASE_URL . '/messages.php',
     'label' => 'Inbox',
-    'meta' => $unreadMessageCount > 0 ? $unreadMessageCount . ' unread' : 'Direct messages',
+    'meta' => 'Direct messages',
     'icon' => 'messages',
     'active' => $isPage(['messages']),
-    'badge' => $unreadMessageCount > 0 ? (string)$unreadMessageCount : '',
+    'badge' => '',
     'message_badge' => true,
   ];
   $appRailItems[] = [
     'href' => TRUX_BASE_URL . '/notifications.php',
     'label' => 'Activity',
-    'meta' => $unreadNotificationCount > 0 ? $notificationBadgeLabel . ' unread' : 'Notifications',
+    'meta' => 'Notifications',
     'icon' => 'activity',
     'active' => $isPage(['notifications']),
-    'badge' => $unreadNotificationCount > 0 ? $notificationBadgeLabel : '',
+    'badge' => '',
+    'notification_badge' => true,
   ];
   $appRailItems[] = [
     'href' => TRUX_BASE_URL . '/bookmarks.php',
@@ -273,6 +290,7 @@ $renderAppRailItems = static function (array $items, string $surface = 'desktop'
     $itemIconName = trim((string)($item['icon'] ?? 'home'));
     $itemBadge = trim((string)($item['badge'] ?? ''));
     $itemIsMessageBadge = !empty($item['message_badge']);
+    $itemIsNotificationBadge = !empty($item['notification_badge']);
     $itemKind = trim((string)($item['kind'] ?? 'link'));
     $itemIsActive = !empty($item['active']);
     $itemClasses = 'railNav__item' . ($itemIsActive ? ' is-active' : '');
@@ -289,8 +307,12 @@ $renderAppRailItems = static function (array $items, string $surface = 'desktop'
             <small><?= trux_e($itemMeta) ?></small>
           </span>
         </span>
-        <?php if ($itemBadge !== '' || $itemIsMessageBadge): ?>
-          <span class="railNav__badge"<?= $itemIsMessageBadge ? ' data-message-unread-badge="rail"' : '' ?><?= $itemBadge === '' ? ' hidden' : '' ?>><?= trux_e($itemBadge) ?></span>
+        <?php if ($itemBadge !== '' || $itemIsMessageBadge || $itemIsNotificationBadge): ?>
+          <span
+            class="railNav__badge"
+            <?= $itemIsMessageBadge ? ' data-message-unread-badge="rail"' : '' ?>
+            <?= $itemIsNotificationBadge ? ' data-notification-unread-badge="rail"' : '' ?>
+            <?= $itemBadge === '' ? ' hidden' : '' ?>><?= trux_e($itemBadge) ?></span>
         <?php endif; ?>
       </button>
       <?php
@@ -312,8 +334,12 @@ $renderAppRailItems = static function (array $items, string $surface = 'desktop'
           <small><?= trux_e($itemMeta) ?></small>
         </span>
       </span>
-      <?php if ($itemBadge !== '' || $itemIsMessageBadge): ?>
-        <span class="railNav__badge"<?= $itemIsMessageBadge ? ' data-message-unread-badge="rail"' : '' ?><?= $itemBadge === '' ? ' hidden' : '' ?>><?= trux_e($itemBadge) ?></span>
+      <?php if ($itemBadge !== '' || $itemIsMessageBadge || $itemIsNotificationBadge): ?>
+        <span
+          class="railNav__badge"
+          <?= $itemIsMessageBadge ? ' data-message-unread-badge="rail"' : '' ?>
+          <?= $itemIsNotificationBadge ? ' data-notification-unread-badge="rail"' : '' ?>
+          <?= $itemBadge === '' ? ' hidden' : '' ?>><?= trux_e($itemBadge) ?></span>
       <?php endif; ?>
     </a>
     <?php
@@ -392,7 +418,7 @@ if ($user) {
     $tp = (string)($user['theme_preference'] ?? 'system');
     if ($tp === 'light') $_serverTheme = 'light';
     elseif ($tp === 'dark') $_serverTheme = 'dark';
-    // 'system' → JS/localStorage will override, default to dark
+    // 'system' -> JS/localStorage will override, default to dark
 }
 ?>
 <html lang="en" data-theme="<?= trux_e($_serverTheme) ?>">
@@ -409,18 +435,39 @@ if ($user) {
   );
   ?>
   <link rel="icon" type="image/png" sizes="32x32" href="<?= TRUX_BASE_URL ?>/favicon.php?v=<?= $faviconVersion ?>">
-  <link rel="stylesheet" href="<?= TRUX_BASE_URL ?>/assets/css/main.css?v=<?= (int)(filemtime($mainCssPath) ?: 0) ?>">
-  <script defer src="<?= TRUX_BASE_URL ?>/assets/app.js?v=<?= filemtime(__DIR__ . '/assets/app.js') ?>"></script>
+  <?php if ($criticalCssContents !== ''): ?>
+    <style data-critical-css="1"><?= $criticalCssContents ?></style>
+  <?php endif; ?>
+  <style data-performance-mode-css="1">
+    .perf--balanced .shellAtmosphere { opacity: .55; }
+    .perf--balanced .shellAtmosphere__grid,
+    .perf--balanced .shellAtmosphere__orb--three { display: none; }
+    .perf--lite .shellAtmosphere,
+    .perf--lite #pageFX { display: none; }
+  </style>
+  <link rel="preload" href="<?= TRUX_BASE_URL ?>/assets/css/main.css?v=<?= $mainCssVersion ?>" as="style">
+  <link rel="stylesheet" href="<?= TRUX_BASE_URL ?>/assets/css/main.css?v=<?= $mainCssVersion ?>" data-main-stylesheet="1">
+  <?php if ($criticalJsVersion > 0): ?>
+    <script defer src="<?= TRUX_BASE_URL ?>/assets/app-critical.js?v=<?= $criticalJsVersion ?>"></script>
+  <?php endif; ?>
+  <script defer src="<?= TRUX_BASE_URL ?>/assets/app.js?v=<?= $appJsVersion ?>"></script>
   <?php if (($pageKey ?? '') === 'messages' && is_file(__DIR__ . '/assets/dm_emoji.js')): ?>
     <script defer src="<?= TRUX_BASE_URL ?>/assets/dm_emoji.js?v=<?= filemtime(__DIR__ . '/assets/dm_emoji.js') ?>"></script>
   <?php endif; ?>
   <?php if (($pageKey ?? '') === 'messages' && is_file(__DIR__ . '/assets/messages_v2.js')): ?>
     <script defer src="<?= TRUX_BASE_URL ?>/assets/messages_v2.js?v=<?= filemtime(__DIR__ . '/assets/messages_v2.js') ?>"></script>
   <?php endif; ?>
-  <script>window.TRUX_BASE_URL = "<?= TRUX_BASE_URL ?>";</script>
+  <script>
+    window.TRUX_BASE_URL = <?= json_encode(TRUX_BASE_URL, JSON_UNESCAPED_SLASHES) ?>;
+    window.TRUX_CSRF_TOKEN = <?= json_encode(trux_csrf_token(), JSON_UNESCAPED_SLASHES) ?>;
+    window.TRUX_NOTIFICATION_COUNT_URL = <?= json_encode($deferredUnreadCountsSrc, JSON_UNESCAPED_SLASHES) ?>;
+  </script>
 </head>
 
-<body class="<?= trux_e(implode(' ', $bodyClasses)) ?>">
+<body
+  class="<?= trux_e(implode(' ', $bodyClasses)) ?>"
+  data-ui-performance-mode="<?= trux_e($uiPerformanceMode) ?>"
+  <?= $deferredUnreadCountsSrc !== '' ? 'data-notification-count-src="' . trux_e($deferredUnreadCountsSrc) . '"' : '' ?>>
   <div id="pageFX" class="pagefx" aria-hidden="true">
     <div class="pagefx__bar"></div>
   </div>
@@ -655,17 +702,15 @@ if ($user) {
                   <svg viewBox="0 0 24 24" focusable="false">
                     <path fill="currentColor" d="M12 3a5 5 0 0 0-5 5v1.2c0 .9-.28 1.78-.81 2.5l-1.1 1.54A2 2 0 0 0 6.72 17h10.56a2 2 0 0 0 1.63-3.16l-1.1-1.54A4.3 4.3 0 0 1 17 9.2V8a5 5 0 0 0-5-5Zm0 18a2.75 2.75 0 0 0 2.58-1.8.75.75 0 0 0-.7-1.02h-3.76a.75.75 0 0 0-.7 1.02A2.75 2.75 0 0 0 12 21Z" />
                   </svg>
-                  <?php if ($unreadNotificationCount > 0): ?>
-                    <span class="shellAction__badge"><?= trux_e($notificationBadgeLabel) ?></span>
-                  <?php endif; ?>
+                  <span class="shellAction__badge" data-notification-unread-badge="header" hidden>0</span>
                 </button>
 
                 <div class="menu__panel menu__panel--notifications" aria-label="Notifications">
                   <div class="notificationMenu__head">
                     <div class="notificationMenu__titleWrap">
                       <div class="notificationMenu__title">Notifications</div>
-                      <div class="notificationMenu__subtitle muted">
-                        <?= $unreadNotificationCount > 0 ? trux_e($notificationBadgeLabel . ' unread') : 'All caught up' ?>
+                      <div class="notificationMenu__subtitle muted" data-notification-unread-label="menu">
+                        Unread status loads after page render.
                       </div>
                     </div>
                     <a class="notificationMenu__link" href="<?= TRUX_BASE_URL ?>/notifications.php">Open page</a>
@@ -729,7 +774,7 @@ if ($user) {
                       <span class="menu__itemTitle">Messages</span>
                       <span class="menu__itemMeta">Inbox</span>
                     </span>
-                    <span class="menuBadge" data-message-unread-badge="menu"<?= $unreadMessageCount > 0 ? '' : ' hidden' ?>><?= (int)$unreadMessageCount ?></span>
+                    <span class="menuBadge" data-message-unread-badge="menu" hidden>0</span>
                   </a>
                   <a class="menu__item" role="menuitem" href="<?= TRUX_BASE_URL ?>/bookmarks.php">
                     <span class="menu__itemIcon" aria-hidden="true">

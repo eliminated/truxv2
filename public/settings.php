@@ -161,15 +161,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
       trux_flash_set('error', 'Could not update privacy settings right now.');
     }
-  } elseif ($action === 'save_theme_preference') {
+  } elseif ($action === 'save_interface_preferences') {
     $theme = trim((string)($_POST['theme_preference'] ?? 'system'));
     if (!in_array($theme, ['light', 'dark', 'system'], true)) {
       $theme = 'system';
     }
+    $uiPerformanceMode = trim((string)($_POST['ui_performance_mode'] ?? 'full'));
+    if (!in_array($uiPerformanceMode, ['full', 'balanced', 'lite'], true)) {
+      $uiPerformanceMode = 'full';
+    }
     $db = trux_db();
-    $stmt = $db->prepare('UPDATE users SET theme_preference = ? WHERE id = ?');
-    $stmt->execute([$theme, (int)$me['id']]);
-    trux_flash_set('success', 'Theme preference updated.');
+    try {
+      $stmt = $db->prepare('UPDATE users SET theme_preference = ?, ui_performance_mode = ? WHERE id = ?');
+      $stmt->execute([$theme, $uiPerformanceMode, (int)$me['id']]);
+      trux_flash_set('success', 'Interface preferences updated.');
+    } catch (PDOException) {
+      $stmt = $db->prepare('UPDATE users SET theme_preference = ? WHERE id = ?');
+      $stmt->execute([$theme, (int)$me['id']]);
+      trux_flash_set('success', 'Theme preference updated.');
+    }
   } else {
     $submitted = [];
     foreach (array_keys(trux_notification_defaults()) as $key) {
@@ -857,7 +867,7 @@ require_once __DIR__ . '/_header.php';
             <form method="post" action="<?= TRUX_BASE_URL ?>/settings.php" class="settingSection__form">
               <?= trux_csrf_field() ?>
               <input type="hidden" name="section" value="interface">
-              <input type="hidden" name="action" value="save_theme_preference">
+              <input type="hidden" name="action" value="save_interface_preferences">
 
               <div class="settingRow settingRow--stacked">
                 <span class="settingRow__label">
@@ -875,8 +885,31 @@ require_once __DIR__ . '/_header.php';
                 </div>
               </div>
 
+              <div class="settingRow settingRow--stacked">
+                <span class="settingRow__label">
+                  <strong>UI performance mode</strong>
+                  <small class="muted">Tune motion and decorative effects for the device you are using right now.</small>
+                </span>
+                <div class="radioGroup">
+                  <?php foreach ([
+                    'full' => ['label' => 'Full', 'copy' => 'All motion and shell effects stay enabled.'],
+                    'balanced' => ['label' => 'Balanced', 'copy' => 'Keep motion, but tone down heavier shell polish.'],
+                    'lite' => ['label' => 'Lite', 'copy' => 'Static shell, reduced effects, and the lightest runtime path.'],
+                  ] as $perfMode => $perfMeta): ?>
+                    <label class="radioGroup__item">
+                      <input type="radio" name="ui_performance_mode" value="<?= trux_e($perfMode) ?>"
+                             <?= ($me['ui_performance_mode'] ?? 'full') === $perfMode ? 'checked' : '' ?>>
+                      <span>
+                        <strong><?= trux_e($perfMeta['label']) ?></strong>
+                        <small class="muted"><?= trux_e($perfMeta['copy']) ?></small>
+                      </span>
+                    </label>
+                  <?php endforeach; ?>
+                </div>
+              </div>
+
               <div class="settingSection__actions">
-                <button class="shellButton shellButton--accent" type="submit">Save theme</button>
+                <button class="shellButton shellButton--accent" type="submit">Save interface settings</button>
               </div>
             </form>
           </div>

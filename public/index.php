@@ -80,14 +80,16 @@ if ($feedMode === 'following') {
   }
 }
 
-$interactionMap = trux_fetch_post_interactions(
-  trux_collect_post_ids($posts),
-  $me ? (int) $me['id'] : null
+$postIds = trux_collect_post_ids($posts);
+$viewerInteractionMap = trux_fetch_viewer_post_interaction_flags(
+  $postIds,
+  $me ? (int)$me['id'] : null
 );
+$homeFeedInteractionsSrc = TRUX_BASE_URL . '/api/posts/interactions.php';
 
 $_quotedIds = array_filter(array_unique(array_map(static fn($p) => (int)($p['quoted_post_id'] ?? 0), $posts)));
 $quotedPostMap = $_quotedIds ? trux_fetch_quoted_posts_batch(array_values($_quotedIds)) : [];
-$pollMap = trux_fetch_polls_for_posts(trux_collect_post_ids($posts), $me ? (int)$me['id'] : null);
+$pollMap = trux_fetch_polls_for_posts($postIds, $me ? (int)$me['id'] : null);
 unset($_quotedIds);
 
 require_once __DIR__ . '/_header.php';
@@ -156,7 +158,11 @@ require_once __DIR__ . '/_header.php';
           </div>
         </div>
 
-        <div class="timeline" data-auto-pager-list="home-posts">
+        <div
+          class="timeline"
+          data-auto-pager-list="home-posts"
+          data-post-interactions-feed="1"
+          data-post-interactions-src="<?= trux_e($homeFeedInteractionsSrc) ?>">
           <?php if (!$posts): ?>
             <section class="bandSurface bandSurface--empty">
               <strong>No posts yet</strong>
@@ -176,7 +182,17 @@ require_once __DIR__ . '/_header.php';
             <?php
             $postRecord = $p;
             $postViewer = $me;
-            $postInteractionStats = $interactionMap[(int)$p['id']] ?? ['likes' => 0, 'comments' => 0, 'shares' => 0, 'liked' => false, 'shared' => false, 'bookmarked' => false];
+            $viewerPostFlags = $viewerInteractionMap[(int)$p['id']] ?? ['liked' => false, 'shared' => false, 'bookmarked' => false];
+            $postInteractionDeferred = true;
+            $postInteractionStats = [
+              'likes' => 0,
+              'comments' => 0,
+              'shares' => 0,
+              'bookmarks' => 0,
+              'liked' => (bool)($viewerPostFlags['liked'] ?? false),
+              'shared' => (bool)($viewerPostFlags['shared'] ?? false),
+              'bookmarked' => (bool)($viewerPostFlags['bookmarked'] ?? false),
+            ];
             require __DIR__ . '/_post_card.php';
             ?>
           <?php endforeach; ?>

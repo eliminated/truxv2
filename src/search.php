@@ -66,7 +66,8 @@ function trux_search_posts_by_hashtag(string $term, int $limit = 20, ?int $befor
     try {
         if ($beforeId !== null && $beforeId > 0) {
             $stmt = $db->prepare(
-                "SELECT DISTINCT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
+                "SELECT DISTINCT p.id, p.user_id, p.body, p.image_path, p.quoted_post_id, p.created_at, p.edited_at, p.is_pinned,
+                        u.username, u.avatar_path, u.display_name
                  FROM posts p
                  JOIN users u ON u.id = p.user_id
                  LEFT JOIN post_hashtags ph ON ph.post_id = p.id
@@ -84,7 +85,8 @@ function trux_search_posts_by_hashtag(string $term, int $limit = 20, ?int $befor
         }
 
         $stmt = $db->prepare(
-            "SELECT DISTINCT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
+            "SELECT DISTINCT p.id, p.user_id, p.body, p.image_path, p.quoted_post_id, p.created_at, p.edited_at, p.is_pinned,
+                    u.username, u.avatar_path, u.display_name
              FROM posts p
              JOIN users u ON u.id = p.user_id
              LEFT JOIN post_hashtags ph ON ph.post_id = p.id
@@ -101,7 +103,8 @@ function trux_search_posts_by_hashtag(string $term, int $limit = 20, ?int $befor
     } catch (PDOException) {
         if ($beforeId !== null && $beforeId > 0) {
             $stmt = $db->prepare(
-                "SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
+                "SELECT p.id, p.user_id, p.body, p.image_path, p.quoted_post_id, p.created_at, p.edited_at, p.is_pinned,
+                        u.username, u.avatar_path, u.display_name
                  FROM posts p
                  JOIN users u ON u.id = p.user_id
                  WHERE p.id < ? AND LOWER(p.body) REGEXP ?
@@ -116,7 +119,8 @@ function trux_search_posts_by_hashtag(string $term, int $limit = 20, ?int $befor
         }
 
         $stmt = $db->prepare(
-            "SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
+            "SELECT p.id, p.user_id, p.body, p.image_path, p.quoted_post_id, p.created_at, p.edited_at, p.is_pinned,
+                    u.username, u.avatar_path, u.display_name
              FROM posts p
              JOIN users u ON u.id = p.user_id
              WHERE LOWER(p.body) REGEXP ?
@@ -131,44 +135,60 @@ function trux_search_posts_by_hashtag(string $term, int $limit = 20, ?int $befor
     }
 }
 
-function trux_search_posts(string $term, int $limit = 20, ?int $beforeId = null): array {
+function trux_search_posts(string $term, int $limit = 20, ?int $beforeId = null, ?string $authorUsername = null): array {
     $term = trim($term);
-    if ($term === '') return [];
+    $author = trux_normalize_mention_fragment((string)$authorUsername);
+    if ($term === '' && $author === '') {
+        return [];
+    }
 
     $limit = max(1, min(50, $limit));
     $db = trux_db();
 
-    $escaped = trux_like_escape($term);
-    $like = '%' . $escaped . '%';
-
+    $conditions = [];
+    $bindings = [];
     if ($beforeId !== null && $beforeId > 0) {
-        $stmt = $db->prepare(
-            "SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
-             FROM posts p
-             JOIN users u ON u.id = p.user_id
-             WHERE p.id < ? AND (p.body LIKE ? ESCAPE '\\\\' OR u.username LIKE ? ESCAPE '\\\\')
-             ORDER BY p.id DESC
-             LIMIT ?"
-        );
-        $stmt->bindValue(1, $beforeId, PDO::PARAM_INT);
-        $stmt->bindValue(2, $like, PDO::PARAM_STR);
-        $stmt->bindValue(3, $like, PDO::PARAM_STR);
-        $stmt->bindValue(4, $limit, PDO::PARAM_INT);
-        $stmt->execute();
-        return $stmt->fetchAll();
+        $conditions[] = 'p.id < ?';
+        $bindings[] = [$beforeId, PDO::PARAM_INT];
+    }
+
+    if ($author !== '') {
+        $conditions[] = 'u.username = ?';
+        $bindings[] = [$author, PDO::PARAM_STR];
+    }
+
+    if ($term !== '') {
+        $escaped = trux_like_escape($term);
+        $like = '%' . $escaped . '%';
+        $bindings[] = [$like, PDO::PARAM_STR];
+        if ($author !== '') {
+            $conditions[] = "p.body LIKE ? ESCAPE '\\\\'";
+        } else {
+            $conditions[] = "(p.body LIKE ? ESCAPE '\\\\' OR u.username LIKE ? ESCAPE '\\\\')";
+            $bindings[] = [$like, PDO::PARAM_STR];
+        }
+    }
+
+    if (!$conditions) {
+        return [];
     }
 
     $stmt = $db->prepare(
-        "SELECT p.id, p.user_id, p.body, p.image_path, p.created_at, p.edited_at, u.username, u.avatar_path
+        "SELECT p.id, p.user_id, p.body, p.image_path, p.quoted_post_id, p.created_at, p.edited_at, p.is_pinned,
+                u.username, u.avatar_path, u.display_name
          FROM posts p
          JOIN users u ON u.id = p.user_id
-         WHERE p.body LIKE ? ESCAPE '\\\\' OR u.username LIKE ? ESCAPE '\\\\'
+         WHERE " . implode(' AND ', $conditions) . "
          ORDER BY p.id DESC
          LIMIT ?"
     );
-    $stmt->bindValue(1, $like, PDO::PARAM_STR);
-    $stmt->bindValue(2, $like, PDO::PARAM_STR);
-    $stmt->bindValue(3, $limit, PDO::PARAM_INT);
+
+    $bindingIndex = 1;
+    foreach ($bindings as [$value, $type]) {
+        $stmt->bindValue($bindingIndex, $value, $type);
+        $bindingIndex++;
+    }
+    $stmt->bindValue($bindingIndex, $limit, PDO::PARAM_INT);
     $stmt->execute();
 
     return $stmt->fetchAll();

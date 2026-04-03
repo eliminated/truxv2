@@ -1,4 +1,43 @@
 # Omnicus Updates
+## TruX v0.8.0 - Performance & Responsiveness Milestone
+
+**Branch**: Production
+**Date**: 2026-04-03
+
+***
+
+### Added
+
+- Deferred unread badge hydration through `GET /api/notifications/count.php` so shared shell counts now load after the page frame renders
+- Home-feed interaction hydration through `POST /api/posts/interactions.php`, with placeholder counts that resolve only for visible cards
+- Critical shell assets in `public/assets/css/critical.css` and `public/assets/app-critical.js` for first-paint layout, timed unread hydration, and home-feed interaction loading
+- Request timing instrumentation in `public/_bootstrap.php` with `X-Response-Time` headers and slow-request logging to `storage/logs/slow_requests.log`
+- `users.ui_performance_mode` plus a new Interface settings control for `full`, `balanced`, and `lite` shell performance profiles
+- Explicit `author=@username` search filtering with in-page author controls and quick "search posts from @user" links in account results
+- v0.8.0 migration pair: `database/migrations/20260403_add_ui_performance_mode.sql` and `database/migrations/20260403_add_v080_indexes.sql`
+
+### Changed
+
+- Removed eager unread notification and direct-message count queries from the shared header render path
+- Home feed now renders viewer interaction flags immediately but defers count aggregation until cards enter the viewport
+- Reworked the following-feed query so it joins the followed-user set directly instead of using the previous `OR EXISTS` pattern
+- Main stylesheet delivery now uses inlined critical CSS plus async loading for `main.css`
+- Page-FX initialization now respects `perf--lite` alongside the existing reduced-motion and classic shell gates
+- Search post queries now return the same quoted-post, pinned-post, and display-name fields used by the main post card partials
+
+### Technical
+
+- Shared shell boot data now exposes CSRF and unread-count hydration config to the critical JS bootstrap
+- Home-feed cards now render stable deferred-interaction hooks (`data-needs-interactions`, placeholder counts, and feed-level API attributes) so auto-paged content can hydrate after `trux:content-added`
+- Search pagination and filter links now preserve the new author filter across load-more requests
+- The v0.8.0 index migration only adds `posts(user_id, id)` when a supporting composite is missing, preserving the existing unread-count and DM indexes
+
+### Notes
+
+- v0.8.0 builds on the v0.7.7 baseline, so previously shipped deferred discovery rail loading, deferred notification-menu body loading, and scroll-memory behavior remain intact and are not re-listed here as new work
+- The home feed is intentionally speed-first when JavaScript is unavailable: cards remain usable, active states still render for the signed-in viewer, and count placeholders stay unresolved until client hydration is available
+
+***
 ## TruX v0.7.7 — Quick Performance Patch
 
 **Branch**: Production

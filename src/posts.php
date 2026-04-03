@@ -84,15 +84,14 @@ function trux_fetch_following_feed(int $viewerId, int $limit = 20, ?int $beforeI
                u.username, u.avatar_path, u.display_name
         FROM posts p
         JOIN users u ON u.id = p.user_id
-        WHERE (
-            p.user_id = :viewer_id
-            OR EXISTS (
-                SELECT 1
-                FROM follows f
-                WHERE f.follower_id = :viewer_follow_id
-                  AND f.following_id = p.user_id
-            )
-        )
+        JOIN (
+            SELECT :viewer_id AS user_id
+            UNION
+            SELECT f.following_id AS user_id
+            FROM follows f
+            WHERE f.follower_id = :viewer_follow_id
+        ) feed_users ON feed_users.user_id = p.user_id
+        WHERE 1 = 1
     ';
 
     if ($beforeId !== null && $beforeId > 0) {
@@ -690,6 +689,82 @@ function trux_collect_post_ids(array $posts): array {
         if ($id > 0) $ids[] = $id;
     }
     return array_values(array_unique($ids));
+}
+
+function trux_fetch_viewer_post_interaction_flags(array $postIds, ?int $viewerId): array {
+    $ids = [];
+    foreach ($postIds as $id) {
+        $n = (int)$id;
+        if ($n > 0) {
+            $ids[] = $n;
+        }
+    }
+    $ids = array_values(array_unique($ids));
+    if (!$ids) {
+        return [];
+    }
+
+    $out = [];
+    foreach ($ids as $id) {
+        $out[$id] = [
+            'liked' => false,
+            'shared' => false,
+            'bookmarked' => false,
+        ];
+    }
+
+    $viewer = (int)($viewerId ?? 0);
+    if ($viewer <= 0) {
+        return $out;
+    }
+
+    $db = trux_db();
+    $placeholders = implode(',', array_fill(0, count($ids), '?'));
+
+    try {
+        $likesMineStmt = $db->prepare("SELECT post_id FROM post_likes WHERE user_id = ? AND post_id IN ($placeholders)");
+        $likesMineStmt->bindValue(1, $viewer, PDO::PARAM_INT);
+        foreach ($ids as $i => $id) {
+            $likesMineStmt->bindValue($i + 2, $id, PDO::PARAM_INT);
+        }
+        $likesMineStmt->execute();
+        foreach ($likesMineStmt->fetchAll() as $row) {
+            $pid = (int)$row['post_id'];
+            if (isset($out[$pid])) {
+                $out[$pid]['liked'] = true;
+            }
+        }
+
+        $sharesMineStmt = $db->prepare("SELECT post_id FROM post_shares WHERE user_id = ? AND post_id IN ($placeholders)");
+        $sharesMineStmt->bindValue(1, $viewer, PDO::PARAM_INT);
+        foreach ($ids as $i => $id) {
+            $sharesMineStmt->bindValue($i + 2, $id, PDO::PARAM_INT);
+        }
+        $sharesMineStmt->execute();
+        foreach ($sharesMineStmt->fetchAll() as $row) {
+            $pid = (int)$row['post_id'];
+            if (isset($out[$pid])) {
+                $out[$pid]['shared'] = true;
+            }
+        }
+
+        $bookmarksMineStmt = $db->prepare("SELECT post_id FROM post_bookmarks WHERE user_id = ? AND post_id IN ($placeholders)");
+        $bookmarksMineStmt->bindValue(1, $viewer, PDO::PARAM_INT);
+        foreach ($ids as $i => $id) {
+            $bookmarksMineStmt->bindValue($i + 2, $id, PDO::PARAM_INT);
+        }
+        $bookmarksMineStmt->execute();
+        foreach ($bookmarksMineStmt->fetchAll() as $row) {
+            $pid = (int)$row['post_id'];
+            if (isset($out[$pid])) {
+                $out[$pid]['bookmarked'] = true;
+            }
+        }
+    } catch (PDOException) {
+        return $out;
+    }
+
+    return $out;
 }
 
 function trux_collect_comment_ids(array $comments): array {

@@ -24,6 +24,39 @@ require_once dirname(__DIR__) . '/src/algr.php';
 
 date_default_timezone_set(TRUX_TIMEZONE);
 
+$truxRequestStartedAt = microtime(true);
+if (PHP_SAPI !== 'cli') {
+    register_shutdown_function(static function () use ($truxRequestStartedAt): void {
+        $elapsedMs = (int)round((microtime(true) - $truxRequestStartedAt) * 1000);
+        if (!headers_sent()) {
+            header('X-Response-Time: ' . $elapsedMs . 'ms');
+        }
+
+        if ($elapsedMs <= 200) {
+            return;
+        }
+
+        $logDirectory = dirname(__DIR__) . '/storage/logs';
+        if (!is_dir($logDirectory)) {
+            @mkdir($logDirectory, 0775, true);
+        }
+
+        if (!is_dir($logDirectory) || !is_writable($logDirectory)) {
+            return;
+        }
+
+        $requestUri = trim((string)($_SERVER['REQUEST_URI'] ?? ''));
+        if ($requestUri === '') {
+            $requestUri = trim((string)($_SERVER['SCRIPT_NAME'] ?? 'unknown'));
+        }
+        $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+        $statusCode = http_response_code();
+        $timestamp = date('Y-m-d H:i:s');
+        $line = sprintf("[%s] %s %s %d %dms\n", $timestamp, $method, $requestUri, $statusCode, $elapsedMs);
+        @file_put_contents($logDirectory . '/slow_requests.log', $line, FILE_APPEND | LOCK_EX);
+    });
+}
+
 $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
 session_set_cookie_params([
     'lifetime' => 0,
